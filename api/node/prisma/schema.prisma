@@ -28,6 +28,7 @@ model User {
   email           String   @unique
   password        String
   name            String
+  university      String   @default("Unkown University")
   dateOfBirth     DateTime
   phoneNumber     String   @unique
   isPhoneVerified Boolean  @default(false)

@@ -39,6 +39,7 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
                 email,
                 password,
                 name,
+                university: email.split("@")[1].split(".")[0].toUpperCase,
                 dateOfBirth: new Date(dateOfBirth),
                 phoneNumber,
                 isPhoneVerified: false, // This would be verified later through an OTP process if they choose to buy/sell
@@ -55,6 +56,7 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
                 id: newUser.id,
                 email: newUser.email,
                 name: newUser.name,
+                university: newUser.university,
                 dateOfBirth: newUser.dateOfBirth,
                 phoneNumber: newUser.phoneNumber,
             }
@@ -66,12 +68,56 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
     }
 }
 
-export const loginUser = async (req: request, res: Response): Promise<any> => {
+export const loginUser = async (req: Request, res: Response): Promise<any> => {
     try{
         const { email, password } = req.body;
 
-        // 1. Basic 
+        // 1. Basic vallidation
+        if (!email || !password) {
+            return res.status(400).json({
+                message: "Email and password are required."
+            });
+        }
+
+        // 2. Find the user
+        const user = await prisma.user.findUnique({
+            where: { email },
+        });
+
+        if (!user) {
+            return res.status(401).json({
+                message: "Invalid email or password."
+            });
+        }
+
+        // 3. Verify the password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                message: "Invalid email or password. Please input a correct password."
+            });
+        }
+
+        // 4. Generate JWT token
+        const token = jwt.sign(
+            { userid: user.id, email: user.email },
+            process.env.JWT_SECRET || "summayh_dev_secret_key_0627",
+            { expiresIn: "7d" }
+        );
+
+        // 5. Return success
+        return res.status(200).json({
+            message: "Login successful.",
+            token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                university: user.university
+            },
+        });
     } catch(error) {
-        //
+        console.error("Login error:", error);
+        return res.status(500).json({ message: "Internal server error during login." });
     }
 }
