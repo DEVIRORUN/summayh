@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// api/node/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+// model TestConnection {
+//   id        String   @id @default(uuid())
+//   createdAt DateTime @default(now())
+//   status    String   @default("Successfully Connected!")
+// }
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  password        String
+  name            String
+  dateOfBirth     DateTime
+  phoneNumber     String   @unique
+  isPhoneVerified Boolean  @default(false)
+  role            Role     @default(BUYER)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relationships
+  sellerProfile SellerProfile?
+}
+
+model SellerProfile {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  bio          String
+  skills       String[]
+  rating       Float    @default(0.0)
+  totalReviews Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relationships
+  user User  @relation(fields: [userId], references: [id])
+  gigs Gig[]
+}
+
+model Gig {
+  id          String   @id @default(uuid())
+  sellerId    String
+  categoryId  String? // Optional for now till cat. model is built
+  title       String
+  description String
+  basePrice   Float
+  category    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  seller SellerProfile @relation(fields: [sellerId], references: [id])
+}

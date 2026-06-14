@@ -1,0 +1,11 @@
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "seyiadebayo@lautech.edu.ng",
+  "password": "SecurePassword123",
+  "name": "Seyi Adebayo",
+  "dateOfBirth": "2008-07-15",
+  "university": "LAUTECH",
+  "phoneNumber": "+2348012345678"
+}
