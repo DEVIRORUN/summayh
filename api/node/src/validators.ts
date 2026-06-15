@@ -10,7 +10,7 @@ const NIGERIAN_UNI_DOMAINS = [
     // Add more Nigerian university domains as needed
 ]
 
-export const checkEduEmail = (email: string): boolean => {
+export const isValidEduEmail = (email: string): boolean => {
     if (!email || !email.includes("@")) return false;
 
     const domain = email.split("@")[1].toLowerCase();
