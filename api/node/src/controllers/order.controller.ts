@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
+import { prisma } from "../utils/prisma";
 import { OrderService } from "../services/order.service";
-import { PaystackService } from "../services/order.service";
+import { PaystackService } from "../services/paystack.service";
+import { handlePrismaError } from "../utils/prismaErrorHandler";
+import { PrismaClient } from "../../generated/prisma";
 
 export class OrderController {
 
@@ -15,8 +18,11 @@ export class OrderController {
                 message: "Order marked as delivered successfully. Awaiting buyer approval.",
                 order: updatedOrder
             });
-        } catch(error: any) {
-            return res.status(400).json({ erorr: error.message })
+        } catch (error) {
+            console.error("ERROR in Delivery Order:", error);
+            const handled = handlePrismaError(error, res);
+            if (handled) return;
+            return res.status(500).json({ message: "Something went wrong." });
         }
     }
 
@@ -31,8 +37,11 @@ export class OrderController {
                 message: "Delivery accepted. Funds have been released to the seller.",
                 order: completedOrder
             });
-        } catch(error: any) {
-            return res.status(400).json({ error: error.message });
+        } catch (error) {
+            console.error("ERROR in Accepting Delivery:", error);
+            const handled = handlePrismaError(error, res);
+            if (handled) return;
+            return res.status(500).json({ message: "Something went wrong." });
         }
     }
 
@@ -46,23 +55,29 @@ export class OrderController {
             return res.status(200).json({
                 message: "Revision requested. the order status has reverted to paid/active",
                 order: revisedOrder
-            })
-        } catch(error: any) {
-            return res.status(400).json({ error: error.message })
+            });
+        } catch (error) {
+            console.error("ERROR in Revision requesting:", error);
+            const handled = handlePrismaError(error, res);
+            if (handled) return;
+            return res.status(500).json({ message: "Something went wrong." });
         }
     }
 
     // POST /api/orders/create
     static async createOrder(req: Request, res: Response): Promise<any> {
         try{
-            const { buyerEmail, buyerId, serviceId, amount } = req.body;
+            const buyerId = (req as any).userId; 
+            const { buyerEmail, serviceId, amount } = req.body;
+
+            const gig = await prisma.gig.findUnique({ where: { id: serviceId } });
+            if (!gig) return res.status(404).json({ message: "Gig not found." });
 
             // 1. Create the order in Prisma
             const newOrder = await prisma.order.create({
-                // ... hook up buyer/seller relations ...
                 data: {
-                    status: "PENDING_PAYMENT",
-                    totalPrice: amount,
+                    status: "PENDING",
+                    totalPrice: gig.basePrice,
                     gigId: serviceId,
                     user: {
                         connect: { id: buyerId }
@@ -82,10 +97,12 @@ export class OrderController {
                 message: "Order created successfuly",
                 checkoutUrl: paystackData.data.authorization_url,
                 reference: paystackData.data.reference
-            })
-        } catch(error) {
-            console.error("Order creation failed:", error);
-           return res.status(500).json({ error: "Could not create order" });
+            });
+        } catch (error) {
+            console.error("ERROR in Order Creation:", error);
+            const handled = handlePrismaError(error, res);
+            if (handled) return;
+            return res.status(500).json({ message: "Something went wrong." });
         }
     }
 }

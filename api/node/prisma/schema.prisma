@@ -27,7 +27,6 @@ enum OrderStatus {
   FAILED
   CANCELLED
   ACTIVE
-  PENDING_PAYMENT
 }
 
 // model TestConnection {

@@ -13,7 +13,7 @@ export class GigService {
         description: string,
         basePrice: number,
         categoryId: string,
-        sellerId: string
+        userId: string
     ): Promise<any> {
         try {
             const newgig = await prisma.gig.create({
@@ -22,7 +22,7 @@ export class GigService {
                     description,
                     basePrice,
                     seller: {
-                        connect: { id: sellerId }
+                        connect: { userId: userId }
                     },
                     category: {
                         connect: { id: categoryId }

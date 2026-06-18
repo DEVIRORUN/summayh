@@ -1,6 +1,7 @@
 import { Request, Response } from "express"
 import { prisma } from "../utils/prisma"
 import { PaystackService } from "../services/paystack.service"
+import { handlePrismaError } from "../utils/prismaErrorHandler";
 
 
 export class SellerController {
@@ -45,10 +46,12 @@ export class SellerController {
             return res.status(200).json({
                 message: "Seller payout successfully activated!",
                 subaccountCode: updateProfile.paystackSubaccountCode
-            })
-        } catch(error: any) {
-            console.error(error.message);
-            return res.status(400).json({ error: error.message })
+            });
+        } catch (error) {
+            console.error("ERROR in On-Boarding Seller:", error);
+            const handled = handlePrismaError(error, res);
+            if (handled) return;
+            return res.status(500).json({ message: "Something went wrong." });
         }
     }
 
@@ -57,8 +60,13 @@ export class SellerController {
         try {
             const banks = await PaystackService.getSupportedBanks();
             return res.status(200).json({ banks });
-        } catch(error: any) {
-            return res.status(500).json({ error: error.message })
+        
+        } catch (error) {
+            console.error("ERROR in Listing Banks Available:", error);
+            const handled = handlePrismaError(error, res);
+            if (handled) return;
+            return res.status(500).json({ message: "Something went wrong." });
         }
     }
 }
+

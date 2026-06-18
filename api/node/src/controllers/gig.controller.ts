@@ -1,5 +1,6 @@
 import { Response, Request } from "express";
 import { GigService } from "../services/gig.service";
+import { handlePrismaError } from "../utils/prismaErrorHandler";
 
 // Then some services
 
@@ -11,23 +12,29 @@ export class GigController {
     static async createGig(req: Request, res: Response):Promise<any> {
         try {
             const { title, description, basePrice, category, categoryId } = req.body
-            const sellerId = (req as any).userId
+            const userId = (req as any).userId;
 
             const newGig = await GigService.initiateGigCreation(
                 title,
                 description,
                 basePrice,
                 categoryId,
-                sellerId
-            )
+                userId
+            );
             
             return res.status(201).json({
                 message: "Gig creation successful",
                 data: newGig
-            })
-        } catch(error: any) {
+            });
+
+        } catch(error) {
             console.error("ERROR CREATING GIG bro: ", error);
-            return res.status(400).json({ error: error.message });
+
+            const handled = handlePrismaError(error, res);
+            if (handled) return;
+
+            // Fallback for really unexpected errors
+            return res.status(500).json({ message: "Failed to create gig. Please try again." });
         }
     }
 }
