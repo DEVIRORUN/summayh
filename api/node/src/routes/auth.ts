@@ -9,6 +9,7 @@ import {
     refreshAccessToken,
     logoutUser
 } from "../controllers/auth";
+
 const router = Router();
 
 /**

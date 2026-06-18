@@ -19,3 +19,12 @@ Content-Type: application/json
   "email": "seyiadebayo@lautech.edu.ng",
   "password": "SecurePassword123"
 }
+
+
+### Test Refresh Token Endpoint
+POST http://localhost:8080/api/auth/refresh
+Content-Type: application/json
+
+{
+  "token": "YOUR_ACTUAL_JWT_STRING_HERE"
+}

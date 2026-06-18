@@ -79,7 +79,7 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
                 email,
                 password,
                 name,
-                university: email.split("@")[1].split(".")[0].toUpperCase,
+                university: email.split("@")[1].split(".")[0].toUpperCase(),
                 dateOfBirth: new Date(dateOfBirth),
                 phoneNumber,
                 isPhoneVerified: false, // This would be verified later through an OTP process if they choose to buy/sell
@@ -157,7 +157,7 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
             },
         });
     } catch(error) {
-        console.error("Login error:", error);
+        console.error("Login error, something wrong with NETWORK bro");
         return res.status(500).json({ message: "Internal server error during login." });
     }
 }
@@ -245,7 +245,7 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<a
 }
 }
 
-export const logoutUser = async (req: Request, res: response): Promise<any> => {
+export const logoutUser = async (req: Request, res: Response): Promise<any> => {
     try {
         // In a stateless JWT setup, logout is handled by the frontend deleting the token.
         // If you add cookies later, you would clear them here like:

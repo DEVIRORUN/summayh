@@ -11,10 +11,23 @@ datasource db {
   provider = "postgresql"
 }
 
+// ENUMS HERE
+
 enum Role {
   BUYER
   SELLER
   ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  DELIVERED
+  COMPLETED
+  FAILED
+  CANCELLED
+  ACTIVE
+  PENDING_PAYMENT
 }
 
 // model TestConnection {
@@ -38,6 +51,7 @@ model User {
 
   // Relationships
   sellerProfile SellerProfile?
+  orders        Order[]
 }
 
 model SellerProfile {
@@ -46,6 +60,7 @@ model SellerProfile {
   bio          String
   skills       String[]
   rating       Float    @default(0.0)
+  paystackSubaccountCode String?
   totalReviews Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -58,14 +73,45 @@ model SellerProfile {
 model Gig {
   id          String   @id @default(uuid())
   sellerId    String
-  categoryId  String? // Optional for now till cat. model is built
+  categoryId  String   // Changed from String? to required once you migrate
   title       String
   description String
   basePrice   Float
-  category    String
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now()) @updatedAt
 
   // Relationships
-  seller SellerProfile @relation(fields: [sellerId], references: [id])
+  seller      SellerProfile @relation(fields: [sellerId], references: [id])
+  category    Category      @relation(fields: [categoryId], references: [id])
+  orders      Order[]
+}
+
+model Category {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  slug        String     @unique // e.g., "programming-tech" or "web-development" for clean URLs
+  parentId    String?    // If this is null, it's a Main Category. If it has an ID, it's a Subcategory!
+  createdAt   DateTime   @default(now())
+
+  // Self-referencing relations
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Category[] @relation("CategoryHierarchy")
+
+  // The connection back to your Gigs
+  gigs        Gig[]
+}
+
+model Order {
+  id               String      @id @default(uuid())
+  buyerId          String
+  gigId            String
+  totalPrice       Float
+  status           OrderStatus @default(PENDING)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime?   @updatedAt
+  paymentReference String?     @unique
+
+  // Relationships
+  user User @relation(fields: [buyerId], references: [id])
+  gig   Gig    @relation(fields: [gigId], references: [id])
 }
