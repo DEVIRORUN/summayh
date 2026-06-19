@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth";
 import orderRoutes from "./routes/order.route"
 import sellerRoutes from "./routes/seller.route"
 import gigRoutes from "./routes/gig.route"
+import TermiiRoutes from "./routes/termii.route"
 import webhookRouter from './routes/webhook.route';
 
 const app = express();
@@ -42,6 +43,7 @@ app.use("/api/webhooks", webhookRouter);
 app.use("/api/orders", orderRoutes);
 app.use("/api/seller", sellerRoutes);
 app.use("/api/gig", gigRoutes);
+app.use("/api/otp", TermiiRoutes);
 
 app.use(express.json());
 

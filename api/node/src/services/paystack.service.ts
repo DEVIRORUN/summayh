@@ -6,9 +6,9 @@ import https from "https";
 export class PaystackService {
     private static secretKey = process.env.PAYSTACK_SECRET_KEY;
 
-    private static get secretKey() {
-        return process.env.PAYSTACK_SECRET_KEY;
-    }
+    // private static get secretKey() {
+    //     return process.env.PAYSTACK_SECRET_KEY;
+    // }
 
     /**
      * Releases escrow funds directly to the seller's account

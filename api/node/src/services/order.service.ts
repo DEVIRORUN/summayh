@@ -1,7 +1,7 @@
 import { stringify } from "node:querystring";
 import { prisma } from "../utils/prisma";
 
-// import { PaystackService } from "./paystack.service";
+import { PaystackService } from "./paystack.service";
 
 
 export class OrderService {
@@ -89,7 +89,8 @@ export class OrderService {
         const order = await tx.order.findUnique({
             where: { id: orderId },
             include: {
-                gig: { include: { seller: true } }
+                gig: { include: { seller: true } },
+                user: true // buyer relation — confirm this is the right relation name in my schema
             }
         });
         
@@ -108,11 +109,12 @@ export class OrderService {
         }
 
         // const payoutAmountInKobo = Math.round((order.totalPrice * 100) - order.totalPrice * 10);
-        const payoutAmountInKobo = Math.round(order.totalPrice * 100);
+        const platformComissionRate = 0.15;
+        const payoutAmountInKobo = Math.round(order.totalPrice * 100 * (1 - platformComissionRate));
 
         await PaystackService.releaseEscrowToSeller(sellerSubaccount, payoutAmountInKobo, orderId);
 
-        return completedOrder;
+        return { completedOrder, order }; // return order so controller has buyer/seller/data
     });
 
 }

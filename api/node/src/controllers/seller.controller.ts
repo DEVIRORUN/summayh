@@ -10,7 +10,7 @@ export class SellerController {
     static async onboardSeller(req: Request, res: Response): Promise<any> {
         try {
             const userId = (req as any).userId;
-            const { accountName, settlementBank, accountNumber, biography } = req.body;
+            const { accountName, settlementBank, accountNumber, biography, phoneNumber } = req.body;
 
             if (!settlementBank || !accountNumber) {
                 return res.status(400).json({ error: "Bnak code and account numner are required." })
@@ -25,6 +25,10 @@ export class SellerController {
                 10 // my cut
             );
 
+            const user = await prisma.user.findUnique({
+                where: { id: userId }
+            });
+
             // 2. Update the user record with the generated payout kwy
             const updateProfile = await prisma.sellerProfile.upsert({
                 where: { userId },
@@ -32,9 +36,12 @@ export class SellerController {
                     paystackSubaccountCode: subaccountCode
                 },
                 create: {
-                    userId,
+                    user: {
+                        connect: { id: userId }
+                    },
                     paystackSubaccountCode: subaccountCode,
                     bio: biography as string,
+                    phoneNumber: phoneNumber,
                     skills: [],
                 }
             });
@@ -70,3 +77,6 @@ export class SellerController {
     }
 }
 
+// Creatign my Termii 
+
+// services/termii.service.ts -> controllers/termii.controller.ts-> routes/termii.route.ts

@@ -49,20 +49,22 @@ model User {
   updatedAt       DateTime @updatedAt
 
   // Relationships
-  sellerProfile SellerProfile?
-  orders        Order[]
+  sellerProfile   SellerProfile?
+  orders          Order[]
+  otpVerification OTPVerification?
 }
 
 model SellerProfile {
-  id           String   @id @default(uuid())
-  userId       String   @unique
-  bio          String
-  skills       String[]
-  rating       Float    @default(0.0)
+  id                     String   @id @default(uuid())
+  userId                 String   @unique
+  bio                    String
+  skills                 String[]
+  rating                 Float    @default(0.0)
   paystackSubaccountCode String?
-  totalReviews Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  totalReviews           Int      @default(0)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  phoneNumber            String?   @unique
 
   // Relationships
   user User  @relation(fields: [userId], references: [id])
@@ -72,7 +74,7 @@ model SellerProfile {
 model Gig {
   id          String   @id @default(uuid())
   sellerId    String
-  categoryId  String   // Changed from String? to required once you migrate
+  categoryId  String // Changed from String? to required once you migrate
   title       String
   description String
   basePrice   Float
@@ -80,24 +82,24 @@ model Gig {
   updatedAt   DateTime @default(now()) @updatedAt
 
   // Relationships
-  seller      SellerProfile @relation(fields: [sellerId], references: [id])
-  category    Category      @relation(fields: [categoryId], references: [id])
-  orders      Order[]
+  seller   SellerProfile @relation(fields: [sellerId], references: [id])
+  category Category      @relation(fields: [categoryId], references: [id])
+  orders   Order[]
 }
 
 model Category {
-  id          String     @id @default(uuid())
-  name        String     @unique
-  slug        String     @unique // e.g., "programming-tech" or "web-development" for clean URLs
-  parentId    String?    // If this is null, it's a Main Category. If it has an ID, it's a Subcategory!
-  createdAt   DateTime   @default(now())
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique // e.g., "programming-tech" or "web-development" for clean URLs
+  parentId  String? // If this is null, it's a Main Category. If it has an ID, it's a Subcategory!
+  createdAt DateTime @default(now())
 
   // Self-referencing relations
-  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children    Category[] @relation("CategoryHierarchy")
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children Category[] @relation("CategoryHierarchy")
 
   // The connection back to your Gigs
-  gigs        Gig[]
+  gigs Gig[]
 }
 
 model Order {
@@ -112,5 +114,16 @@ model Order {
 
   // Relationships
   user User @relation(fields: [buyerId], references: [id])
-  gig   Gig    @relation(fields: [gigId], references: [id])
+  gig  Gig  @relation(fields: [gigId], references: [id])
+}
+
+model OTPVerification {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  otp       String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }
