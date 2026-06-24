@@ -35,6 +35,11 @@ export class OrderService {
             if (!order) {
                 throw new Error(`Order not found: ${orderId}`);
             }
+            
+            if (order.status === "DISPUTED") {
+                console.error("ORDER IS UNDER DISPUTE AND CANNOT BE MODIFIED UNTIL RESOLVED");
+                throw new Error("This order is under dispute and cannot be modified until resolved.");
+            }
 
             // Prevent duplicate if already paid
             if (order.status === "PAID") {
@@ -74,7 +79,12 @@ export class OrderService {
         });
 
         if (!order) throw new Error("Order not found.");
-
+        
+        if (order.status === "DISPUTED") {
+            console.error("ORDER IS UNDER DISPUTE AND CANNOT BE MODIFIED UNTIL RESOLVED");
+            throw new Error("This order is under dispute and cannot be modified until resolved.");
+        }
+        
         if (order.status !== "PAID") throw new Error("Only active orders can be delivered.");
 
         if (order.gig.sellerId !== sellerId) throw new Error("Unauthorized. Only the seller can deliver this order.");
@@ -101,6 +111,10 @@ export class OrderService {
         });
         
         if (!order) throw new Error("Order not found");
+        if (order.status === "DISPUTED") {
+            console.error("ORDER IS UNDER DISPUTE AND CANNOT BE MODIFIED UNTIL RESOLVED");
+            throw new Error("This order is under dispute and cannot be modified until resolved.");
+        }
         if (order.status !== "DELIVERED") throw new Error("Only delivered orders can be accepted.");
         if (order.buyerId !== buyerId) throw new Error("Unauthorized. Only the buyer can accept this delivery.");
 
@@ -131,6 +145,10 @@ export class OrderService {
         });
 
         if(!order) throw new Error("Order not found");
+        if (order.status === "DISPUTED") {
+            console.error("ORDER IS UNDER DISPUTE AND CANNOT BE MODIFIED UNTIL RESOLVED");
+            throw new Error("This order is under dispute and cannot be modified until resolved.");
+        }
         if(order.status !== "DELIVERED") throw new Error("Only Delivered can be review be requested on.");
         if (order.buyerId !== buyerId) throw new Error("Unauthorized. Only the buyer can request for revision.");
         
@@ -251,6 +269,10 @@ export class OrderService {
             });
 
             if (!order) throw new Error("Order not found.");
+            if (order.status === "DISPUTED") {
+                console.error("ORDER IS UNDER DISPUTE AND CANNOT BE MODIFIED UNTIL RESOLVED");
+                throw new Error("This order is under dispute and cannot be modified until resolved.");
+            }
             if(order.buyerId !== buyerId) throw new Error("Only teh buyer can submit requirements for this order.");
             if (order.status !== "ACTIVE") throw new Error("Requirements can only be submitted for ACTIVE orders.");
             if (order.requirementsSubmittedAt) throw new Error("Requirements have already been submitted for this order.");
@@ -332,6 +354,11 @@ export class OrderService {
             });
 
             if (!order) throw new Error("Order not found.");
+            
+            if (order.status === "DISPUTED") {
+                console.error("ORDER IS UNDER DISPUTE AND CANNOT BE MODIFIED UNTIL RESOLVED");
+                throw new Error("This order is under dispute and cannot be modified until resolved.");
+            }
             
             const isSeller = order.seller.user.id === userId;
             const isBuyer = order.buyerId === userId;

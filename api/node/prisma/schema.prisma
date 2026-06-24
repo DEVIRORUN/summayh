@@ -27,6 +27,8 @@ enum OrderStatus {
   FAILED
   CANCELLED
   ACTIVE
+  DISPUTED // new
+  REFUNDED // new
 }
 
 enum Service {
@@ -50,6 +52,23 @@ enum RequirementInputType {
   MULTIPLE_CHOICE
   FILE_UPLOAD
   YES_NO
+}
+
+enum DisputeStatus {
+  OPEN
+  AI_REVIEWED
+  MANUAL_REVIEWED // Might wanna add this
+  RESOLVED_BUYER
+  RESOLVED_SELLER
+  CLOSED
+}
+
+enum DisputeReason {
+  WORK_NOT_DELIVERED
+  WORK_NOT_AS_DESCRIBED
+  SELLER_UNRESPONSIVE
+  QUALITY_ISSUES
+  OTHER
 }
 
 // model TestConnection {
@@ -76,6 +95,8 @@ model User {
   sellerProfile   SellerProfile?
   orders          Order[]
   otpVerification OTPVerification?
+  reviews         Review[]
+  dispute Dispute[]
 }
 
 model SellerProfile {
@@ -91,24 +112,31 @@ model SellerProfile {
   updatedAt              DateTime @updatedAt
   phoneNumber            String?  @unique
 
+  // Review
+  avgRating Float @default(0)
+
   // Relationships
-  user  User    @relation(fields: [userId], references: [id])
-  gigs  Gig[]
-  order Order[]
+  reviews Review[]
+  user    User     @relation(fields: [userId], references: [id])
+  gigs    Gig[]
+  order   Order[]
+  dispute Dispute[]
 }
 
 model Gig {
-  id          String   @id @default(uuid())
-  sellerId    String
-  categoryId  String // Changed from String? to required once you migrate
-  title       String
-  description String
-  tags        String[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
-  service     Service  @default(DIGITAL)
-  state       State    @default(ACTIVE)
-  coverImage  String?
+  id           String   @id @default(uuid())
+  sellerId     String
+  categoryId   String // Changed from String? to required once you migrate
+  title        String
+  description  String
+  tags         String[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+  service      Service  @default(DIGITAL)
+  state        State    @default(ACTIVE)
+  coverImage   String?
+  avgRating    Float    @default(0)
+  totalReviews Int      @default(0)
 
   // Relationships
   seller               SellerProfile            @relation(fields: [sellerId], references: [id])
@@ -116,6 +144,7 @@ model Gig {
   requirementTemplates GigRequirementTemplate[]
   tiers                GigTier[]
   orders               Order[]
+  reviews              Review[]
 }
 
 model GigTier {
@@ -148,7 +177,7 @@ model GigRequirementTemplate {
   order      Int                  @default(0)
   createdAt  DateTime             @default(now())
 
-  gig        Gig                  @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  gig Gig @relation(fields: [gigId], references: [id], onDelete: Cascade)
 }
 
 model TierQuantityPrice {
@@ -203,7 +232,7 @@ model Order {
   createdAt               DateTime    @default(now())
   updatedAt               DateTime?   @updatedAt
   cancelledAt             DateTime?
-  requirementsSubmittedAt DateTime?   
+  requirementsSubmittedAt DateTime?
   paymentReference        String?     @unique
 
   // Relationships
@@ -211,6 +240,8 @@ model Order {
   seller  SellerProfile @relation(fields: [sellerId], references: [id])
   gigTier GigTier       @relation(fields: [gigTierId], references: [id])
   gig     Gig           @relation(fields: [gigId], references: [id])
+  dispute Dispute?
+  review  Review?
 }
 
 model OTPVerification {
@@ -222,4 +253,52 @@ model OTPVerification {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  orderId   String   @unique // only one review is allowed of course, at DB level enforced
+  gigId     String
+  buyerId   String
+  sellerId  String
+  rating    Int
+  comment   String
+  isFlagged Boolean  @default(false) // spam detection flag (FastAPI)
+  isPublic  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order  Order         @relation(fields: [orderId], references: [id])
+  gig    Gig           @relation(fields: [gigId], references: [id])
+  buyer  User          @relation(fields: [buyerId], references: [id])
+  seller SellerProfile @relation(fields: [sellerId], references: [id])
+}
+
+model Dispute {
+  id String @id @default(uuid())
+  orderId String @unique // one dispute max
+  buyerId String
+  sellerId String
+  reason DisputeReason
+  description String
+  evidenceUrls String[] @default([])
+  status DisputeStatus @default(OPEN)
+
+  // AI fields (FastAPI work)
+  aiSummary String?
+  aiRecommendation String? // "favour_buyer" | "favour_seller" | "escalate"
+  aiConfidence Float?
+
+  // Resolution (populated by admin)
+  resolution String?
+  resolvedAt DateTime?
+  resolvedby String? // admin userId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id])
+  buyer User @relation(fields: [buyerId], references: [id])
+  seller SellerProfile @relation(fields: [sellerId], references: [id])
 }
