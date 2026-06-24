@@ -8,6 +8,7 @@ const SENDER_ID = process.env.TERMII_SENDER_ID!; // SUMMAYH (once approved, use 
 const OTP_EXPIRY_MINUTES = 10;
 
 export class TermiiService {
+    private static secretKey = process.env.PAYSTACK_SECRET_KEY;
     // 1. SEND OTP
     static async sendOtp(phone: string, userId: string): Promise<any> {
         const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit
@@ -30,6 +31,7 @@ export class TermiiService {
             type: "plain",
             channel: "generic"
         });
+        console.log("SENDER_ID being used:", process.env.TERMII_SENDER_ID);
     }
 
     // 2. VERIFY THE OTP bro
@@ -102,5 +104,45 @@ export class TermiiService {
             phone,
             `SUMMAYH: Your payout of NGN ${amount.toLocaleString()} has been sent to your bank account.`
         );
+    }
+
+    
+    static async notifySellerRequirementsSubmitted(sellerId: string, orderId: string): Promise<any> {
+        try {
+            // 1. We fecth teh seller's number
+            const seller = await prisma.sellerProfile.findUnique({
+                where: { id: sellerId},
+                
+            });
+
+            if (!seller || !seller.phoneNumber) {
+                console.error(`[TermiiService] Aborting notification: Seller ${seller?.sellerUsername || "username"}, Id: ${sellerId} has no valid phone number.`);
+                return;
+            } 
+
+            // 2. Format message
+            const shortOrderId = orderId.substring(0, 8).toUpperCase();
+            const message = `hello ${seller.sellerUsername || 'Seller'}, the buyer has submitted requiremenst for Order #${shortOrderId}. Your delivery timer has started! Log in to your SUMMAYH your dashboard`
+
+            //3. Post payload to Termii's transactional SMS route
+            const payload = {
+                to: seller.phoneNumber,
+                from: SENDER_ID,
+                sms: message,
+                type: "plain",
+                channel: "generic", // 'generic' or 'dnd' depending on route configs
+                api_key: TERMII_API_KEY
+            };
+
+            const response = await axios.post(`${TERMII_BASE_URL}/api/sms/send`, payload);
+
+            if (response.data && response.data.code === "ok") {
+                console.log(`[TermiService] Requirement alert sent successfully to seller ${sellerId}`);
+            } else {
+                console.warn(`[TermiService] Termii accepted payload but returned unexpected status: `, response.data);
+            }
+        } catch(error: any) {
+            console.error("[TermiiService] Failed to execute notifySellerRequirementsSubmitted:", error?.response?.data || error.message);
+        }
     }
 }

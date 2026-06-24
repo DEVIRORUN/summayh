@@ -20,6 +20,16 @@ Content-Type: application/json
   "password": "SecurePassword123"
 }
 
+### Login BUYER
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "irorun757@lautech.edu.ng",
+  "password": "Irorun1608"
+}
+
+
 
 ### Test Refresh Token Endpoint
 POST http://localhost:8080/api/auth/refresh

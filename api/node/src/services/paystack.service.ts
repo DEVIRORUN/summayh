@@ -10,6 +10,30 @@ export class PaystackService {
     //     return process.env.PAYSTACK_SECRET_KEY;
     // }
 
+    static async initiateRefund(transactionReference: string, amountInKobo: number): Promise<any> {
+        try {
+            const response = await axios.post(
+                'https://api.paystack.co/refund',
+                {
+                    transaction: transactionReference,
+                    amount: amountInKobo // No commision deducted
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${this.secretKey}`,
+                        'Content-Type': "application/json"
+                    }
+                }
+            );
+
+            return response.data;
+        } catch(error: any) {
+           console.error("❌ [Paystack Refund Error]:", error.response?.data || error.message);
+           throw new Error(error.response?.data?.message || "Failed to initiate refund");
+           
+        }
+    }
+
     /**
      * Releases escrow funds directly to the seller's account
      * @param subaccountCode The Paystack subaccount ID assigned to the seller (e.g., ACCT_xxxxxx)

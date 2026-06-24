@@ -29,6 +29,29 @@ enum OrderStatus {
   ACTIVE
 }
 
+enum Service {
+  DIGITAL
+  PHYSICAL
+}
+
+enum State {
+  ACTIVE
+  PAUSED
+}
+
+enum TierLabel {
+  BASIC
+  STANDARD
+  PREMIUM
+}
+
+enum RequirementInputType {
+  FREE_TEXT
+  MULTIPLE_CHOICE
+  FILE_UPLOAD
+  YES_NO
+}
+
 // model TestConnection {
 //   id        String   @id @default(uuid())
 //   createdAt DateTime @default(now())
@@ -40,6 +63,7 @@ model User {
   email           String   @unique
   password        String
   name            String
+  username        String?
   university      String   @default("Unkown University")
   dateOfBirth     DateTime
   phoneNumber     String   @unique
@@ -57,6 +81,7 @@ model User {
 model SellerProfile {
   id                     String   @id @default(uuid())
   userId                 String   @unique
+  sellerUsername         String?  @unique
   bio                    String
   skills                 String[]
   rating                 Float    @default(0.0)
@@ -64,11 +89,12 @@ model SellerProfile {
   totalReviews           Int      @default(0)
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
-  phoneNumber            String?   @unique
+  phoneNumber            String?  @unique
 
   // Relationships
-  user User  @relation(fields: [userId], references: [id])
-  gigs Gig[]
+  user  User    @relation(fields: [userId], references: [id])
+  gigs  Gig[]
+  order Order[]
 }
 
 model Gig {
@@ -77,14 +103,65 @@ model Gig {
   categoryId  String // Changed from String? to required once you migrate
   title       String
   description String
-  basePrice   Float
+  tags        String[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
+  service     Service  @default(DIGITAL)
+  state       State    @default(ACTIVE)
+  coverImage  String?
 
   // Relationships
-  seller   SellerProfile @relation(fields: [sellerId], references: [id])
-  category Category      @relation(fields: [categoryId], references: [id])
-  orders   Order[]
+  seller               SellerProfile            @relation(fields: [sellerId], references: [id])
+  category             Category                 @relation(fields: [categoryId], references: [id])
+  requirementTemplates GigRequirementTemplate[]
+  tiers                GigTier[]
+  orders               Order[]
+}
+
+model GigTier {
+  id            String    @id @default(uuid())
+  gigId         String
+  label         TierLabel
+  customName    String?
+  description   String
+  price         Float
+  deliveryDays  Int
+  revisionCount Int
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+
+  // Relationships
+  gig             Gig                 @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  quantityPricing TierQuantityPrice[]
+  orders          Order[]
+
+  @@unique([gigId, label]) // a gig can only have ONE TIER not label duplicates
+}
+
+model GigRequirementTemplate {
+  id         String               @id @default(uuid())
+  gigId      String
+  question   String // "What is your brand name"
+  inputType  RequirementInputType @default(FREE_TEXT)
+  options    String[] // Only when inpput_tyoe is multiple
+  isRequired Boolean              @default(true)
+  order      Int                  @default(0)
+  createdAt  DateTime             @default(now())
+
+  gig        Gig                  @relation(fields: [gigId], references: [id], onDelete: Cascade)
+}
+
+model TierQuantityPrice {
+  id                 String   @id @default(uuid())
+  gigTierId          String
+  quantity           Int
+  totalPrice         Float
+  createdAt          DateTime @default(now())
+  discountPercentage Float
+
+  gigTier GigTier @relation(fields: [gigTierId], references: [id], onDelete: Cascade)
+
+  @@unique([gigTierId, quantity]) // no duplicate quantity bands per tier
 }
 
 model Category {
@@ -103,18 +180,37 @@ model Category {
 }
 
 model Order {
-  id               String      @id @default(uuid())
-  buyerId          String
-  gigId            String
-  totalPrice       Float
-  status           OrderStatus @default(PENDING)
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime?   @updatedAt
-  paymentReference String?     @unique
+  id        String @id @default(uuid())
+  sellerId  String
+  buyerId   String
+  gigId     String
+  gigTierId String // the tier that was ordered
+
+  // frozen at order time (SNAPSHOT)
+  tierLabelSnapshot     TierLabel
+  tierNameSnapshot      String? // customName at time of order, if any
+  tierDescription       String
+  unitPriceSnapshot     Float
+  quantity              Int       @default(1)
+  totalPrice            Float // final amount actually charged (unitPrice/bulk price × quantity, frozen)
+  deliveryDaysSnapshot  Int
+  revisionCountSnapshot Int
+  requirements          Json?
+
+  cancelReason String?
+
+  status                  OrderStatus @default(PENDING)
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime?   @updatedAt
+  cancelledAt             DateTime?
+  requirementsSubmittedAt DateTime?   
+  paymentReference        String?     @unique
 
   // Relationships
-  user User @relation(fields: [buyerId], references: [id])
-  gig  Gig  @relation(fields: [gigId], references: [id])
+  buyer   User          @relation(fields: [buyerId], references: [id])
+  seller  SellerProfile @relation(fields: [sellerId], references: [id])
+  gigTier GigTier       @relation(fields: [gigTierId], references: [id])
+  gig     Gig           @relation(fields: [gigId], references: [id])
 }
 
 model OTPVerification {
