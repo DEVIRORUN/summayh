@@ -1,6 +1,7 @@
 import { Request, Response } from "express"
 import { prisma } from "../utils/prisma"
 import { PaystackService } from "../services/paystack.service"
+import { SellerService } from "../services/seller.service"
 import { handlePrismaError } from "../utils/prismaErrorHandler";
 
 
@@ -61,7 +62,6 @@ export class SellerController {
             return res.status(500).json({ message: "Something went wrong." });
         }
     }
-
     // To list all supported banks from Paystack
     static async listBanks(req: Request, res: Response): Promise<any> {
         try {
@@ -75,8 +75,58 @@ export class SellerController {
             return res.status(500).json({ message: "Something went wrong." });
         }
     }
+    static async getSellerProfile(req: Request, res: Response): Promise<any> {
+        try {
+            const sellerId = (req as any).userId;
+            const sellerProfile = await SellerService.getSellerByUserId(sellerId);
+            return res.status(200).json({
+                sellerProfile
+            });
+        } catch(error: any) {
+            console.error("ERROR in Getting Seller Profile: ", error);
+            const handled = handlePrismaError(error, res);
+            if (handled) return;
+            return res.status(500).json({ message: "Failed to get seller profile." });
+        }
+    }
+    // static async getSellerProfileByUserId(req: Request, res: Response): Promise<any> {
+    //     try {
+    //         const userId = (req as any).userId;
+    //         const sellerProfile = await SellerService.getSellerByUserId(userId);
+    //         return res.status(200).json({
+    //             sellerProfile
+    //         });
+    //     } catch(error: any) {
+    //         console.error("ERROR in Getting Seller Profile: ", error);
+    //         const handled = handlePrismaError(error, res);
+    //         if (handled) return;
+    //         return res.status(500).json({ message: "Failed to get seller profile." });
+    //     }
+    // }
+    static async updateSellerProfile(req: Request, res: Response): Promise<any> {
+        try {
+            const sellerId = (req as any).userId;
+            const { bio, skills, phoneNumber, sellerUsername } = req.body;
+
+            if(!bio && !skills && !phoneNumber && !sellerUsername) {
+                return res.status(400).json({ message: "At least one field must be provided for update." });
+            }
+
+            const updatedProfile = await SellerService.updateSellerProfile(
+                sellerId,
+                bio,
+                skills,
+                phoneNumber,
+                sellerUsername
+            );
+
+            return res.status(200).json({
+                message: "Seller profile updated successfully.",
+                updatedProfile
+            });
+        } catch(error: any) {
+            console.error("ERROR in Updating Seller Profile: ", error);
+            throw error;
+        }
+    }
 }
-
-// Creatign my Termii 
-
-// services/termii.service.ts -> controllers/termii.controller.ts-> routes/termii.route.ts

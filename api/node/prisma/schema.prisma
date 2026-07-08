@@ -39,6 +39,7 @@ enum Service {
 enum State {
   ACTIVE
   PAUSED
+  INACTIVE
 }
 
 enum TierLabel {

@@ -40,3 +40,50 @@ Content-Type: application/json
 }
 
 // cc419fde-2c22-4b68-b25c-dc9fb39554d1
+
+
+
+// ALL SELLERS TO Test
+
+[
+  {
+    "email": "fatimah.adeleke@unilag.edu.ng",
+    "password": "Test1234!",
+    "name": "Fatimah Adeleke",
+    "dateOfBirth": "2007-04-22",
+    "university": "UNILAG",
+    "phoneNumber": "+2348023456789"
+  },
+  {
+    "email": "emeka.obi@ui.edu.ng",
+    "password": "Test1234!",
+    "name": "Chukwuemeka Obi",
+    "dateOfBirth": "2008-11-05",
+    "university": "UI",
+    "phoneNumber": "+2348134567890"
+  },
+  {
+    "email": "aisha.bello@unilorin.edu.ng",
+    "password": "Test1234!",
+    "name": "Aisha Bello",
+    "dateOfBirth": "2009-01-19",
+    "university": "UNILORIN",
+    "phoneNumber": "+2347045678901"
+  },
+  {
+    "email": "tunde.fashola@oauife.edu.ng",
+    "password": "Test1234!",
+    "name": "Tunde Fashola",
+    "dateOfBirth": "2008-08-14",
+    "university": "OAU",
+    "phoneNumber": "+2349056789012"
+  },
+  {
+    "email": "ngozi.eze@abu.edu.ng",
+    "password": "Test1234!",
+    "name": "Ngozi Eze",
+    "dateOfBirth": "2007-06-30",
+    "university": "ABU",
+    "phoneNumber": "+2348167890123"
+  }
+]

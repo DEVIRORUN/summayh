@@ -127,6 +127,7 @@ export class OrderController {
         try{
             const buyerId = (req as any).userId; 
             const { buyerEmail, serviceId, amount, selectedTierLabel, requirements } = req.body;
+            const { quantity = 1 } = req.body; // from body
 
             if (!selectedTierLabel) {
                 return res.status(400).json({ message: "selectedTierLabel is mandatory." })
@@ -149,6 +150,22 @@ export class OrderController {
                 return res.status(400).json({ 
                     message: `The specified tier "${selectedTierLabel}" does not exist on this gig.` 
                 });
+            }
+            
+            let finalPrice = matchedTier?.price * quantity; // default: unit price x quantity
+
+            if (quantity > 1) {
+                const bulkBand = await prisma.tierQuantityPrice.findUnique({
+                    where: {
+                        gigTierId_quantity: {
+                            gigTierId: matchedTier.id,
+                            quantity: quantity
+                        }
+                    }
+                });
+                if (bulkBand) {
+                    finalPrice = bulkBand.totalPrice; // seller-defined bulk price
+                }
             }
             // 1. Create the order in Prisma
             const newOrder = await prisma.order.create({
@@ -174,7 +191,7 @@ export class OrderController {
                     tierLabelSnapshot: matchedTier.label,         // e.g., "BASIC", "STANDARD", or "PREMIUM"
                     tierDescription: matchedTier.description,     // The description string
                     tierNameSnapshot: matchedTier.customName || null,
-                    unitPriceSnapshot: matchedTier.price,         // The numeric price
+                    unitPriceSnapshot: finalPrice,                // The numeric price
                     deliveryDaysSnapshot: matchedTier.deliveryDays, // The delivery days integer
                     revisionCountSnapshot: matchedTier.revisionCount
                 }

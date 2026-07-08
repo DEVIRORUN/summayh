@@ -20,7 +20,7 @@ export class DisputeService {
             });
 
             if (!order) throw new Error("Order not found.");
-            if(order.buyerId == buyerId) throw new Error("Only the buyer can open a dispute.");
+            if(order.buyerId !== buyerId) throw new Error("Only the buyer can open a dispute.");
             if (order.dispute) throw new Error("There's already a dispute for this order");
             
 
@@ -46,6 +46,16 @@ export class DisputeService {
                         evidenceUrls: evidenceUrls  ?? []
                     }
                 });
+
+                const disputeCall = {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ disputeId: dispute.id })
+                }
+
+                fetch(`${process.env.FASTAPI_URL}/api/disputes/review`, disputeCall).catch(err => {
+                    console.error("FastAPI dispute review call failed: ", err)
+                }); // Call to Gemini for review
 
                 return dispute
             });
@@ -232,7 +242,7 @@ export class DisputeService {
                 });
             });
 
-            
+
         } catch(error: any) {
             console.error("ERROR IN RESOLVING A DISPUTE: ", error);
             throw new Error("Cannot resolve a DISPUTE");

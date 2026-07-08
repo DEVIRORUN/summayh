@@ -16,6 +16,16 @@ export class DisputeController {
                 });
             }
 
+            const order = await prisma.order.findUnique({
+                where: { id: orderId }
+            });
+
+            if(order?.buyerId !== buyerId) {
+                return res.status(400).json({
+                    message: "Only the buyer can open a dispute."
+                })
+            }
+
             const validReasons = [
                 "WORK_NOT_DELIVERED",
                 "WORK_NOT_AS_DESCRIBED",

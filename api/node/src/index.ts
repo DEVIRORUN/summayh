@@ -6,6 +6,7 @@ import swaggerJsdoc from "swagger-jsdoc";
 import express from "express";
 
 import authRoutes from "./routes/auth";
+import userRoutes from "./routes/user.route";
 import orderRoutes from "./routes/order.route"
 import sellerRoutes from "./routes/seller.route"
 import gigRoutes from "./routes/gig.route"
@@ -185,6 +186,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Mount our routes
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
 app.use("/api/webhooks", webhookRouter);
 app.use("/api/orders", orderRoutes);
 app.use("/api/seller", sellerRoutes);

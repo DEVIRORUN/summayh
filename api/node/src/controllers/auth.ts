@@ -157,7 +157,7 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
             },
         });
     } catch(error) {
-        console.error("Login error, something wrong with NETWORK bro");
+        console.error("Login error, something wrong with NETWORK bro", error);
         return res.status(500).json({ message: "Internal server error during login." });
     }
 }

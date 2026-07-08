@@ -56,5 +56,56 @@ router.get("/banks", SellerController.listBanks);
  */
 router.post("/onboard", protectRoute, SellerController.onboardSeller);
 
+/**
+ * @openapi
+ * /api/seller/me:
+ *  get:
+ *     summary: Get the authenticated seller's profile
+ *     tags: [Seller]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Seller profile retrieved successfully
+ *       404:
+ *         description: Seller profile not found
+ */
+router.get("/me", protectRoute, SellerController.getSellerProfile);
 
+/**
+ * @openapi
+ * /api/seller/update:
+ *   put:
+ *     summary: Update the authenticated seller's profile
+ *     tags: [Seller]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               bio:
+ *                 type: string
+ *                 description: Updated seller bio
+ *               skills:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Updated seller skills
+ *               phoneNumber:
+ *                 type: string
+ *                 description: Updated seller phone number
+ *               sellerUsername:
+ *                 type: string
+ *                 description: Updated seller username
+ *     responses:
+ *       200:
+ *         description: Seller profile updated successfully
+ *       400:
+ *         description: Invalid input data
+ */
+router.put("/update", protectRoute, SellerController.updateSellerProfile)
 export default router;
