@@ -172,6 +172,8 @@ export class OrderController {
                 data: {
                     status: "PENDING",
                     totalPrice: amount,
+                    commission: finalPrice * 0.10, // 10% commission
+                    quantity: quantity,
                     gig: {
                         connect: { id: serviceId }
                     },
@@ -206,7 +208,7 @@ export class OrderController {
             const paymentInitialize = await PaystackService.initializeTransaction(
                 buyerEmail || buyer.email,
                 amount, // Paystack operate in Kobo
-                newOrder.id
+                { orderId: newOrder.id }
             )
 
             // 3. Send the checkout link back to the frontend

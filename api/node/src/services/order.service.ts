@@ -12,59 +12,59 @@ export class OrderService {
    * Processes a successful payment webhook from Paystack
    * @param data The payload data object sent by Paystack
    */
-  public static async handleSuccessfulPayment(data: any) {
-    const { reference, amount, metadata, customer } = data;
+    public static async handleSuccessfulPayment(data: any) {
+        const { reference, amount, metadata, customer } = data;
 
-    // 1. Extract your application identifiers (e.g., orderId passed during initialization)
-    // Paystack allows passing custom fields inside a 'metadata' object
-    const orderId = metadata?.orderId;
+        // 1. Extract your application identifiers (e.g., orderId passed during initialization)
+        // Paystack allows passing custom fields inside a 'metadata' object
+        const orderId = metadata?.orderId;
 
-    if (!orderId) {
-        console.log(`[Webhook Error]: No orderId found in metadata for reference: ${reference}`);
-        return { success: false, error: "Missing order identity context" };
+        if (!orderId) {
+            console.log(`[Webhook Error]: No orderId found in metadata for reference: ${reference}`);
+            return { success: false, error: "Missing order identity context" };
+        }
+
+        try {
+            // 2. Wrap this in a transaction to guarantee data integrity
+            return await prisma.$transaction(async (tx) => {
+                // Find the target order using the orderId from metadata
+                const order = await tx.order.findUnique({
+                    where: { id: orderId },
+                });
+
+                if (!order) {
+                    throw new Error(`Order not found: ${orderId}`);
+                }
+                
+                if (order.status === "DISPUTED") {
+                    console.error("ORDER IS UNDER DISPUTE AND CANNOT BE MODIFIED UNTIL RESOLVED");
+                    throw new Error("This order is under dispute and cannot be modified until resolved.");
+                }
+
+                // Prevent duplicate if already paid
+                if (order.status === "PAID") {
+                    console.log(`[Webhook Info]: Order ${orderId} is already marked as PAID.`);
+                    return { success: true, duplicated: true };
+                }
+
+                // 3. Update the order status and log the transaction details
+                const updatedOrder = await tx.order.update({
+                    where: { id: orderId },
+                    data: {
+                        status: 'PAID',
+                        paymentReference: reference,
+                        updatedAt: new Date(),
+                    },
+                });
+                console.log(`[Webhook Success]: Order ${orderId} marked as PAID with reference: ${reference} from customer: ${customer}`);
+
+                return { success: true, order: updatedOrder };
+            })
+        } catch(error) {
+            console.error(`[Webhook Processing Failed]: ${error}`);
+            throw error;
+        }
     }
-
-    try {
-        // 2. Wrap this in a transaction to guarantee data integrity
-        return await prisma.$transaction(async (tx) => {
-            // Find the target order using the orderId from metadata
-            const order = await tx.order.findUnique({
-                where: { id: orderId },
-            });
-
-            if (!order) {
-                throw new Error(`Order not found: ${orderId}`);
-            }
-            
-            if (order.status === "DISPUTED") {
-                console.error("ORDER IS UNDER DISPUTE AND CANNOT BE MODIFIED UNTIL RESOLVED");
-                throw new Error("This order is under dispute and cannot be modified until resolved.");
-            }
-
-            // Prevent duplicate if already paid
-            if (order.status === "PAID") {
-                console.log(`[Webhook Info]: Order ${orderId} is already marked as PAID.`);
-                return { success: true, duplicated: true };
-            }
-
-            // 3. Update the order status and log the transaction details
-            const updatedOrder = await tx.order.update({
-                where: { id: orderId },
-                data: {
-                    status: 'PAID',
-                    paymentReference: reference,
-                    updatedAt: new Date(),
-                },
-            });
-            console.log(`[Webhook Success]: Order ${orderId} marked as PAID with reference: ${reference} from customer: ${customer}`);
-
-            return { success: true, order: updatedOrder };
-        })
-    } catch(error) {
-        console.error(`[Webhook Processing Failed]: ${error}`);
-        throw error;
-    }
-  }
 
   /**
      * 1. SELLER SUBMITS WORK

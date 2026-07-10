@@ -6,7 +6,9 @@ import swaggerJsdoc from "swagger-jsdoc";
 import express from "express";
 
 import authRoutes from "./routes/auth";
+import adminRoutes from "./routes/admin.route";
 import userRoutes from "./routes/user.route";
+import foundersPassRoutes from "./routes/foundersPass.route";
 import orderRoutes from "./routes/order.route"
 import sellerRoutes from "./routes/seller.route"
 import gigRoutes from "./routes/gig.route"
@@ -14,12 +16,17 @@ import TermiiRoutes from "./routes/termii.route"
 import reviewRoutes from './routes/review.route';
 import disputeRoutes from './routes/dispute.route';
 import webhookRouter from './routes/webhook.route';
+import { buffer } from "stream/consumers";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware to parse incoming JSON payloads
-app.use(express.json());
+app.use(express.json({
+  verify: (req: any, res, buf) => {
+    req.rawBody = buffer; // Buffer - needed for webhook signature verification
+  }
+}));
 
 const swaggerSpec = swaggerJsdoc({
   definition: {
@@ -186,7 +193,9 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Mount our routes
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/founders-pass", foundersPassRoutes);
 app.use("/api/webhooks", webhookRouter);
 app.use("/api/orders", orderRoutes);
 app.use("/api/seller", sellerRoutes);

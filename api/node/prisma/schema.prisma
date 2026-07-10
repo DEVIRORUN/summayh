@@ -72,6 +72,19 @@ enum DisputeReason {
   OTHER
 }
 
+enum VerificationStat {
+  VERIFIED
+  PENDING
+  REJECTED
+  NOTVERIFIED
+}
+
+enum StatusFounders {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
 // model TestConnection {
 //   id        String   @id @default(uuid())
 //   createdAt DateTime @default(now())
@@ -79,25 +92,29 @@ enum DisputeReason {
 // }
 
 model User {
-  id              String   @id @default(uuid())
-  email           String   @unique
-  password        String
-  name            String
-  username        String?
-  university      String   @default("Unkown University")
-  dateOfBirth     DateTime
-  phoneNumber     String   @unique
-  isPhoneVerified Boolean  @default(false)
-  role            Role     @default(BUYER)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                 String           @id @default(uuid())
+  email              String           @unique
+  password           String
+  name               String
+  username           String?
+  university         String           @default("Unkown University")
+  dateOfBirth        DateTime
+  phoneNumber        String           @unique
+  isPhoneVerified    Boolean          @default(false)
+  role               Role             @default(BUYER)
+  isBanned           Boolean          @default(false)
+  tokenVersion       Int              @default(0)
+  banReason          String?
+  verificationStatus VerificationStat @default(NOTVERIFIED)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   // Relationships
   sellerProfile   SellerProfile?
   orders          Order[]
   otpVerification OTPVerification?
   reviews         Review[]
-  dispute Dispute[]
+  dispute         Dispute[]
 }
 
 model SellerProfile {
@@ -113,15 +130,45 @@ model SellerProfile {
   updatedAt              DateTime @updatedAt
   phoneNumber            String?  @unique
 
+  // Pro field
+  isPro         Boolean   @default(false)
+  founderBadge  Boolean   @default(false)
+  founderPassAt DateTime?
+
+  // AI
+  aiBio String?
+
   // Review
   avgRating Float @default(0)
 
   // Relationships
-  reviews Review[]
-  user    User     @relation(fields: [userId], references: [id])
-  gigs    Gig[]
-  order   Order[]
-  dispute Dispute[]
+  reviews               Review[]
+  user                  User                   @relation(fields: [userId], references: [id])
+  gigs                  Gig[]
+  order                 Order[]
+  dispute               Dispute[]
+  foundersPassPurchases FoundersPassPurchase[]
+}
+
+model FoundersPassPurchase {
+  id              String         @id @default(uuid())
+  sellerId        String         @unique // JUST ADDED THIS FOR CONSTARINT FOR OEN SELLE PER PASS
+  amount          Float
+  paymentRefernce String         @unique
+  status          StatusFounders @default(PENDING) // PENDING | SUCCESS | FAILED
+  createdAt       DateTime       @default(now())
+  paidAt          DateTime?
+
+  seller SellerProfile @relation(fields: [sellerId], references: [id])
+}
+
+model FoundersPassConfig {
+  id         String   @id @default(uuid())
+  priceNaira Float
+  maxPasses  Int      @default(250)
+  isActive   Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
+  updatedBy  String? // admin userId, optional audit trail
 }
 
 model Gig {
@@ -223,6 +270,7 @@ model Order {
   unitPriceSnapshot     Float
   quantity              Int       @default(1)
   totalPrice            Float // final amount actually charged (unitPrice/bulk price × quantity, frozen)
+  commission            Float?
   deliveryDaysSnapshot  Int
   revisionCountSnapshot Int
   requirements          Json?
@@ -276,19 +324,19 @@ model Review {
 }
 
 model Dispute {
-  id String @id @default(uuid())
-  orderId String @unique // one dispute max
-  buyerId String
-  sellerId String
-  reason DisputeReason
-  description String
-  evidenceUrls String[] @default([])
-  status DisputeStatus @default(OPEN)
+  id           String        @id @default(uuid())
+  orderId      String        @unique // one dispute max
+  buyerId      String
+  sellerId     String
+  reason       DisputeReason
+  description  String
+  evidenceUrls String[]      @default([])
+  status       DisputeStatus @default(OPEN)
 
   // AI fields (FastAPI work)
-  aiSummary String?
+  aiSummary        String?
   aiRecommendation String? // "favour_buyer" | "favour_seller" | "escalate"
-  aiConfidence Float?
+  aiConfidence     Float?
 
   // Resolution (populated by admin)
   resolution String?
@@ -299,7 +347,7 @@ model Dispute {
   updatedAt DateTime @updatedAt
 
   // Relations
-  order Order @relation(fields: [orderId], references: [id])
-  buyer User @relation(fields: [buyerId], references: [id])
+  order  Order         @relation(fields: [orderId], references: [id])
+  buyer  User          @relation(fields: [buyerId], references: [id])
   seller SellerProfile @relation(fields: [sellerId], references: [id])
 }

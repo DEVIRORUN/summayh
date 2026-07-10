@@ -129,7 +129,7 @@ export class PaystackService {
         }
     }
 
-    static async initializeTransaction(email: string, amountInNaira: number, orderId: string): Promise<any> {
+    static async initializeTransaction(email: string, amountInNaira: number, metadata: Record<string, unknown>): Promise<any> {
         const amountInKobo = amountInNaira * 100;
 
         try {
@@ -138,15 +138,7 @@ export class PaystackService {
                 {
                     email,
                     amount: amountInKobo,
-                    metadata: {
-                        custom_fields: [
-                            {
-                                display_name: "Order ID",
-                                variable_name: "order_id",
-                                value: orderId
-                            }
-                        ]
-                    }
+                    metadata
                 },
                 {
                     headers: {
