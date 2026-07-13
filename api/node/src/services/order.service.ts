@@ -4,6 +4,7 @@ import { prisma } from "../utils/prisma";
 import { PaystackService } from "./paystack.service";
 import { TermiiService } from "./termii.service";
 import { asyncWrapProviders } from "node:async_hooks";
+import { onOrderCompleted } from "./ranking/triggers";
 
 
 export class OrderService {
@@ -97,7 +98,7 @@ export class OrderService {
     }
 
     static async acceptOrderDelivery(orderId: string, buyerId: string) {
-    return await prisma.$transaction(async (tx) => {
+    const result =  await prisma.$transaction(async (tx) => {
         const order = await tx.order.findUnique({
             where: { id: orderId },
             include: {
@@ -136,6 +137,14 @@ export class OrderService {
 
         return { completedOrder, order }; // return order so controller has buyer/seller/data
     });
+    
+    // Fire-and-forget, outside the transaction — ranking recalculation
+    // doesn't need to be atomic with the order completion + payout itself
+    onOrderCompleted(result.order.gigId).catch(err =>
+        console.error(`[OnOrderCompletion]: Failed to trigger ranking recalculation for gig ${result.order.gigId}:`, err)
+    );
+
+    return result;
 
     }
 

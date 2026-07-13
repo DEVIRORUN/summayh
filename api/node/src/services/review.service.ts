@@ -1,5 +1,5 @@
 import { prisma } from "../utils/prisma";
-
+import { onReviewCreated } from "./ranking/triggers"
 
 export class ReviewService {
 // 66fcb691-167b-42a1-851c-64968ee28053
@@ -79,7 +79,14 @@ export class ReviewService {
             });
 
             return review;
-        })
+        }).then(async (review) => {
+            // Fire-and-forget, outside the transaction — ranking recalculation
+            // doesn't need to be atomic with the review write itself
+            onReviewCreated(order.gigId).catch(err => 
+                console.error(`Failed to trigger ranking recalculation for gig ${order.gigId}:`, err)
+            );
+            return review;
+        });
     }
 
     // GET /api/gigs/:gigId/reviews

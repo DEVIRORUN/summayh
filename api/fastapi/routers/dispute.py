@@ -1,7 +1,8 @@
 from fastapi import APIRouter, BackgroundTasks
 from pydantic import BaseModel
-from database import get_db_connection
+from database import get_db_connection_with_retry
 from services.gemini_service import analyze_dispute
+from services.agent_logger import log_agent_decision 
 import logging
 
 
@@ -28,7 +29,7 @@ async def process_dispute_review(dispute_id: str):
     try:
         logger.info(
             f"[Review] Starting dispute check for dispuye {dispute_id}")
-        conn = get_db_connection()
+        conn = get_db_connection_with_retry()
         cursor = conn.cursor()
 
         cursor.execute(
@@ -101,6 +102,17 @@ async def process_dispute_review(dispute_id: str):
         conn.commit()
         logger.info(
             F"[Dispute] ✅ Complete - Dispute {dispute_id} reviewed - {result['aiRecommendation']} ({result['aiConfidence']}:.0%) confindence")
+        
+        # Log the autonomous decision - fire-and-forget, never blocks or breaks the dispute flow
+        await log_agent_decision(
+            agent_name="DISPUTE_RESOLUTION",
+            entity_id=dispute_id,
+            entity_type="Dispute",
+            decision=result["aiRecommendation"],
+            confidence=result["aiConfidence"],
+            reasoning=result["aiSummary"],
+            input_summary=f"{gig_title} - {tier_label} - ₦{total_price:,.2f} - reason: {reason[:100]}"
+        )
     except Exception as e:
         logger.info(f"[FastAPI] ❌ Error processing dispute {dispute_id}: {e}")
         if conn:

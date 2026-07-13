@@ -2,6 +2,7 @@ import { Response, Request, response } from "express";
 import { GigService } from "../services/gig.service";
 import { handlePrismaError } from "../utils/prismaErrorHandler";
 import { RequirementInputType } from "../../generated/prisma";
+import { GigStatsService } from "../services/gigStats.service";
 
 // Then some services
 
@@ -113,6 +114,20 @@ export class GigController {
                 tiers,
                 requirementTemplates
             );
+
+            // Fire-and-forget: only pro sellers get embeddings generated
+            if (newGig.seller?.isPro) {
+                fetch(`${process.env.FASTAPI_URL}/api/embeddings/gig`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        gigId: newGig.id,
+                        title: newGig.title,
+                        description: newGig.description,
+                        tags: newGig.tags
+                    })
+                }).catch(err => console.error("Failed to trigger gig embedding: ", err))
+            }
             
             return res.status(201).json({
                 message: "Gig creation successful",
@@ -199,6 +214,20 @@ export class GigController {
                 tiers
             );
             
+            // Fire-and-forget: only pro sellers get embeddings generated
+            if (updatedGig.seller?.isPro) {
+                fetch(`${process.env.FASTAPI_URL}/api/embeddings/gig`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        gigId: updatedGig.id,
+                        title: updatedGig.title,
+                        description: updatedGig.description,
+                        tags: updatedGig.tags
+                    })
+                }).catch(err => console.error("[Update Gig]: Failed to trigger gig embedding: ", err))
+            }
+            
             return res.status(200).json({ // Changed status code to 200 since it's an update, not a creation (201)
                 message: "Gig update successful",
                 data: updatedGig
@@ -230,6 +259,10 @@ export class GigController {
             const gigData = await GigService.readGigData(
                 userId,
                 gigId as string
+            );
+
+            GigStatsService.recordClick(gigId as string).catch(err => 
+                console.error("Failed to record gig click: ", err)
             );
 
             return res.status(200).json({
@@ -269,6 +302,14 @@ export class GigController {
                 limit,
                 categoryId
             );
+
+            // Fire-and-forget impression tracking for every gig returned in this page
+            const gigIds = gigs?.data?.map((g: any) => g.id) ?? [];
+            if (gigIds.length) {
+                GigStatsService.recordImpressions(gigIds).catch(err =>
+                    console.error("Failed to record gig impression: ", err)
+                )
+            }
 
             return res.status(200).json({
                 message: "The fecth was succesfull. ^^",
@@ -351,6 +392,14 @@ export class GigController {
             });
 
             const data = await fastApiResponse.json()
+
+               // Fire-and-forget impression tracking for every gig returned in this page
+            const gigIds = data?.results?.map((g: any) => g.id) ?? [];
+            if (gigIds.length) {
+                GigStatsService.recordImpressions(gigIds).catch(err =>
+                    console.error("Failed to record gig impression: ", err)
+                )
+            }
 
             return res.status(200).json({
                 message: "Search Complete",

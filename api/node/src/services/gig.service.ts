@@ -44,11 +44,14 @@ export class GigService {
     ): Promise<any> {
         try {
             const newGig = await prisma.$transaction(async (tx) => {
+                const rookieExpiry = new Date(Date.now() + 72 * 60 * 60* 1000); // 3 days form now()
+
                 const gig = await tx.gig.create({
                     data: {
                         title,
                         description,
                         tags,
+                        rookieExpiresAt: rookieExpiry,
                         seller: {
                             connect: { userId: userId }
                         },
@@ -57,6 +60,10 @@ export class GigService {
                         }
                     }
                 });
+
+                await tx.gigStats.create({
+                    data: { gigId: gig.id }
+                })
 
                 await tx.gigTier.createMany({
                     data: [
@@ -110,9 +117,13 @@ export class GigService {
                     where: { id: gig.id },
                     include: { 
                         tiers: true,
+                        seller: {
+                            select: { isPro: true }
+                        },
                         requirementTemplates: {
                             orderBy: { order: "asc" }
-                        }
+                        },
+                        stats: true
                     }
                 });
             });
@@ -242,6 +253,9 @@ export class GigService {
                 return await tx.gig.findUnique({
                     where: { id: gigId },
                     include: {
+                        seller: {
+                            select: { isPro: true }
+                        },
                         tiers: {
                             include: {
                                 quantityPricing: true
@@ -289,7 +303,7 @@ export class GigService {
     static async listGigs(
         userId: string,
         page: number = 1,
-        limit: number  =30,
+        limit: number = 30,
         categoryId?:string
     ): Promise<any> {
         try {

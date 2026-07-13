@@ -1,14 +1,13 @@
 from fastapi import APIRouter, BackgroundTasks
 from pydantic import BaseModel
-from database import get_db_connection
+from database import get_db_connection, get_db_connection_with_retry
 from services.gemini_service import detect_review_spam
+from services.agent_logger import log_agent_decision
 from datetime import datetime, timezone
 import logging
 
 
-
 logger = logging.getLogger(__name__)
-
 
 router = APIRouter(prefix="/api/reviews", tags=["Reviews"]) # for grouping and for prepending
 
@@ -27,7 +26,7 @@ async def process_spam_check(review_id: str):
 
     try:
         logger.info(f"[Review] Starting spam check for review {review_id}")
-        conn = get_db_connection() # psycopg2 connection to Supabase
+        conn = get_db_connection_with_retry() # psycopg2 connection to Supabase
         cursor = conn.cursor() # like a prepared statement handle
 
         cursor.execute(
@@ -78,6 +77,17 @@ async def process_spam_check(review_id: str):
         conn.commit() # we commit manually unlike prisma
         logger.info(f"[Review] ✅ Complete - review {review_id}, spam_score: {spam_score:.2f} {'🚩 FLAGGED' if should_flag else '✅ clean'}")
 
+        # Log this autonomous decision
+        await log_agent_decision(
+            agent_name="REVIEW_SPAM_DETECTION",
+            entity_id=review_id,
+            entity_type="Review",
+            decision="FLAGGED" if should_flag else "CLEAN",
+            confidence=spam_score,
+            reasoning=result.get("reasoning", "N/A"),
+            input_summary=comment[:150]
+        )
+
     except Exception as e:
         logger.info(f"[FastAPI] ❌ Error processing review {review_id}: {e}")
         if conn:
@@ -85,24 +95,3 @@ async def process_spam_check(review_id: str):
     finally:
         if conn:
             conn.close() # always release the connection
-
-
-
-"""
-
-When i use the swgger ui the uvicorn:
-
-
-2026-06-27 09:36:46,119 [INFO] [Review] Starting spam check for review 97bdba82-7c21-4f79-a871-a9fbb3479898
-2026-06-27 09:37:01,139 [INFO] [FastAPI] ❌ Error processing review 97bdba82-7c21-4f79-a871-a9fbb3479898: could not translate host name "aws-0-eu-west-1.pooler.supabase.com" to address: Temporary failure in name resolution
-
-
-
-but when i manually us ethe curl in terminal it workes why??
-
-
-codespace ➜ /workspaces/summayh/api/fastapi (main) $ curl -X POST http://localhost:8000/api/reviews/spam-check   -H "Content-Type: application/json"   -d '{"reviewId": "97bdba82-7c21-4f79-a871-a9fbb3479898"}'
-{"message":"Spam check queued","reviewId":"97bdba82-7c21-4f79-a871-a9fbb3479898"}codespace ➜ /workspaces/summayh/api/fastapi (main) $ 
-
-
-"""

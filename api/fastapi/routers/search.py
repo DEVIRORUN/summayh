@@ -3,17 +3,24 @@ from pydantic import BaseModel
 from typing import Optional
 from database import get_db_connection
 from services.gemini_service import run_agentic_search
+from services.embedding_service import generate_embedding
+from services.agent_logger import log_agent_decision
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/search", tags=["Search"])
+
+
 
 class SearchRequest(BaseModel):
     query: str
     budgetMax: Optional[float] = None
     location: Optional[str] = None
     gigType: Optional[str] = None
+    limit: Optional[int] = 20
+    page: Optional[int] = 1
 
 @router.post("/gigs")
 async def search_gigs(payload: SearchRequest):
@@ -29,6 +36,25 @@ async def search_gigs(payload: SearchRequest):
     extraction = await run_agentic_search(payload.query, filters)
     logger.info(f"[Search] Gemini extracted: skill='{extraction.get('extractedSkill')}', gigType={extraction.get('gigType')}, terms={extraction.get('searchTerms')}")
 
+    # Log teh agentic query-extraction decision - this is a live AI call on every search
+    search_log_id = str(uuid.uuid4()) # search queries have no DB row of their own, so generate a synthetic entityId
+    await log_agent_decision(
+        agent_name="AGENTIC_SEARCH",
+        entity_id=search_log_id,
+        entity_type="SearchQuery",
+        decision=extraction.get("extractedSkill", "unknown"),
+        confidence=None,
+        reasoning=extraction.get("rewrittenQuery"),
+        input_summary=payload.query[:150]
+    )
+
+    # Generate teh query's own embedding once, reused for every Pro gig comparison
+    try:
+        query_embedding = await generate_embedding(payload.query)
+    except Exception as e:
+        logger.error(f"[Search] Failed to embed query, Pro semantic branch will be skipped: {e}")
+        query_embedding = None
+
     # 2. We now use the extracted term to serach the DB
     conn = None
 
@@ -41,76 +67,120 @@ async def search_gigs(payload: SearchRequest):
         search_terms = extraction.get('searchTerms', [payload.query])
         gig_type_filter = extraction.get('gigType', payload.gigType)
 
-        # I WILL SWITCH TO tsvector and tsquery or trigram index
-        # CREATE EXTENSION pg_trgm;
-        # CREATE INDEX gig_title_trgm_idx ON "Gig" USING gin (title gin_trgm_ops);
+        # ---- Shared filter conditions (budget, gigType) apply to both branches ----
+        extra_conditions = ""
+        extra_params = []
+        if gig_type_filter:
+            extra_conditions += ' AND g.service = %s'
+            extra_params.append(gig_type_filter)
+        if payload.budgetMax:
+            extra_conditions += ' AND t.price <= %s'
+            extra_params.append(payload.budgetMax)
 
-        # Build a search using ILIKE across title, description, tags
-        # Each search term gets matched against all three fields
-        conditions = []
-        params = []
+        # ---- Branch 1: FREE TIER — strict ILIKE lexical match, relevance locked at 1.0 ----
+        ilike_conditions = []
+        ilike_params = []
         for term in search_terms:
-            conditions.append(
+            ilike_conditions.append(
                 '(g.title ILIKE %s OR g.description ILike %s OR %s = ANY(g.tags))'
             )
-            params.extend([f"%{term}%", f"%{term}%", term])
+            ilike_params.extend([f"%{term}%", f"%{term}%", term])
+        ilike_where = " OR ".join(ilike_conditions) # passing conditions to main filter `ilike_where`
 
-        where_clause = " OR ".join(conditions) # conditions goes in here
-
-        # Add gigType filter if extracted
-        if gig_type_filter:
-            where_clause = f"({where_clause}) AND g.service = %s"
-            params.append(gig_type_filter)
-
-        # Add budget gilter if provided
-        if payload.budgetMax:
-            where_clause += " AND t.price <= %s"
-            params.append(payload.budgetMax)
-        query_sql = f"""
-            SELECT DISTINCT
-                g.id,
-                g.title,
-                g.description,
-                g.tags,
-                g.service,
-                g."avgRating",
-                g."totalReviews",
-                g."coverImage",
-                sp."sellerUsername",
-                sp."avgRating" as seller_rating,
-                MIN(t.price) as starting_price
+        free_query_sql = f"""
+            SELECT
+                g.id, g.title, g.description, g.tags, g.service,
+                g."avgRating", g."totalReviews", g."coverImage", g."baseRankingScore",
+                sp."sellerUsername", sp."avgRating" as seller_rating, sp."isPro",
+                MIN(t.price) as starting_price,
+                1.0 as relevance
             FROM "Gig" g
             JOIN "SellerProfile" sp ON sp.id = g."sellerId"
             JOIN "GigTier" t ON t."gigId" = g.id
             WHERE g.state = 'ACTIVE'
-            AND ({where_clause})
-            GROUP BY g.id, g.description, g.tags, g.service,
-                        g."avgRating", g."totalReviews", g."coverImage",
-                        sp."sellerUsername", sp."avgRating"
-            ORDER BY g."avgRating" DESC, g."totalReviews" DESC
-            LIMIT 20
+            AND sp."isPro" = false
+            AND ({ilike_where})
+            {extra_conditions}
+            GROUP BY g.id, g.title, g.description, g.tags, g.service,
+                        g."avgRating", g."totalReviews", g."coverImage", g."baseRankingScore",
+                        sp."sellerUsername", sp."avgRating", sp."isPro"
         """
+        free_params = ilike_params + extra_params
 
-        cursor.execute(query_sql, params)
-        rows = cursor.fetchall()
+        # ---- Branch 2: PRO TIER — semantic vector similarity ----
+        pro_query_sql = None
+        pro_params = []
+        if query_embedding is not None:
+            pro_query_sql = f"""
+                SELECT
+                    g.id, g.title, g.description, g.tags, g.service,
+                    g."avgRating", g."totalReviews", g."coverImage", g."baseRankingScore",
+                    sp."sellerUsername", sp."avgRating" as seller_rating, sp."isPro",
+                    MIN(t.price) as starting_price,
+                    (1 - (g.embedding <=> %s::vector)) as relevance
+                FROM "Gig" g
+                JOIN "SellerProfile" sp ON sp.id = g."sellerId"
+                JOIN "GigTier" t ON t."gigId" = g.id
+                WHERE g.state = 'ACTIVE'
+                AND sp."isPro" = true
+                AND g.embedding IS NOT NULL
+                {extra_conditions}
+                GROUP BY g.id, g.title, g.description, g.tags, g.service,
+                            g."avgRating", g."totalReviews", g."coverImage", g."baseRankingScore",
+                            sp."sellerUsername", sp."avgRating", sp."isPro", g.embedding
+                HAVING (1 - (g.embedding <=> %s::vector)) > 0.5
+            """
+            pro_params = [query_embedding] + extra_params + [query_embedding]
 
-        gigs =[]
-        for row in rows:
+        # ---- Execute both branches, combine in Python ----
+        all_rows = []
+
+
+        cursor.execute(free_query_sql, free_params)
+        all_rows.extend(cursor.fetchall()) # what is extend liek append???
+
+        if pro_query_sql:
+            cursor.execute(pro_query_sql, pro_params)
+            all_rows.extend(cursor.fetchall())
+
+
+        # 1. Sort the combined rows by final score (ranking * relevance)
+        all_rows.sort(key=lambda row: (row[8] or 0) * row[13], reverse=True)
+
+        # 2. Track total count BEFORE cutting the list
+        total_found = len(all_rows)
+
+        # Ensure payload defaults are handled safely if fields are optional
+        current_page = payload.page if (hasattr(payload, 'page') and payload.page is not None) else 1
+        take = payload.limit if payload.limit is not None else 20
+
+        # 3. Calculate pagination boundaries safely based on page number
+        skip = (current_page - 1) * take
+        end_index = skip + take
+
+        # 4. Slice the list to only process the requested page
+        paginated_rows = all_rows[skip:end_index]
+
+        # 5. Loop through ONLY the paginated rows (saves CPU processing!)
+        gigs = []
+        for row in all_rows:
             gigs.append({
                 "id": row[0],
                 "title": row[1],
-                "decsription": row[2][:150] + "..." if len(row[2]) > 150 else row[2], # fi shii is greater than 150 char cut to append ... else show full
+                "decsription": row[2][:150] + "..." if len(row[2]) > 150 else (row[2] or ""), # fi shii is greater than 150 char cut to append ... else show full
                 "tags": row[3],
                 "gigType": row[4],
-                "avgRating": float(row[5]) if row[5] else 0, # is it really there? if not default to 0
+                "avgRating": float(row[5]) if row[5] else 0.0, # is it really there? if not default to 0
                 "totalReviews": row[6],
                 "coverImage": row[7],
-                "sellerUsername": row[8],
-                "sellerRating": float(row[9]) if row[9] else 0,
-                "sellerPrice": float(row[10]) if row[10] else 0
+                "sellerUsername": row[9], # index 8 is baseRankingScore, index 9 is sellerUsername
+                "sellerRating": float(row[10]) if row[10] else 0.0,
+                "isPro": bool(row[11]),
+                "startingPrice": float(row[12]) if row[12] else 0.0,
+                "relevance": round(float(row[13]), 4),
             })
 
-        logger.info(f"[Search] Found {len(gigs)} gigs for query '{payload.query}")
+        logger.info(f"[Search] Found {len(gigs)} gigs for query '{payload.query} ({len(all_rows)} before cap)")
 
         return {
             "query": payload.query,
@@ -122,7 +192,7 @@ async def search_gigs(payload: SearchRequest):
                 "rewrittenQuery": extraction.get("rewrittenQuery"),
             },
             "results": gigs,
-            "total": len(gigs)
+            "total": total_found
         }
     except Exception as e:
         logger.error(f"[Search] DB error: {e}")

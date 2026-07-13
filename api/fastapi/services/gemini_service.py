@@ -145,3 +145,48 @@ Return ONLY valid JSON:
             "rewrittenQuery": query
         }
 
+# receives userId, 
+# fetches seller's skills + \
+# university + order count + portfolio count
+async def bio_generation(user_info: str) -> dict:
+    prompt = f"""
+You are an expert profile copywriter for SUMMAYH, a premier Nigerian marketplace freelance and on-site services.
+Your task is to write a compelling, professional, and natural-sounding biography for a seller's profile page.
+
+USER CONTEXT:
+ - Skills: [{user_info.get("skills"), "Not specified"}]
+ - University: {user_info.get("university", "Not specified")}
+ - Order count: {user_info.get("order_count", 0)}
+ - Portfolio count: {user_info.get("portfolio_count", 0)}
+
+
+
+WRITING RULES:
+ 1. Tone: Professional, welcoming, and confident, Avoidoverly complex jargon or robotic enthusiasm.
+ 2. Perspective: Write strictly in the first-person ("I am a...", "I specialize in...").
+ 3. Logic & Edge Cases:
+      - If "Completed Orders" or "Portfolio Items" are 0, DO NOT mention them. instead, focus entirely on their specific Skills and University background.
+      - If the numbers are high, originally highlight them as proof of reliability and experience.
+      - If a field says "Not specified" or "Unknown", ignore if completely in the biography.
+ 4. Length: Keep it concise and impactful (2-3 maximum).
+ 5. reasoning: should be why you think this biography is excellent
+ 6. confidence: How confident are you this is PERFECT?? explictly from range of 0.0 - 1.0
+
+OUTPUT FORMAT:
+Return Only a valid JSON object. Do not include markdown formatting, conversational filler, or code blocks.
+ {{
+    "aiBio": "<the generated biography string>"
+    "reasoning": "..."
+    "confidence": 0.87
+ }}
+"""
+    try:
+        text = await call_gemini(prompt)
+        result = json.loads(clean_json(text))
+        return result
+    except Exception as e:
+        print(f"[Gemini]")
+        return {
+            "aiBio": "Could not generate bio"
+        }
+# Marketplaces must protect the buyer's experience above all else, because buyers bring the liquidity.

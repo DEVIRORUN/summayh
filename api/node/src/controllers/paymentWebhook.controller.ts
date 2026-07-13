@@ -2,6 +2,7 @@ import { Request, Response } from "express"
 import { verifyPaystackSignature } from "../utils/verifyPaystackSignature"
 import { OrderService } from "../services/order.service"
 import { FoundersPassService } from "../services/foundersPass.service"
+import { InvoiceService } from "../services/invoice.service"
 
 
 export class PaymentWebhookController {
@@ -31,6 +32,8 @@ export class PaymentWebhookController {
 
                 if (metadata?.founderPassPurchaseId) {
                     await FoundersPassService.activateFoundersPass(data.reference);
+                } else if (metadata?.invoiceId) {
+                    await InvoiceService.activateInvoice(data.reference)
                 } else if (metadata?.orderId){
                     await OrderService.handleSuccessfulPayment(data)
                 } else {

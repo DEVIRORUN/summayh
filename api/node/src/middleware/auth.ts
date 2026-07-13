@@ -11,17 +11,28 @@ export interface AuthRequest extends Request {
 
 // 2. the actual bouncer function
 export const protectRoute = async (req: AuthRequest, res: Response, next: NextFunction): Promise<any> => {
-    // Grabs teh header to tak ethe token to verify
-    const authHeader = req.headers.authorization;
+    // // Grabs teh header to tak ethe token to verify
+    // const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+
+    // if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    //     return res.status(401).json({
+    //         message: "Unauthorized. No token provided."
+    //     });
+    // }
+
+    // // Split teh string to get the token
+    // const token = authHeader.split(" ")[1];
+
+
+    // 1. Grab the token from cookies instead of auth headers
+    const token = req.cookies.token;
+
+    if (!token) {
         return res.status(401).json({
             message: "Unauthorized. No token provided."
-        });
+        })
     }
-
-    // Split teh string to get the token
-    const token = authHeader.split(" ")[1];
 
     try{
         const decoded = jwt.verify(

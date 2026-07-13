@@ -4,6 +4,8 @@ import "dotenv/config";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 import express from "express";
+import cookieParser from "cookie-parser";
+import cors from "cors";
 
 import authRoutes from "./routes/auth";
 import adminRoutes from "./routes/admin.route";
@@ -16,15 +18,24 @@ import TermiiRoutes from "./routes/termii.route"
 import reviewRoutes from './routes/review.route';
 import disputeRoutes from './routes/dispute.route';
 import webhookRouter from './routes/webhook.route';
-import { buffer } from "stream/consumers";
+import agentDecisionRoutes from './routes/agentDesicion.route';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
+
+// 1. Configure CORS to explicitly allow credentials
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  credentials: true // Now cookies can pass back and forth
+}));
+
+// 2. Register Cookie Parser
+app.use(cookieParser());
 
 // Middleware to parse incoming JSON payloads
 app.use(express.json({
   verify: (req: any, res, buf) => {
-    req.rawBody = buffer; // Buffer - needed for webhook signature verification
+    req.rawBody = buf; // buf - needed for webhook signature verification
   }
 }));
 
@@ -203,13 +214,9 @@ app.use("/api/gig", gigRoutes);
 app.use("/api/otp", TermiiRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/disputes", disputeRoutes);
+app.use("/api/agent-decisions", agentDecisionRoutes);
 
 // Start listening
 app.listen(PORT, () => {
   console.log(`🚀 Summayh 1.0.0 Engine running on http://localhost:${PORT}`);
-//   console.log("👉 Actual Keys Node can see:", Object.keys(process.env).filter(key => key.includes('PAYSTACK')));
-//   console.log("🔍 Webhook Route Inspecting Key:");
-// console.log("- Type of key:", typeof process.env.PAYSTACK_SECRET_KEY);
-// console.log("- Length of key string:", process.env.PAYSTACK_SECRET_KEY?.length);
-// console.log("- Value starts with 'sk_test_':", process.env.PAYSTACK_SECRET_KEY?.startsWith('sk_test_'));
 });

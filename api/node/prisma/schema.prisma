@@ -85,6 +85,34 @@ enum StatusFounders {
   FAILED
 }
 
+enum GigStatusFlag {
+  NORMAL
+  WARNING
+  SHADOWBAN
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
+enum AgentName {
+  DISPUTE_RESOLUTION
+  REVIEW_SPAM_DETECTION
+  PROFILE_CLONER
+  AGENTIC_SEARCH
+  SEMANTIC_MATCH
+  EMBEDDING_GENERATION
+  BIO_GENERATION
+}
+
+enum ProSource {
+  FOUNDERS
+  SUSBSCRIPTION
+}
+
 // model TestConnection {
 //   id        String   @id @default(uuid())
 //   createdAt DateTime @default(now())
@@ -99,7 +127,7 @@ model User {
   username           String?
   university         String           @default("Unkown University")
   dateOfBirth        DateTime
-  phoneNumber        String           @unique
+  phoneNumber        String?          @unique
   isPhoneVerified    Boolean          @default(false)
   role               Role             @default(BUYER)
   isBanned           Boolean          @default(false)
@@ -115,6 +143,7 @@ model User {
   otpVerification OTPVerification?
   reviews         Review[]
   dispute         Dispute[]
+  invoices        Invoice[]
 }
 
 model SellerProfile {
@@ -130,10 +159,17 @@ model SellerProfile {
   updatedAt              DateTime @updatedAt
   phoneNumber            String?  @unique
 
+  // Stats
+  isOnline     Boolean   @default(false)
+  lastActiveAt DateTime?
+
   // Pro field
   isPro         Boolean   @default(false)
+  proSource ProSource?
   founderBadge  Boolean   @default(false)
   founderPassAt DateTime?
+
+  proexpiresAt DateTime?
 
   // AI
   aiBio String?
@@ -148,6 +184,7 @@ model SellerProfile {
   order                 Order[]
   dispute               Dispute[]
   foundersPassPurchases FoundersPassPurchase[]
+  invoices              Invoice[]
 }
 
 model FoundersPassPurchase {
@@ -186,6 +223,15 @@ model Gig {
   avgRating    Float    @default(0)
   totalReviews Int      @default(0)
 
+  // Embedding
+  embedding Unsupported("vector(768)")?
+
+  // Ranking
+  baseRankingScore Int           @default(0)
+  statusFlag       GigStatusFlag @default(NORMAL)
+  isRookiePeriod   Boolean       @default(true)
+  rookieExpiredAt  DateTime?
+
   // Relationships
   seller               SellerProfile            @relation(fields: [sellerId], references: [id])
   category             Category                 @relation(fields: [categoryId], references: [id])
@@ -193,6 +239,18 @@ model Gig {
   tiers                GigTier[]
   orders               Order[]
   reviews              Review[]
+  gigStats             GigStats?
+}
+
+model GigStats {
+  id          String   @id @default(uuid())
+  gigId       String   @unique
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  // relations
+  gig Gig @relation(fields: [gigId], references: [id])
 }
 
 model GigTier {
@@ -350,4 +408,38 @@ model Dispute {
   order  Order         @relation(fields: [orderId], references: [id])
   buyer  User          @relation(fields: [buyerId], references: [id])
   seller SellerProfile @relation(fields: [sellerId], references: [id])
+}
+
+model Invoice {
+  id               String        @id @default(uuid())
+  sellerId         String
+  clientName       String
+  clientEmail      String? // may not be known until checkout, buyer fills it in
+  description      String
+  amount           Float
+  status           InvoiceStatus @default(PENDING)
+  paymentReference String?       @unique
+  buyerId          String? // linked once the buyer pays and their User record is created/matched
+  createdAt        DateTime      @default(now())
+  paidAt           DateTime?
+  expiresAt        DateTime?
+
+  // Relations
+  seller SellerProfile @relation(fields: [sellerId], references: [id])
+  buyer  User?         @relation(fields: [buyerId], references: [id])
+}
+
+model AgentDecision {
+  id           String    @id @default(uuid())
+  agentName    AgentName
+  entityId     String // the ID of whatever it acted on (disputeId, reviewId, gigId)
+  entityType   String // "Dispute" | "Review" | "Gig" — human-readable label for the UI
+  decision     String // "favour_buyer" | "spam" | "profile_generated" etc — whatever the agent output
+  confidence   Float? // 0.0–1.0, null if the agent doesn't produce a confidence score
+  reasoning    String? // the AI's own explanation, if it produced one
+  inputSummary String? // short human-readable snapshot of what was fed in
+  createdAt    DateTime  @default(now())
+
+  @@index([agentName])
+  @@index([createdAt])
 }
