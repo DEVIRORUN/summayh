@@ -145,6 +145,14 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
             { expiresIn: "7d" }
         );
 
+        // Set the httpOnly cookie - so this is what protectRoute actually reads to validate
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax", // localhost:3000 <-> localhost:3001 
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        })
+
         // 5. Return success
         return res.status(200).json({
             message: "Login successful.",
@@ -153,7 +161,9 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                university: user.university
+                university: user.university,
+                role: user.role,
+                // isPro: user.is
             },
         });
     } catch(error) {
@@ -182,6 +192,14 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<any> => {
                 university: true,
                 isPhoneVerified: true,
                 createdAt: true,
+                role: true,
+                sellerProfile: {
+                    select: {
+                        isPro: true,
+                        founderBadge: true,
+                        proSource: true,
+                    }
+                }
             }
         });
 
@@ -191,7 +209,16 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<any> => {
             });
         }
 
-        return res.status(200).json({ user });
+        const { sellerProfile, ...rest } = user;
+
+        return res.status(200).json({
+            user: {
+                ...user,
+                isPro: sellerProfile ? sellerProfile.isPro : false,
+                founderBadge: sellerProfile ? sellerProfile.founderBadge : false,
+                proSource: sellerProfile ? sellerProfile.proSource : null,
+            },
+        });
     } catch(error) {
         console.error("GetMe error:", error);
         return res.status(500).json({ message: "Internal server error during fetching user data." });
@@ -247,12 +274,14 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<a
 
 export const logoutUser = async (req: Request, res: Response): Promise<any> => {
     try {
-        // In a stateless JWT setup, logout is handled by the frontend deleting the token.
-        // If you add cookies later, you would clear them here like:
-        // res.clearCookie('token');
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+        })
 
         res.status(200).json({
-            message: "Logged out successfully. Please remove token from client storage (e.g., localStorage) to complete logout."
+            message: "Logged out successfully."
         })
     } catch(error) {
         console.error("Logout error:", error);

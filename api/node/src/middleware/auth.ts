@@ -37,7 +37,7 @@ export const protectRoute = async (req: AuthRequest, res: Response, next: NextFu
     try{
         const decoded = jwt.verify(
             token,
-            process.env.JWT_SECRET as string || "summayh_dev_secret_key_0627"
+            process.env.JWT_SECRET as string
         ) as { userId: string, tokenVersion: number };
 
         // 1. Fetch only the tokenVersion

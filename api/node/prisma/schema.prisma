@@ -110,7 +110,7 @@ enum AgentName {
 
 enum ProSource {
   FOUNDERS
-  SUSBSCRIPTION
+  SUBSCRIPTION
 }
 
 // model TestConnection {
@@ -169,7 +169,7 @@ model SellerProfile {
   founderBadge  Boolean   @default(false)
   founderPassAt DateTime?
 
-  proexpiresAt DateTime?
+  proExpiresAt DateTime?
 
   // AI
   aiBio String?
