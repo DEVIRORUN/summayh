@@ -1,22 +1,14 @@
 import { NextResponse } from "next/server";
-
+import { proxyFetch } from "@/lib/proxy-fetch";
 
 export async function POST(request: Request) {
     try {
         // 1. extract the JSON body typed by the user in page
         const body = await request.json();
 
-        // 2. Grab cookie header
-        const cookieHeader = request.headers.get("cookie") || "";
-
-        // 3. Foward it securely to Node system
-        const backendRes = await fetch(`${process.env.NODE_API_URL}/api/gig/create`, {
+        const backendRes = await proxyFetch(request, "api/auth/login", {
             method: "POST",
-            headers: {
-                "Cookie": cookieHeader,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),
         });
 
         // 4. Node error, logs

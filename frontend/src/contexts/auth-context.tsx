@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 type Role = "BUYER" | "SELLER" | "ADMIN"
+type ProSource = "FOUNDERS" | "SUBSCRIPTION";
 
 
 interface User {
@@ -10,6 +11,8 @@ interface User {
     name: string;
     role: Role;
     isPro: boolean;
+    founderBadge: boolean;
+    proSource: ProSource | null;
 }
 
 interface AuthContextValue {
