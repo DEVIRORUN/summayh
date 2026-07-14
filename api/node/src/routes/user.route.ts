@@ -5,7 +5,6 @@ import { UserController } from "../controllers/user.controller";
 
 const router = Router();
 
-
 /**
  * @openapi
  * /api/user/me:

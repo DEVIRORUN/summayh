@@ -27,7 +27,7 @@ export function Navbar() {
                         <PopoverTrigger asChild>
                             <button className="flex items-center gap-2 rounded-full">
                                 <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm">
-                                    {user.name[0]}
+                                    {user.name?.[0] ?? "?"}
                                 </div>
                                 {user.isPro && <Badge variant="secondary">Pro</Badge>}
                             </button>

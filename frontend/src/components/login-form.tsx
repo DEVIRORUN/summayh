@@ -41,6 +41,7 @@ export function LoginForm() {
 
             const redirectTo = searchParams.get("redirect") || "/dashboard";
             router.push(redirectTo);
+            router.refresh();
         } catch {
             setError("Something went wrong. Check your connection and try again.")
         } finally {;

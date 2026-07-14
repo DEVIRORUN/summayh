@@ -5,7 +5,7 @@ export async function POST(request: Request) {
     try {
         const body = await request.json();
 
-        const backendRes = await proxyFetch(request, "api/auth/login", {
+        const backendRes = await proxyFetch(request, "/api/auth/login", {
                 method: "POST",
                 body: JSON.stringify(body),
         });
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
         }
         return response
     }catch (error) {
+        console.error("Login proxy error:", error); // ADD THIS
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
     }
 }

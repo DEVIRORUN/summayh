@@ -20,11 +20,11 @@ export async function GET(request: Request) {
             return NextResponse.json({ user: null }, { status: backendRes.status })
         }
 
-        const data = backendRes.json();
+        const data = await backendRes.json();
 
         // 4. Return user payload back to React Auth State
         return NextResponse.json(data)
-    } catch(error) {
+    } catch {
         return NextResponse.json({ user: null, error: "Backend unreachable" }, { status: 500 })
     }
 }

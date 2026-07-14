@@ -1,11 +1,31 @@
+import { ProSource } from "../../generated/prisma";
 import { prisma } from "../utils/prisma";
 
 
 export class UserService {
     static async getMe(userId: string): Promise<any> {
+        console.log("[getMe HIT !!!]")
         try {
             const user = await prisma.user.findUnique({
                 where: { id: userId },
+                select: {
+                    id: true,
+                    name: true,
+                    username: true,
+                    email: true,
+                    university: true,
+                    isPhoneVerified: true,
+                    phoneNumber: true,
+                    role: true,
+                    createdAt: true,
+                    sellerProfile: {
+                        select: {
+                            isPro: true,
+                            founderBadge: true,
+                            proSource: true
+                        }
+                    }
+                }
             })
 
             if (!user) {
@@ -13,13 +33,15 @@ export class UserService {
                 throw new Error("User not found!");
             }
 
+            const { sellerProfile, ...rest } = user;
+
             return {
-                id: user.id,
-                username: user.username,
-                role: user.role,
+                ...rest,
                 phoneNumber: user.isPhoneVerified ? user.phoneNumber : null,
-                school: user.university
-            }
+                isPro: sellerProfile ? sellerProfile.isPro : false,
+                founderBadge: sellerProfile ? sellerProfile.founderBadge : false,
+                proSource: sellerProfile ? sellerProfile.proSource : null,
+            };
         } catch(error: any) {
             console.error("ERROR fetching user: ", error);
             throw error;

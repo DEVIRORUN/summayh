@@ -5,6 +5,8 @@ import { isValidEduEmail } from "../validators";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+// console.log("🔍 [TOP-LEVEL] Is prisma imported? ->", prisma);
+
 export const checkEduEmail = async (req: Request, res: Response): Promise<any> => {
   try {
     const { email } = req.body;
@@ -109,6 +111,7 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
 }
 
 export const loginUser = async (req: Request, res: Response): Promise<any> => {
+    console.log("🔥 loginUser ENTRY, body:", req.body);
     try{
         const { email, password } = req.body;
 
@@ -119,7 +122,9 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
             });
         }
 
+        console.log(`email: ${email} before prisma call`);
         // 2. Find the user
+        // console.log("🔍 [RUNTIME] Is prisma available here? ->", prisma);
         const user = await prisma.user.findUnique({
             where: { email },
         });
@@ -131,6 +136,7 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
         }
 
         // 3. Verify the password
+        console.log("user found:", user ? { id: user.id, hasPassword: !!user.password } : null);
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({
@@ -153,6 +159,7 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
             maxAge: 7 * 24 * 60 * 60 * 1000,
         })
 
+        console.log("Successfully logged In");
         // 5. Return success
         return res.status(200).json({
             message: "Login successful.",
@@ -173,6 +180,7 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
 }
 
 export const getMe = async (req: AuthRequest, res: Response): Promise<any> => {
+    console.log("🔥 getMe HIT");
     try{
         const userId = req.userId;
 
@@ -210,6 +218,10 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<any> => {
         }
 
         const { sellerProfile, ...rest } = user;
+
+        console.log("getMe raw user:", user);
+
+        console.log("Succesully logged in for `getMe`");
 
         return res.status(200).json({
             user: {
