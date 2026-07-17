@@ -1,6 +1,31 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local"
 import "./globals.css";
+
+// Multi-file static font setup
+const clashDisplay = localFont({
+  src: [
+    {
+      path: "./fonts/ClashDisplay-Regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/ClashDisplay-Medium.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "./fonts/ClashDisplay-Bold.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-clash-display",
+});
+
+
 
 // Provider
 import { Providers } from "@/components/providers";
@@ -29,7 +54,8 @@ export default async function RootLayout({
     <html
       lang="en"
       // className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-      className="flex min-h-screen min-w-screen"
+      className={`${clashDisplay.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body>
         <Providers>{children}</Providers>

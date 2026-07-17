@@ -39,6 +39,7 @@ export function Sidebar({ categories }: { categories: Category[] }) {
         {/* Desktop: always in DOM by the side */}
         <aside className="hidden md:block w-60 shrink-0 border-r bg-background">
             <SidebarLinks categories={categories} />
+            <h2>Nothing to show</h2>
         </aside>
         {/* Mobile/tabet: slider*/}
         <Drawer open={isOpen} onOpenChange={(open) => !open && close()} direction="left">

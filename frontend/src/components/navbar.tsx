@@ -17,9 +17,10 @@ export function Navbar() {
                 <button onClick={toggle} className="md:hidden" aria-label="Toggle menu">
                     <Menu className="h-5 w-5"/>
                 </button>
+                <h1 className="font-bold text-2xl tracking-tighter">SUMMAYH</h1>
             </div>
 
-            <div className="flex items-center-gap-3">
+            <div className="flex items-center gap-3">
                 {isLoading ? (
                     <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
                 ) : user ? (
