@@ -42,7 +42,7 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
             placeholder="Try 'logo design' or 'video editing'"
             />
             <Button 
-                onClick={() => (executeSearch)} 
+                onClick={() => (executeSearch())} 
                 disabled={query.trim().length < 3}
                 suppressHydrationWarning    
             >Search</Button>

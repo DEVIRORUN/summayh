@@ -6,7 +6,7 @@ export async function POST(request: Request) {
         // 1. extract the JSON body typed by the user in page
         const body = await request.json();
 
-        const backendRes = await proxyFetch(request, "/api/gigs/create", {
+        const backendRes = await proxyFetch(request, "api/testimonial", {
             method: "POST",
             body: JSON.stringify(body),
         });
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
         if (!backendRes.ok) {
             const errorData = await backendRes.json().catch(() => ({}));
             return NextResponse.json(
-                { error: errorData.message || "Failed to create gig" },
+                { error: errorData.error || errorData.message || "Failed to submit testimonial" },
                 { status: backendRes.status }
             );
         }

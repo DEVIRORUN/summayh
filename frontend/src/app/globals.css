@@ -185,3 +185,11 @@
     @apply font-sans;
   }
 }
+/* 3. Add your custom scrollbar utilities underneath */
+@utility scrollbar-none {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

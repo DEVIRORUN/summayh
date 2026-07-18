@@ -19,7 +19,7 @@ export default function LoginPage() {
     setError(undefined);
 
     try {
-      const res = await fetch("api/auth/login", {
+      const res = await fetch("api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
@@ -29,7 +29,7 @@ export default function LoginPage() {
         const data = await res.json();
         throw new Error(data.message || "Invalid email or password");
       }
-      
+
       await refetch();
       router.push("/"); // redirect to homepage
     } catch (err) {
@@ -46,19 +46,19 @@ export default function LoginPage() {
 
   return (
     <AuthCard
-      title="Welcome back"
-      subtitle="Log in to continue to SUMMAYH"
+      title="Create your account"
+      subtitle="Join SUMMAYH to hire or get hired"
       footer={
         <span>
-          {"Don't have an account? "}
+          {"Already have an account? "}
           <Link href="/signup" className="text-primary font-medium underline">
-            Sign up
+            Log in
           </Link>
         </span>
       }
     >
       <AuthForm
-        mode="login"
+        mode="signup"
         onSubmit={handleLogin}
         isSubmitting={isSubmitting}
         error={error}

@@ -11,6 +11,7 @@ interface Category {
 
 interface CategoryGridProps {
   categories: Category[];
+  variant: "inline" | "grid"
 }
 
 // Single card — kept separate from the grid so it can be reused
@@ -25,7 +26,24 @@ function CategoryCard({ name, icon, href }: Category) {
   );
 }
 
-export function CategoryGrid({ categories }: CategoryGridProps) {
+export function CategoryGrid({ categories, variant }: CategoryGridProps) {
+
+  if (variant === "inline") {
+    return (
+      <div className="flex justify-center w-full">
+        <div className="flex  self-center overflow-x-auto p-3 w-[90vw] border rounded-md border-border">
+          <div className="flex flex-row gap-3 min-w-max">
+            {categories.map((c) => (
+              <div key={c.id} className="shrink-0">
+                <CategoryCard {...c}/>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
       {categories.map((c) => (

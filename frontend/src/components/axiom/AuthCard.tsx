@@ -10,7 +10,7 @@ interface AuthCardProps {
 
 export function AuthCard({ title, subtitle, children, footer }: AuthCardProps) {
     return (
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="w-full max-w-sm min-h-screen flex items-center justify-center">
             <Card className="w-full max-w-sm p-6 flex flex-col gap-6">
                 <div className="flex flex-col items-center gap-2 text-center">
                     <span className="font-bold text-lg">SUMMAYH</span>

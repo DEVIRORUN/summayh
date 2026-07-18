@@ -1,0 +1,370 @@
+import React, { useMemo, useState } from "react";
+import { Label } from "../ui/label";
+import { Input } from "../ui/input";
+import { cn } from "@/lib/utils";
+
+const SETTLEMENT_BANK_CODES = {
+  "78 Finance Company Ltd": "40195",
+  "9jaPay Microfinance Bank": "090629",
+  "9mobile 9Payment Service Bank": "120001",
+  "Abbey Mortgage Bank": "404",
+  "Above Only MFB": "51204",
+  "Abulesoro MFB": "51312",
+  "Access Bank": "044",
+  "Access Bank (Diamond)": "063",
+  "Accion Microfinance Bank": "602",
+  "Adamawa Mortgage Bank Limited": "90102",
+  "Aella MFB": "50315",
+  "AG Mortgage Bank": "90077",
+  "Ahmadu Bello University Microfinance Bank": "50036",
+  "Airtel Smartcash PSB": "120004",
+  "AKU Microfinance Bank": "51336",
+  "Akuchukwu Microfinance Bank Limited": "090561",
+  "Al-Barakah Microfinance Bank": "50055",
+  "ALAT by WEMA": "035A",
+  "Alert MFB": "51074",
+  "Alpha Morgan Bank": "108",
+  "Alternative bank": "000304",
+  "Amju Unique MFB": "50926",
+  "Aramoko MFB": "50083",
+  "ASO Savings and Loans": "401",
+  "Assets Microfinance Bank": "50092",
+  "Astrapolaris MFB LTD": "MFB50094",
+  "AVUENEGBE MICROFINANCE BANK": "090478",
+  "AWACASH MICROFINANCE BANK": "51351",
+  "AZTEC MICROFINANCE BANK LIMITED": "51337",
+  "Bainescredit MFB": "51229",
+  "Banc Corp Microfinance Bank": "50117",
+  "Bank78 Microfinance Bank": "11072",
+  "BANKIT MFB": "50572",
+  "BANKIT MICROFINANCE BANK LTD": "50572",
+  "BANKLY MFB": "51341",
+  "Baobab Microfinance Bank": "MFB50992",
+  "BellBank Microfinance Bank": "51100",
+  "Benysta Microfinance Bank Limited": "51267",
+  "Berachah Microfinance Bank Ltd.": "50122",
+  "Beststar Microfinance Bank": "50123",
+  "BOLD MFB": "50725",
+  "Boost Microfinance Bank": "51449",
+  "Bosak Microfinance Bank": "650",
+  "Bowen Microfinance Bank": "50931",
+  "Branch International Finance Company Limited": "FC40163",
+  "Brent Mortgage bank": "90070",
+  "BuyPower MFB": "50645",
+  "Carbon": "565",
+  "Cashbridge Microfinance Bank Limited": "51353",
+  "CASHCONNECT MFB": "865",
+  "Cedrus MFB": "51437",
+  "CEMCS Microfinance Bank": "50823",
+  "Centrum Finance": "050032",
+  "Chanelle Microfinance Bank Limited": "50171",
+  "Chikum Microfinance bank": "312",
+  "Citibank Nigeria": "023",
+  "CITYCODE MORTAGE BANK": "070027",
+  "Consumer Microfinance Bank": "50910",
+  "Cool Microfinance Bank Limited": "51458",
+  "Cooperative Mortgage Bank": "90089",
+  "Corestep MFB": "50204",
+  "Coronation Merchant Bank": "559",
+  "County Finance Limited": "FC40128",
+  "Credit Direct Limited": "40119",
+  "Crescent MFB": "51297",
+  "Crust Microfinance Bank": "090560",
+  "CRUTECH MICROFINANCE BANK LTD": "50216",
+  "Dash Microfinance Bank": "51368",
+  "Davenport MICROFINANCE BANK": "51334",
+  "Dillon Microfinance Bank": "51450",
+  "Dot Microfinance Bank": "50162",
+  "EBSU Microfinance Bank": "50922",
+  "Ecobank Nigeria": "050",
+  "Ekimogun MFB": "50263",
+  "Ekondo Microfinance Bank": "098",
+  "Ethica MFB": "51475",
+  "EXCEL FINANCE BANK": "090678",
+  "Eyowo": "50126",
+  "Fairmoney Microfinance Bank": "51318",
+  "FCMB MFB": "51241",
+  "Fedeth MFB": "50298",
+  "Fewchore Finance Company Limited": "050002",
+  "FFS Microfinance Bank": "51110",
+  "Fidelity Bank": "070",
+  "Firmus MFB": "51314",
+  "First Bank of Nigeria": "011",
+  "First City Monument Bank": "214",
+  "First Option MFB": "50934",
+  "FIRST ROYAL MICROFINANCE BANK": "090164",
+  "FIRSTMIDAS MFB": "51333",
+  "FirstTrust Mortgage Bank Nigeria": "413",
+  "Flutterwave MFB": "090567",
+  "Fortress MFB": "D53",
+  "FSDH Merchant Bank Limited": "501",
+  "FUTMINNA MICROFINANCE BANK": "832",
+  "Garun Mallam MFB": "MFB51093",
+  "Gateway Mortgage Bank LTD": "812",
+  "Globus Bank": "00103",
+  "Goldman MFB": "090574",
+  "GoMoney": "100022",
+  "GOOD SHEPHERD MICROFINANCE BANK": "090664",
+  "Goodnews Microfinance Bank": "50739",
+  "Greenwich Merchant Bank": "562",
+  "GROOMING MICROFINANCE BANK": "51276",
+  "GTI MFB": "50368",
+  "Guaranty Trust Bank": "058",
+  "Hackman Microfinance Bank": "51251",
+  "Haggai Mortgage Bank": "90065",
+  "Hasal Microfinance Bank": "50383",
+  "Hayat Trust MFB": "51364",
+  "HopePSB": "120002",
+  "IBANK Microfinance Bank": "51211",
+  "IBBU MFB": "51279",
+  "Ibile Microfinance Bank": "51244",
+  "Ibom Mortgage Bank": "90012",
+  "Ikoyi Osun MFB": "50439",
+  "Ilaro Poly Microfinance Bank": "50442",
+  "Imowo MFB": "50453",
+  "IMPERIAL HOMES MORTAGE BANK": "415",
+  "INEBA GOGO MFB": "51462",
+  "Infinity MFB": "50457",
+  "Infinity trust  Mortgage Bank": "070016",
+  "ISUA MFB": "090701",
+  "Jaiz Bank": "301",
+  "Jubilee Life Mortgage Bank": "402",
+  "Kadpoly MFB": "50502",
+  "KANOPOLY MFB": "51308",
+  "Kayvee Microfinance Bank": "5129",
+  "Kebbi Homes Savings and Loans Limited": "90028",
+  "Keystone Bank": "082",
+  "Kolomoni MFB": "899",
+  "KONGAPAY (Kongapay Technologies Limited)(formerly Zinternet)": "100025",
+  "Kredi Money MFB LTD": "50200",
+  "Kuda Bank": "50211",
+  "Lagos Building Investment Company Plc.": "90052",
+  "Lemmy MFB": "091003",
+  "Letshego Microfinance Bank": "090420",
+  "Links MFB": "50549",
+  "Living Trust Mortgage Bank": "031",
+  "LOMA MFB": "50491",
+  "Lotus Bank": "303",
+  "Maal MFB": "51444",
+  "MAINSTREET MICROFINANCE BANK": "090171",
+  "Mayfair MFB": "50563",
+  "Mayfresh Mortgage Bank": "90003",
+  "Mega Microfinance Bank": "50570",
+  "Michael Okpara UniAgric Microfinance Bank": "MFB51116M",
+  "Mint MFB": "50304",
+  "MINT-FINEX MFB": "09",
+  "Money Master PSB": "946",
+  "Moniepoint MFB": "50515",
+  "MTN Momo PSB": "120003",
+  "MUTUAL BENEFITS MICROFINANCE BANK": "090190",
+  "NDCC MICROFINANCE BANK": "090679",
+  "NET MICROFINANCE BANK": "51361",
+  "Nigerian Navy Microfinance Bank Limited": "51142",
+  "NIRSAL MICROFINANCE": "51304",
+  "Nombank MFB": "50072",
+  "NOVA BANK": "561",
+  "Novus MFB": "51371",
+  "NPF MICROFINANCE BANK": "50629",
+  "NSUK MICROFINANACE BANK": "51261",
+  "NUVION MFB": "51392",
+  "Olabisi Onabanjo University Microfinance Bank": "50689",
+  "OLUCHUKWU MICROFINANCE BANK LTD": "50697",
+  "OPay Digital Services Limited (OPay)": "999992",
+  "Optimus Bank Limited": "107",
+  "Pact Microfinance Bank": "51477",
+  "Paga": "100002",
+  "PalmPay": "999991",
+  "Parallex Bank": "104",
+  "Parkway - ReadyCash": "311",
+  "PATHFINDER MICROFINANCE BANK LIMITED": "090680",
+  "Paystack MFB": "51457",
+  "Paystack-Titan": "100039",
+  "Peace Microfinance Bank": "50743",
+  "PECANTRUST MICROFINANCE BANK LIMITED": "51226",
+  "Personal Trust MFB": "51146",
+  "Petra Mircofinance Bank Plc": "50746",
+  "Pettysave MFB": "MFB51452",
+  "PFI FINANCE COMPANY LIMITED": "050021",
+  "Platinum Mortgage Bank": "268",
+  "Pocket App": "00716",
+  "Polaris Bank": "076",
+  "Polyunwana MFB": "50864",
+  "PremiumTrust Bank": "105",
+  "Prospa Capital Microfinance Bank": "50739",
+  "PROSPERIS FINANCE LIMITED": "050023",
+  "Providus Bank": "101",
+  "QuickFund MFB": "51293",
+  "Rand Merchant Bank": "502",
+  "RANDALPHA MICROFINANCE BANK": "090496",
+  "Rank MFB": "50130",
+  "Refuge Mortgage Bank": "90067",
+  "REHOBOTH MICROFINANCE BANK": "50761",
+  "Rephidim Microfinance Bank": "50994",
+  "Retrust Mfb": "51375",
+  "Rex Microfinance Bank": "51108",
+  "Rigo Microfinance Bank Limited": "51286",
+  "ROCKSHIELD MICROFINANCE BANK": "50767",
+  "Rubies MFB": "125",
+  "Safe Haven MFB": "51113",
+  "SAGE GREY FINANCE LIMITED": "40165",
+  "Shield MFB": "50582",
+  "Signature Bank Ltd": "106",
+  "Solid Allianze MFB": "51062",
+  "Solid Rock MFB": "50800",
+  "Sparkle Microfinance Bank": "51310",
+  "SPECTRUM MFB LTD": "50756",
+  "Springfield Microfinance Bank": "51429",
+  "Stanbic IBTC Bank": "221",
+  "Standard Chartered Bank": "068",
+  "STANFORD MICROFINANCE BANK": "090162",
+  "STATESIDE MICROFINANCE BANK": "50809",
+  "STB Mortgage Bank": "070022",
+  "Stellas MFB": "51253",
+  "Sterling Bank": "232",
+  "Summit Bank": "00305",
+  "Suntrust Bank": "100",
+  "Supreme MFB": "50968",
+  "Sycamore Microfinance Bank": "51056",
+  "TAJ Bank": "302",
+  "Tangerine Money": "51269",
+  "Tatum Bank": "109",
+  "TENN": "51403",
+  "Think Finance Microfinance Bank": "677",
+  "Titan Bank": "102",
+  "TransPay MFB": "090708",
+  "TRUSTBANC J6 MICROFINANCE BANK": "51118",
+  // "U and C MFB": "50840",
+  "U&C Microfinance Bank Ltd (U AND C MFB)": "50840",
+  "UCEE MFB": "090706",
+  "Uhuru MFB": "51322",
+  "Ultraviolet Microfinance Bank": "51080",
+  "Unaab Microfinance Bank Limited": "50870",
+  "UNIABUJA MFB": "51447",
+  "Unical MFB": "50871",
+  "Unilag Microfinance Bank": "51316",
+  "UNIMAID MICROFINANCE BANK": "50875",
+  "Union Bank of Nigeria": "032",
+  "United Bank For Africa": "033",
+  "Unity Bank": "215",
+  "UNIUYO Microfinance Bank Ltd": "50880",
+  "Uzondu Microfinance Bank Awka Anambra State": "50894",
+  "Vale Finance Limited": "050020",
+  "VFD Microfinance Bank Limited": "566",
+  "Victory MFB": "51085",
+  "Waya Microfinance Bank": "51355",
+  "Wema Bank": "035",
+  "Weston Charis MFB": "51386",
+  "Whitecrust Finance Company": "402001",
+  "Xpress Wallet": "100040",
+  "YCT MFB": "51253",
+  "Yes MFB": "594",
+  "Zap": "00zap",
+  "Zenith Bank": "057",
+  "Zitra MFB": "51373"
+};
+
+const ALL_BANKS = Object.entries(SETTLEMENT_BANK_CODES).map(([name, code]) => ({
+  name,
+  code,
+}));
+
+interface BankInputProps {
+  inputValue: string;             
+  onInputChange: (value: string) => void;
+  onBankSelect: (code: string) => void;
+  error?: string | null;
+  onErrorChange?: (error: string | null) => void;
+}
+
+export function BankInput({
+  inputValue,
+  onInputChange,
+  onBankSelect,
+  error,
+  onErrorChange,
+}: BankInputProps) {
+  const [isFocused, setIsFocused] = useState(false);
+
+  const isExactMatch = useMemo(() => {
+    return ALL_BANKS.some((b) => b.name.toLowerCase() === inputValue.trim().toLowerCase());
+  }, [inputValue]);
+
+  const matches = useMemo(() => {
+    if (!inputValue.trim()) return [];
+    const q = inputValue.toLowerCase();
+    return ALL_BANKS.filter((b) => b.name.toLowerCase().includes(q));
+  }, [inputValue]);
+
+  const showDropdown = isFocused && inputValue.length > 0 && matches.length > 0;
+
+  function handleSelect(bank: { name: string; code: string }) {
+    onInputChange(bank.name);     // Update input box to full bank name
+    onBankSelect(bank.code);      // Store the backend code
+    onErrorChange?.(null);
+    setIsFocused(false);
+  }
+
+return (
+  <div className="flex flex-col gap-1 relative w-full">
+    {/* 1. Parent wrapper container handles the premium border and focus states */}
+    <div className="group flex flex-col rounded-xl border border-muted-foreground/20 bg-background/50 p-3 shadow-sm transition-all duration-200 focus-within:border-foreground focus-within:ring-1 focus-within:ring-foreground">
+      <label className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase transition-colors group-focus-within:text-foreground">
+        Bank
+      </label>
+      <Input
+        type="text"
+        placeholder="Type your bank name..."
+        autoComplete="off"
+        value={inputValue}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setTimeout(() => setIsFocused(false), 180)}
+        onChange={(e) => {
+          onInputChange(e.target.value);
+          if (error) onErrorChange?.(null);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (showDropdown && matches.length > 0) {
+              handleSelect(matches[0]);
+            } else if (!isExactMatch) {
+              onErrorChange?.("Please select a valid bank from the suggestions list.");
+            }
+          }
+        }}
+        required
+        /* 2. Strip out all inner visual styles so it blends into the parent card */
+        className="h-auto border-0 p-0 pt-1 text-sm bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/30 font-medium"
+      />
+    </div>
+
+    {/* Suggestion Dropdown */}
+    {!isExactMatch && showDropdown && (
+      <div
+        className={cn(
+          "absolute top-full left-0 right-0 mt-1 z-20 translate-y-1",
+          "flex flex-col p-1 rounded-md border bg-background shadow-md",
+          "max-h-[200px] overflow-y-auto scrollbar-none"
+        )}
+      >
+        {matches.map((bank) => (
+          <button
+            type="button"
+            key={bank.code}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => handleSelect(bank)}
+            className={cn(
+              "w-full shrink-0 text-left text-xs px-3 py-2 rounded-sm",
+              "hover:bg-muted transition-colors whitespace-nowrap overflow-hidden text-ellipsis"
+            )}
+          >
+            {bank.name}
+          </button>
+        ))}
+      </div>
+    )}
+
+    {error && <span className="w-full mt-1 text-xs text-red-500">{error}</span>}
+  </div>
+);
+}

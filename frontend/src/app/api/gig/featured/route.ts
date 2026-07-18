@@ -6,7 +6,7 @@ export async function POST(request: Request) {
         // 1. extract the JSON body typed by the user in page
         const body = await request.json();
 
-        const backendRes = await proxyFetch(request, "/api/gigs/create", {
+        const backendRes = await proxyFetch(request, "api/featured/", {
             method: "POST",
             body: JSON.stringify(body),
         });

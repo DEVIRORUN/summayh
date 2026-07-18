@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/gigs", "/orders", "/settings"];
+const PROTECTED_PREFIXES = ["/dashboard", "/gigs", "/orders", "/settings", "/onboarding"];
 
 
 export function proxy(request: NextRequest) {
@@ -26,5 +26,6 @@ export const config = {
         "/dashboard/:path*", 
         "/gigs/:path*", 
         "/orders/:path*", 
+        "/onboarding/:path*", 
         "/settings/:path*"],
 }

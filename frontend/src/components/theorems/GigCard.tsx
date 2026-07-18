@@ -17,7 +17,7 @@ export interface GigCardProps{
     rating: { avgRating: number; reviewCount?: number; };
     seller: { avatar: string; name: string; isOnline: boolean; level?: SellerLevel }
     tags?: string[];
-    variant?: "default" | "compact" | "list";
+    variant?: "default" | "compact" | "list" | "grid";
     isFavorited?: boolean;
     onFavorite?: () => void; // Not really sure what to write here
 }
@@ -37,6 +37,7 @@ export function GigCard({
 }: GigCardProps) {
     const isCompact = variant === "compact";
     const isList = variant === "list";
+    const isGrid = variant === "grid";
 
     return (
         <Card
@@ -50,7 +51,7 @@ export function GigCard({
                 "relative", 
                 isList 
                     ? "w-40 shrink-0" 
-                    : "w-full aspect-video")}>
+                    :  "w-full aspect-video")}>
                 <Image 
                     src={thumbnail} 
                     alt={title} 
@@ -89,9 +90,9 @@ export function GigCard({
                     <PriceTag price={price} showFrom size={isCompact ? "sm" : "lg"} />
                 </div>
 
-                <div className="flex">
+                <div className="flex flex-wrap">
                     {tags && (tags.map((t, i) => (
-                        <span key={i}  className="mx-1 px-2 p-1 rounded-xl bg-foreground text-xs text-muted/90 font-bold">{t}</span>
+                        <span key={i}  className="m-1 px-2 p-1 rounded-xl bg-foreground text-xs text-muted/90 font-bold">{t}</span>
                     )))}
                 </div>
             </div>

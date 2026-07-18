@@ -46,7 +46,7 @@ export function Navbar() {
                         </PopoverContent>
                     </Popover>
                 ) : (
-                    <Link href="/login" className="text-sm font-medium">
+                    <Link href="/login" className="hover:bg-foreground hover:text-background px-4 py-3 rounded-md cursor-pointer text-sm font-medium duration-150">
                         Log in
                     </Link>
                 )}

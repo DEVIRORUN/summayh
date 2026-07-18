@@ -1,112 +1,194 @@
-import { RatingInline } from "@/components/axiom/RatingInline";
-import { PriceTag } from "@/components/axiom/PriceTag";
-import { SellerMiniRow } from "@/components/axiom/SellerMiniRow";
-import { EmptyStateWrapper } from "@/components/wrapper/EmptyStateWrapper";
-import { OrderStatusTimeline } from "@/components/axiom/OrderStatusTimeline";
-import { StatsRow } from "@/components/axiom/StatsRow";
-import { CheckCircle2, Clock, Calendar } from "lucide-react";
-import { FeatureListItem } from "@/components/axiom/FeatureListItem";
-import { PricingSection } from "@/components/wrapper/PricingWrapper";
-import { GigsSection } from "@/components/wrapper/GigCardWrapper";
-import OrdersPage from "@/components/wrapper/OrderCardWrapper";
-import MockUploadContainer from "@/components/wrapper/UploadContainer";
-import { EarningsSummary } from "@/components/wrapper/Dashboardsummary";
-import MockOrders from "@/components/wrapper/MockTable";
-import MockFilterSidebarContainer from "@/components/wrapper/MockFilterSidebarContainer";
-import MockSortContainer from "@/components/wrapper/MockSortContainer";
-import GalleryDemoPage from "@/components/wrapper/GigGalleryMock";
-import MockGigAccordionContainer from "@/components/wrapper/MockGigAccordion";
-import MockReviewSummaryContainer from "@/components/wrapper/ReviewSummaryMock";
-import MockCarouselContainer from "@/components/wrapper/GigCarouselWrapper";
-import ShareDemoPage from "@/components/wrapper/ShareModalWrapper";
-import { HeroWrapper } from "@/components/wrapper/HeroWrapper";
-import { SearchManager } from "@/components/wrapper/SearchWrapper";
-import { TestimonialSection } from "@/components/wrapper/TestimonialWrapper";
-import { ProfileNavigation } from "@/components/wrapper/ProfileTabsWrapper";
+import { HeroSearchHandler } from "@/components/shared/HeroSearchHandler";
+import {
+  Code,
+  Video,
+  PenTool,
+  Megaphone,
+  Music,
+  Camera,
+  Wallet,
+  ShieldCheck,
+  Headphones,
+  Cpu,
+  Cloud,
+  Search,
+  FileText,
+  ShoppingBag,
+  NotebookPen,
+  BarChart3,
+  Shield,
+  Palette,
+  Layout,
+  Share2,
+} from "lucide-react";
+import { getTrendingCategories } from "@/lib/categories";
+import { getTestimonial } from "@/lib/testimonial";
+import { CategoryGrid } from "@/components/axiom/Category";
+import { HowItWorksSteps } from "@/components/axiom/HowItWorks";
+import { TestimonialCard } from "@/components/axiom/TestimonialCard";
+import { TrustBadgesRow } from "@/components/axiom/TrustBadgeRow";
 
-export default function Home() {
+async function getHomepageData() {
+  try {
+    const trendingCategory = await getTrendingCategories();
+    const testimonials = await getTestimonial();
 
-  const normalSteps = [
-    { id: "placed", label: "Order Placed", status: "completed" as const, timestamp: "Jul 10, 9:02 AM" },
-    { id: "progress", label: "In Progress", status: "current" as const },
-    { id: "delivered", label: "Delivered", status: "upcoming" as const },
-    { id: "completed", label: "Completed", status: "upcoming" as const },
-  ];
+    return { trendingCategory, testimonials };
+  } catch (error) {
+    console.error(error);
+    return { trendingCategory: [], testimonials: [] }
+  }
+}
 
-  // Fully completed order
-  const completedSteps = [
-    { id: "placed", label: "Order Placed", status: "completed" as const, timestamp: "Jul 1, 10:14 AM" },
-    { id: "progress", label: "In Progress", status: "completed" as const, timestamp: "Jul 2, 3:40 PM" },
-    { id: "delivered", label: "Delivered", status: "completed" as const, timestamp: "Jul 5, 11:00 AM" },
-    { id: "completed", label: "Completed", status: "completed" as const, timestamp: "Jul 6, 8:22 AM" },
-  ];
+const iconClass = "w-6 h-6";
+// Categories
+const categories = [
+  {
+    id: "1",
+    name: "Web Dev",
+    icon: <Code className="w-6 h-6" />,
+    href: "/search?category=web-dev",
+  },
+  {
+    id: "2",
+    name: "AI & Automation",
+    icon: <Cpu className="w-6 h-6" />,
+    href: "/search?category=ai-automation",
+  },
+  {
+    id: "3",
+    name: "Data Analytics",
+    icon: <BarChart3 className="w-6 h-6" />,
+    href: "/search?category=data-analytics",
+  },
+  {
+    id: "4",
+    name: "Cybersecurity",
+    icon: <Shield className="w-6 h-6" />,
+    href: "/search?category=cybersecurity",
+  },
+  {
+    id: "5",
+    name: "Cloud & DevOps",
+    icon: <Cloud className="w-6 h-6" />,
+    href: "/search?category=cloud-devops",
+  },
+  {
+    id: "6",
+    name: "SEO",
+    icon: <Search className="w-6 h-6" />,
+    href: "/search?category=seo",
+  },
+  {
+    id: "7",
+    name: "Marketing",
+    icon: <Megaphone className="w-6 h-6" />,
+    href: "/search?category=marketing",
+  },
+  {
+    id: "8",
+    name: "Copywriting",
+    icon: <PenTool className="w-6 h-6" />,
+    href: "/search?category=copywriting",
+  },
+  {
+    id: "9",
+    name: "Video Editing",
+    icon: <Video className="w-6 h-6" />,
+    href: "/search?category=video-editing",
+  },
+  {
+    id: "10",
+    name: "Design",
+    icon: <Palette className="w-6 h-6" />,
+    href: "/search?category=design",
+  },
+  {
+    id: "11",
+    name: "UX/UI Design",
+    icon: <Layout className="w-6 h-6" />,
+    href: "/search?category=ux-ui-design",
+  },
+  {
+    id: "12",
+    name: "Technical Writing",
+    icon: <FileText className="w-6 h-6" />,
+    href: "/search?category=technical-writing",
+  },
+  {
+    id: "13",
+    name: "E-commerce",
+    icon: <ShoppingBag className="w-6 h-6" />,
+    href: "/search?category=ecommerce",
+  },
+  {
+    id: "14",
+    name: "Social Media",
+    icon: <Share2 className="w-6 h-6" />,
+    href: "/search?category=social-media",
+  },
+  {
+    id: "15",
+    name: "Content Writing",
+    icon: <NotebookPen className="w-6 h-6" />,
+    href: "/search?category=content-writing",
+  },
+];
 
-  // Disputed order (branch off, fewer steps, ends in failed)
-  const disputedSteps = [
-    { id: "placed", label: "Order Placed", status: "completed" as const, timestamp: "Jul 8, 1:00 PM" },
-    { id: "progress", label: "In Progress", status: "completed" as const, timestamp: "Jul 9, 4:15 PM" },
-    { id: "disputed", label: "Disputed", status: "failed" as const, timestamp: "Jul 11, 2:30 PM" },
-  ];
+const howItWorksSteps = [
+  {
+    icon: <Code className={iconClass} />,
+    title: "Post of find a gig",
+    description: "Browse gigs or post what you need done.",
+  },
+  {
+    icon: <ShieldCheck className={iconClass} />,
+    title: "Pay securely",
+    description: "Funds are held in escrow until you approve delivery..",
+  },
+  {
+    icon: <Wallet className={iconClass} />,
+    title: "Get it done",
+    description: "Receive your work and release payment to the seller.",
+  },
+];
+
+const trustBadges = [
+  {
+    icon: <ShieldCheck className="w-4 h-4" />,
+    label: "Secure escrow payments.",
+  },
+  { icon: <Wallet className="w-4 h-4" />, label: "Verified sellers." },
+  { icon: <Headphones className="w-4 h-4" />, label: "24/7 support." },
+];
+
+export default async function HomePage() {
+  const { trendingCategory, testimonials } = await getHomepageData();
 
   return (
-    <main className="min-h-screen py-5 flex flex-col items-center gap-1.5 justify-center">
-      <h1>I need money more than anything</h1>
-      <RatingInline  avgRating={4.34} reviewCount={45} size={"lg"} />
-      <PriceTag  price={5000} showFrom={true} size="lg"  />
-      <SellerMiniRow  
-        avatar="https://hsfrsqsscahuvkakghab.supabase.co/storage/v1/object/public/SUMMAYH/WIN_20260712_16_10_11_Pro.jpg" 
-        name="Abdulmalik ahmed" 
-        isOnline={true} 
-        level={"apex"} 
-        compact={true} />
-        <ShareDemoPage />
-        <HeroWrapper />
-        <SearchManager />
-        <PricingSection />
-        <EarningsSummary />
-        {/* <Calender /> */}
-        <ProfileNavigation />
-        <MockUploadContainer />
-        {/* <MockOrders /> */}
-        <MockSortContainer />
-        <TestimonialSection />
-        <MockReviewSummaryContainer />
-        {/* <MockCarouselContainer /> */}
-        <MockFilterSidebarContainer />
-        <GalleryDemoPage />
-        <MockGigAccordionContainer />
-        <GigsSection 
-          url="https://hsfrsqsscahuvkakghab.supabase.co/storage/v1/object/public/SUMMAYH/logo-test.jpg"
-          avatar="https://hsfrsqsscahuvkakghab.supabase.co/storage/v1/object/public/SUMMAYH/seller-avatar.webp"/>
-        <OrdersPage />
-        <FeatureListItem label="Source files included" included={true} />
-        <FeatureListItem label="Commercial license" included={false} />
-        <EmptyStateWrapper />
-        {/* <OrderStatusTimeline steps={normalSteps} variant="line" orientation="horizontal" /> */}
-        <OrderStatusTimeline steps={normalSteps} variant="line" orientation="vertical" />
-        <OrderStatusTimeline steps={disputedSteps} variant="line" orientation="horizontal" />
-        <OrderStatusTimeline steps={disputedSteps} variant="boxes" orientation="horizontal" />
-        <OrderStatusTimeline steps={normalSteps} variant="boxes" orientation="vertical" /> 
-        <StatsRow
-          layout="grid"
-          stats={[
-            { 
-              label: "Orders Completed", 
-              value: "152", 
-              icon: <CheckCircle2 className="w-5 h-5" /> 
-            },
-            { 
-              label: "Response Time", 
-              value: "2 hrs", 
-              icon: <Clock className="w-5 h-5" /> 
-            },
-            { 
-              label: "Member Since", 
-              value: "Jan 2024", 
-              icon: <Calendar className="w-5 h-5" /> 
-            },
-          ]}
-        />
+    <main className="flex flex-col gap-16 pb-16">
+      <HeroSearchHandler />
+
+      <section className="px-4 max-w-6xl mx-auto w-full">
+        <h2 className="text-lg font-semibold mb-4">Browse categories</h2>
+        <CategoryGrid variant="inline" categories={categories} /> {/* trendingCategory */}
+      </section>
+
+      <section className="px-4 max-w-6xl mx-auto w-full">
+        <h2 className="text-lg font-semibold mb-8 text-center">
+          How SUMMAYH works
+        </h2>
+        <HowItWorksSteps steps={howItWorksSteps} /> {/* trendingCategory */}
+      </section>
+
+      <section className="px-4 max-w-6xl mx-auto w-full">
+        <h2 className="text-lg font-semibold mb-8 text-center">What people are saying</h2>
+        {testimonials.map((t, i) => (
+          <TestimonialCard key={i} quote={t.quote} author={t.author}/>
+        ))}
+      </section>
+
+      <TrustBadgesRow badges={trustBadges} />
     </main>
-  )
+  );
 }
