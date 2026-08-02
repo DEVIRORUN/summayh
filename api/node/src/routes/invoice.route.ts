@@ -15,7 +15,6 @@ const router = Router()
  *           - bearerAuth: []
  */
 router.post("/create", protectRoute, InvoiceController.create);
-
 /**
  * @openapi
  * /api/invoices/{invoiceId}:
@@ -31,6 +30,5 @@ router.get("/:invoiceId", InvoiceController.getById)
  *       summary: Public - buyer submits email/name and gets a checkout link
  *       tags: [Invoices]
  */
-router.get("/:invoiceId/pay", InvoiceController.pay)
 
 export default router;

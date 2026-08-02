@@ -6,10 +6,6 @@ import https from "https";
 export class PaystackService {
     private static secretKey = process.env.PAYSTACK_SECRET_KEY;
 
-    // private static get secretKey() {
-    //     return process.env.PAYSTACK_SECRET_KEY;
-    // }
-
     static async initiateRefund(transactionReference: string, amountInKobo: number): Promise<any> {
         try {
             const response = await axios.post(
@@ -33,7 +29,6 @@ export class PaystackService {
            
         }
     }
-
     /**
      * Releases escrow funds directly to the seller's account
      * @param subaccountCode The Paystack subaccount ID assigned to the seller (e.g., ACCT_xxxxxx)
@@ -67,7 +62,6 @@ export class PaystackService {
             throw new Error(error.response?.data?.message || "Failed to execute escrow release transfer.");
         }
     }
-
     /**
      * Creates a dedicated Paystack subaccount for a seller
      * @param businessName The seller's brand/display name or full name
@@ -108,7 +102,6 @@ export class PaystackService {
              
         }
     }
-
     static async getSupportedBanks(): Promise<any> {
         const agent = new https.Agent({ rejectUnauthorized: false });
 
@@ -128,7 +121,6 @@ export class PaystackService {
             
         }
     }
-
     static async initializeTransaction(email: string, amountInNaira: number, metadata: Record<string, unknown>): Promise<any> {
         const amountInKobo = amountInNaira * 100;
 
@@ -138,7 +130,8 @@ export class PaystackService {
                 {
                     email,
                     amount: amountInKobo,
-                    metadata
+                    metadata,
+                    callback_url: `${process.env.FRONTEND_URL}/orders/callback` // Send back to FE
                 },
                 {
                     headers: {
@@ -154,5 +147,57 @@ export class PaystackService {
             throw new Error("Failed to initialize Transaction");
         }
         
+    }
+    static async verifyTransaction(reference: string): Promise<any> {
+        try {
+            const response = await axios.get(
+                    `https://api.paystack.co/transaction/${reference}`,
+                    { headers: { Authorization: `Bearer ${this.secretKey}` } }
+            );
+            return response.data;
+        } catch(error: any) {
+            console.error(" [Paystack Verify Transaction Error]: ", error.response?.data || error.message);
+            throw new Error("Failed to verify transaction");
+        }
+    }
+    static async createTransferRecipient(accountNumber: string, bankCode: string, name: string): Promise<any> {
+        try {
+            const response = await axios.post(
+                "https://api.paystack.co/transferrecipient",
+                {
+                    type: "nuban",
+                    name,
+                    account_number: accountNumber,
+                    bank_code: bankCode,
+                    currency: "NGN"
+                },
+                { headers: { Authorization: `Bearer ${this.secretKey}` } }
+            )
+
+            return response.data.data.recipient_code;
+        } catch(error: any) {
+            console.error("ERROR CREATING TRANSFER RECIPIENT", error)
+            throw new Error("Failed to create transfer recipient")
+        }
+    }
+    static async initiateTransfer(recipientCode: string, amountInKobo: number, reference: string, reason: string): Promise<any> {
+        try {
+            const response = await axios.post(
+                "https://api.paystack.co/transfer",
+                {
+                    source: "balance",
+                    amount: amountInKobo,
+                    recipient: recipientCode,
+                    reference,
+                    reason,
+                },
+                { headers: { Authorization: `Bearer ${this.secretKey}` } }
+            )
+
+            return response.data.data;
+        } catch(error: any) {
+            console.error("ERROR IINITIATING TRANSFER", error?.response?.data)
+            throw new Error("Failed to inititae transfer.")
+        }
     }
 }

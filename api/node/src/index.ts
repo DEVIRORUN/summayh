@@ -9,9 +9,13 @@ import cors from "cors";
 
 import authRoutes from "./routes/auth";
 import adminRoutes from "./routes/admin.route";
+import testimonialRoutes from "./routes/testimonial.route";
+import ategoryRoutes from "./routes/category.route";
 import userRoutes from "./routes/user.route";
 import foundersPassRoutes from "./routes/foundersPass.route";
 import orderRoutes from "./routes/order.route"
+import messageRoutes from "./routes/message.route"
+import paymentRoutes from "./routes/payment.route"
 import sellerRoutes from "./routes/seller.route"
 import gigRoutes from "./routes/gig.route"
 import TermiiRoutes from "./routes/termii.route"
@@ -205,10 +209,14 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // Mount our routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/testimonial", testimonialRoutes);
+app.use("/api/category", ategoryRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/founders-pass", foundersPassRoutes);
-app.use("/api/webhooks", webhookRouter);
+app.use("/api/webhook", webhookRouter);
 app.use("/api/orders", orderRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/payment", paymentRoutes);
 app.use("/api/seller", sellerRoutes);
 app.use("/api/gig", gigRoutes);
 app.use("/api/otp", TermiiRoutes);

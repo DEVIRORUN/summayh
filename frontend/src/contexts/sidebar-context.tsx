@@ -15,11 +15,11 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
     return (
         <SidebarContext.Provider
-        value={{
-            isOpen,
-            toggle: () => setIsOpen(o => !o),
-            close: () => setIsOpen(false),
-        }}
+            value={{
+                isOpen,
+                toggle: () => setIsOpen(o => !o),
+                close: () => setIsOpen(false),
+            }}
         >
             {children}
         </SidebarContext.Provider>

@@ -1,5 +1,6 @@
 import { Response, Request, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { prisma } from "../utils/prisma";
 
 
 // Define admin
@@ -10,24 +11,32 @@ export interface AdminRequest extends Request {
 
 
 
-export const isAdmin = (req: AdminRequest, res: Response, next: NextFunction): any => {
-    // Grabs the header to take the token to verify
-    const authHeader = req.headers.authorization;
+export const isAdmin = async (req: AdminRequest, res: Response, next: NextFunction): Promise<any> => {
+    const token = req.cookies.token;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(400).json({
-            message: "Unauthorized. No token provided"
-        })
+    if (!token) {
+        return res.status(401).json({
+            message: "Unauthorized. No token provided."
+        });
     }
-
-    // Split the string to get the token
-    const token = authHeader.split(" ")[1];
 
     try {
         const decoded = jwt.verify(
             token,
-            process.env.JWT_SECRET as string || "summayh_dev_secret_key_0627"
-        ) as { userId: string; role: string; };
+            process.env.JWT_SECRET as string
+        ) as { userId: string; role: string; tokenVersion: number };
+
+        // Might wanna check is admin was banned by SUPIEROR ADMIN
+        const user = await prisma.user.findUnique({
+            where: { id: decoded.userId },
+            select: { tokenVersion: true, isBanned: true }
+        });
+
+        if (!user || user.isBanned || user.tokenVersion !== decoded.tokenVersion) {
+            return res.status(403).json({
+                message: "Acces denied. you have been blocked by SUPERIOR ADMIN"
+            })
+        }
 
         // 3. Strict gatekeeping check: Bounce them out if they aren't an admin
         if (decoded.role !== "ADMIN") {

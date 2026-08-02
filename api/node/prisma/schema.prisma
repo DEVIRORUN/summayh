@@ -36,7 +36,14 @@ enum Service {
   PHYSICAL
 }
 
+enum GigDeliveryMode {
+  DIGITAL
+  LIVE
+  PHYSICAL
+}
+
 enum State {
+  DRAFT
   ACTIVE
   PAUSED
   INACTIVE
@@ -113,6 +120,21 @@ enum ProSource {
   SUBSCRIPTION
 }
 
+enum LedgerEntryType {
+  EARNING // Landing in seller's
+  WITHDRAWAL // To seller's bank account
+  REFUND
+  FEE // My fee
+  ADJUSTMENT // manual/admin correction <--
+}
+
+enum LedgerEntryStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
 // model TestConnection {
 //   id        String   @id @default(uuid())
 //   createdAt DateTime @default(now())
@@ -126,7 +148,9 @@ model User {
   name               String
   username           String?
   university         String           @default("Unkown University")
-  dateOfBirth        DateTime
+  dateOfBirth        DateTime?
+  avatar             String?
+  isOnline Boolean?
   phoneNumber        String?          @unique
   isPhoneVerified    Boolean          @default(false)
   role               Role             @default(BUYER)
@@ -138,12 +162,19 @@ model User {
   updatedAt          DateTime         @updatedAt
 
   // Relationships
-  sellerProfile   SellerProfile?
-  orders          Order[]
-  otpVerification OTPVerification?
-  reviews         Review[]
-  dispute         Dispute[]
-  invoices        Invoice[]
+  sellerProfile        SellerProfile?
+  orders               Order[]
+  otpVerification      OTPVerification?
+  reviews              Review[]
+  dispute              Dispute[]
+  ledgerEntries        LedgerEntry[]
+  invoices             Invoice[]
+  testimonialWritten   Testimonial[]
+  withdrawals          Withdrawal[]
+  messages             Message[]
+  conversations        Conversation[]
+  conversationsAsUserA Conversation[]   @relation("ConversationsAsUserA")
+  conversationsAsUserB Conversation[]   @relation("ConversationsAsUserB")
 }
 
 model SellerProfile {
@@ -158,15 +189,16 @@ model SellerProfile {
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
   phoneNumber            String?  @unique
+  avatar                 String? // Just about to be added(migartion))
 
   // Stats
   isOnline     Boolean   @default(false)
   lastActiveAt DateTime?
 
   // Pro field
-  isPro         Boolean   @default(false)
-  proSource ProSource?
-  founderBadge  Boolean   @default(false)
+  isPro         Boolean    @default(false)
+  proSource     ProSource?
+  founderBadge  Boolean    @default(false)
   founderPassAt DateTime?
 
   proExpiresAt DateTime?
@@ -185,6 +217,9 @@ model SellerProfile {
   dispute               Dispute[]
   foundersPassPurchases FoundersPassPurchase[]
   invoices              Invoice[]
+  testimonialWritten    Testimonial[]
+  withdrawals           Withdrawal[]
+  ledgerEntries         LedgerEntry[]
 }
 
 model FoundersPassPurchase {
@@ -213,15 +248,19 @@ model Gig {
   sellerId     String
   categoryId   String // Changed from String? to required once you migrate
   title        String
-  description  String
+  description  String?
   tags         String[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
   service      Service  @default(DIGITAL)
   state        State    @default(ACTIVE)
   coverImage   String?
+  images       String[]
+  video        String?
   avgRating    Float    @default(0)
   totalReviews Int      @default(0)
+
+  deliveryMode GigDeliveryMode @default(DIGITAL)
 
   // Embedding
   embedding Unsupported("vector(768)")?
@@ -240,6 +279,7 @@ model Gig {
   orders               Order[]
   reviews              Review[]
   gigStats             GigStats?
+  gigFAQs              GigFAQ[]
 }
 
 model GigStats {
@@ -299,6 +339,19 @@ model TierQuantityPrice {
   @@unique([gigTierId, quantity]) // no duplicate quantity bands per tier
 }
 
+model GigFAQ {
+  id        String   @id @default(uuid())
+  gigId     String
+  question  String
+  answer    String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  gig Gig @relation(fields: [gigId], references: [id], onDelete: Cascade)
+}
+
+// model GigImage
+
 model Category {
   id        String   @id @default(uuid())
   name      String   @unique
@@ -309,17 +362,19 @@ model Category {
   // Self-referencing relations
   parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children Category[] @relation("CategoryHierarchy")
+  orders   Order[]
 
   // The connection back to your Gigs
   gigs Gig[]
 }
 
 model Order {
-  id        String @id @default(uuid())
-  sellerId  String
-  buyerId   String
-  gigId     String
-  gigTierId String // the tier that was ordered
+  id         String @id @default(uuid())
+  sellerId   String
+  buyerId    String
+  categoryId String
+  gigId      String
+  gigTierId  String // the tier that was ordered
 
   // frozen at order time (SNAPSHOT)
   tierLabelSnapshot     TierLabel
@@ -333,6 +388,8 @@ model Order {
   revisionCountSnapshot Int
   requirements          Json?
 
+  deliveryFiles String? //should be String[]
+
   cancelReason String?
 
   status                  OrderStatus @default(PENDING)
@@ -343,12 +400,57 @@ model Order {
   paymentReference        String?     @unique
 
   // Relationships
-  buyer   User          @relation(fields: [buyerId], references: [id])
-  seller  SellerProfile @relation(fields: [sellerId], references: [id])
-  gigTier GigTier       @relation(fields: [gigTierId], references: [id])
-  gig     Gig           @relation(fields: [gigId], references: [id])
-  dispute Dispute?
-  review  Review?
+  buyer         User          @relation(fields: [buyerId], references: [id])
+  seller        SellerProfile @relation(fields: [sellerId], references: [id])
+  category      Category?     @relation(fields: [categoryId], references: [id])
+  gigTier       GigTier       @relation(fields: [gigTierId], references: [id])
+  gig           Gig           @relation(fields: [gigId], references: [id])
+  dispute       Dispute?
+  review        Review?
+  ledgerEntries LedgerEntry[]
+}
+
+model LedgerEntry {
+  id           String            @id @default(uuid())
+  userId       String
+  withdrawalId String?
+  type         LedgerEntryType
+  status       LedgerEntryStatus @default(PENDING)
+  amount       Decimal           @db.Decimal(12, 2)
+  orderId      String?
+  description  String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  // relations
+  order           Order?         @relation(fields: [orderId], references: [id])
+  withdrawal      Withdrawal?    @relation(fields: [withdrawalId], references: [id])
+  user            User?          @relation(fields: [userId], references: [id])
+  sellerProfile   SellerProfile? @relation(fields: [sellerProfileId], references: [id])
+  sellerProfileId String?
+
+  @@index([userId, status])
+  @@index([userId, createdAt])
+}
+
+model Withdrawal {
+  id                    String            @id @default(cuid())
+  userId                String
+  amount                Decimal           @db.Decimal(12, 2)
+  status                LedgerEntryStatus @default(PENDING)
+  paystackTransferCode  String?
+  paystackTransferId    String?
+  paystackRecipientCode String?
+  failureReason         String?
+  requestedAt           DateTime          @default(now())
+  completedAt           DateTime?
+
+  user            User?          @relation(fields: [userId], references: [id])
+  ledgerEntries   LedgerEntry[]
+  sellerProfile   SellerProfile? @relation(fields: [sellerProfileId], references: [id])
+  sellerProfileId String?
+
+  @@index([userId, status])
 }
 
 model OTPVerification {
@@ -442,4 +544,58 @@ model AgentDecision {
 
   @@index([agentName])
   @@index([createdAt])
+}
+
+model Conversation {
+  id            String    @id @default(uuid())
+  userAId       String
+  userBId       String
+  lastMessageAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  userA    User      @relation("ConversationsAsUserA", fields: [userAId], references: [id])
+  userB    User      @relation("ConversationsAsUserB", fields: [userBId], references: [id])
+  messages Message[]
+  user     User?     @relation(fields: [userId], references: [id])
+  userId   String?
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+}
+
+model Message {
+  id             String    @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String
+  seenAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  // relations
+  sender       User         @relation(fields: [senderId], references: [id])
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId, createdAt])
+}
+
+model Testimonial {
+  id       String @id @default(uuid())
+  sellerId String
+
+  buyerId String
+
+  reviewerTitle String?
+  text          String   @db.Text
+  rating        Int
+  createdAt     DateTime @default(now())
+  writtenAt     DateTime @updatedAt()
+
+  // relations
+  seller SellerProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  buyer  User          @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@index([sellerId])
+  @@index([buyerId])
 }

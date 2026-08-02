@@ -21,8 +21,8 @@ export default function DashboardPage() {
         <div className="p-6">
             <h1 className="text-2xl font-semibold">Welcome back, {user.name}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-                {user.role === "SELLER" ? "Seller dashboard" : "Buyer dashboard"}
-                {user.isPro && " · Pro"}
+                {user.role === "SELLER" ? "Seller dashboard . " : "Buyer dashboard"}
+                {user.isPro && <span className="font-bold">Pro</span>}
             </p>
         </div>
     )

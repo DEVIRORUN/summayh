@@ -29,32 +29,29 @@ export function PricingTierTabs({
 
     return (
         <>
-            {/* Mobile */}
-            <div className="md:hidden">
+            <div className="lg:hidden">
                 <Tabs value={selectedTier} onValueChange={(val) => handleSelect(val as TierId)}>
-                    <TabsList className="w-full mb-2">
+                    <TabsList className="w-full rounded-md mb-4">
                         {tiers.map((t) => (
-                            <TabsTrigger key={t.tier} value={t.tier} className="flex-1">
-                                {t.theme.label}
+                            <TabsTrigger key={t.tier} value={t.tier} className="flex-1 capitalize rounded-xs">
+                                {t.tier}
                             </TabsTrigger>
                         ))}
                     </TabsList>
-
+                    
                     {tiers.map((t) => (
-                        <TabsContent key={t.tier} value={t.tier}>
+                        <TabsContent key={t.tier} value={t.tier} className="focus-visible:outline-none">
                             <PricingTierCard
                                 {...t}
-                                isSelected={selectedTier === t.tier}
+                                isSelected={true} // It's the active tab, so it's always selected
                                 onSelect={() => handleSelect(t.tier)}
                             />
                         </TabsContent>
                     ))}
                 </Tabs>
             </div>
-            
 
-            {/* Desktop: all three in columns */}
-            <div className={cn("hidden md:grid md:grid-cols-3 md:gap-4")}>
+            <div className="hidden lg:grid lg:grid-cols-3 lg:gap-4">
                 {tiers.map((t) => (
                     <PricingTierCard
                         key={t.tier}

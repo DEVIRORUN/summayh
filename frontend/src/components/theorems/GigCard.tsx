@@ -7,30 +7,49 @@ import { RatingInline } from "../axiom/RatingInline";
 import { SellerMiniRow, type SellerLevel } from "../axiom/SellerMiniRow";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import Link from "next/link";
+
+export interface GigTier {
+  id?: string;
+  name?: string;
+  price?: number | string;
+  deliveryDays?: number;
+  key: string;
+}
 
 export interface GigCardProps{
     id: string;
     title: string;
-    thumbnail: string;
+    thumbnail?: string;
+    coverImage?: string;
+    tiers?: GigTier[] | string[]
     price: number
     deliveryTime: string;
     rating: { avgRating: number; reviewCount?: number; };
-    seller: { avatar: string; name: string; isOnline: boolean; level?: SellerLevel }
+    avgRating?: number;
+    totalReviews?: number;
+    seller: { avatar: string; name: string; sellerUsername?: string; isOnline: boolean; level?: SellerLevel }
     tags?: string[];
+    createdAt?: string | number | Date | undefined;
     variant?: "default" | "compact" | "list" | "grid";
     isFavorited?: boolean;
-    onFavorite?: () => void; // Not really sure what to write here
+    onFavorite?: (id: string) => void; // Not really sure what to write here
 }
 
 
 export function GigCard({
+    id,
     title,
+    coverImage,
     thumbnail,
+    tiers,
     price,
     deliveryTime,
     rating,
+    avgRating,
+    totalReviews,
     seller,
-    tags,
+    tags = [],
     variant = "default",
     isFavorited = false,
     onFavorite,
@@ -39,63 +58,91 @@ export function GigCard({
     const isList = variant === "list";
     const isGrid = variant === "grid";
 
+    const reviewCount = rating?.reviewCount ?? 0;
+
+    const displayPrice = price ?? (
+        Array.isArray(tiers) && tiers.length > 0 && typeof tiers[0] === "object"
+            ? Math.min(...(tiers as GigTier[]).map((t) => Number(t.price) || 0))
+            : 0
+    )
+
+    const displayDelivery = deliveryTime ?? (
+        Array.isArray(tiers) && tiers.length > 0 && typeof tiers[0] === "object"
+            ? `${(tiers[0] as GigTier).deliveryDays} days`
+            : "1-3 days"
+    );
+
+    const displayAvgRating = avgRating ?? rating.avgRating ?? 0;
+    const displayReviewCount = totalReviews ?? rating?.reviewCount ?? 0;
+
+    const displayImage = coverImage || thumbnail || "/placeholder.jpg"
+    const sellerName = seller?.name || seller.sellerUsername || "Seller"
+    const sellerAvatar = seller?.avatar || "";
+
+
     return (
-        <Card
-            className={cn(
-                "overflow-hidden p-0",
-                isList ? "flex flex-row" : "flex flex-col"
-            )}
-        >
-            {/* Thumbnail */}
-            <div className={cn(
-                "relative", 
-                isList 
-                    ? "w-40 shrink-0" 
-                    :  "w-full aspect-video")}>
-                <Image 
-                    src={thumbnail} 
-                    alt={title} 
-                    fill 
-                    sizes={isList ? "160px" : "(max-width: 768px) 100vw, 300px" }
-                    className="object-cover"
-                    priority/>
-                <button
-                    onClick={onFavorite}
-                    className="absolute top-2 right-2 bg-background/80 rounded-full p-1.5"
-                >
-                    <Heart className={cn("w-4 h-4", isFavorited && "fill-red-500 text-red-500")} />
-                </button>
-            </div>
-
-            {/* Content */}
-            <div className={cn("flex flex-col gap-2 p-3", isList && "flex-1" )}>
-                <SellerMiniRow 
-                    avatar={seller.avatar}
-                    name={seller.name}
-                    isOnline={seller.isOnline}
-                    level={seller.level}
-                    compact={isCompact}
-                />
-
-                <p className={cn("font-medium line-clamp-2", isCompact ? "text-xs" : "text-sm")}>
-                    {title}
-                </p>
-
-                {!isCompact && (
-                    <RatingInline avgRating={rating.avgRating} reviewCount={rating.reviewCount} size="sm"/>
+        <Link href={`/gigs/${id}`}>
+            <Card
+                className={cn(
+                    "overflow-hidden p-0",
+                    isList ? "flex flex-row" : "flex flex-col"
                 )}
-
-                <div className="flex items-center justify-between mt-auto">
-                    <span className="text-xs text-muted-foreground">{deliveryTime}</span>
-                    <PriceTag price={price} showFrom size={isCompact ? "sm" : "lg"} />
+            >
+                {/* Thumbnail */}
+                <div className={cn(
+                    "relative", 
+                    isList 
+                        ? "w-40 shrink-0" 
+                        :  "w-full aspect-video")}>
+                    <Image 
+                        src={displayImage || "/placeholder.jpg"} 
+                        alt={title} 
+                        fill 
+                        sizes={isList ? "160px" : "(max-width: 768px) 100vw, 300px" }
+                        className="object-cover"
+                        priority/>
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation()
+                            onFavorite?.(id);
+                        }}
+                        className="absolute top-2 right-2 bg-background/80 rounded-full p-1.5"
+                    >
+                        <Heart className={cn("w-4 h-4", isFavorited && "fill-red-500 text-red-500")} />
+                    </button>
                 </div>
 
-                <div className="flex flex-wrap">
-                    {tags && (tags.map((t, i) => (
-                        <span key={i}  className="m-1 px-2 p-1 rounded-xl bg-foreground text-xs text-muted/90 font-bold">{t}</span>
-                    )))}
+                {/* Content */}
+                <div className={cn("flex flex-col gap-2 p-3", isList && "flex-1" )}>
+                    <SellerMiniRow 
+                        avatar={sellerAvatar}
+                        name={sellerName}
+                        isOnline={seller.isOnline}
+                        level={seller.level}
+                        compact={isCompact}
+                    />
+
+                    <p className={cn("font-medium line-clamp-2", isCompact ? "text-xs" : "text-sm")}>
+                        {title}
+                    </p>
+
+                    {!isCompact && (
+                        <RatingInline avgRating={displayAvgRating} reviewCount={displayReviewCount} size="sm"/>
+                    )}
+
+                    <div className="flex items-center justify-between mt-auto">
+                        <span className="text-xs text-muted-foreground">{displayDelivery}</span>
+                        <PriceTag price={displayPrice} showFrom size={isCompact ? "sm" : "lg"} />
+                    </div>
+
+                    <div className="flex flex-wrap">
+                        {tags && (tags.map((t, i) => (
+                            <span key={i}  className="m-1 px-2 p-1 rounded-xl bg-foreground text-xs text-muted/90 font-bold">{t}</span>
+                        )))}
+                    </div>
                 </div>
-            </div>
-        </Card>
+            </Card>
+        </Link>
     )
 }

@@ -1,18 +1,17 @@
-// api/node/src/utils/validators.ts
+import schoolsData from "../../../frontend/src/data/schools.json";
 
-const NIGERIAN_UNI_DOMAINS = [
-    "lautech.edu.ng",
-    "unilag.edu.ng",
-    "ui.edu.ng",
-    "oauife.edu.ng",
-    "unilorin.edu.ng",
-    "abu.edu.ng"
-    // Add more Nigerian university domains as needed
-]
+type School = { school: string; value: string } 
+
+const ALL_SCHOOLS: School[] = [...schoolsData.edu_ng, ...schoolsData.sch_ng];
+
+const ALLOWED_SCHOOL_DOMAINS = new Set(
+  ALL_SCHOOLS.map((s) => s.value.toLowerCase())
+)
 
 export const isValidEduEmail = (email: string): boolean => {
     if (!email || !email.includes("@")) return false;
 
     const domain = email.split("@")[1].toLowerCase();
-  return NIGERIAN_UNI_DOMAINS.includes(domain);
+
+  return ALLOWED_SCHOOL_DOMAINS.has(domain);
 }

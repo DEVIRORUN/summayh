@@ -14,11 +14,11 @@ export class FoundersPassController {
 
             const result = await FoundersPassService.initializeFoundersPassPayment(sellerId, email);
             return res.status(200).json({
-                message: "[FoundersPass Init Success]: Founder Pass initialized successfully",
+                message: new Date() + "-> [FoundersPass Init Success]: Founder Pass initialized successfully",
                 data: result
             });
         } catch(error: any) {
-            console.error("[FoundersPass Init Error]:", error.message);
+            console.error(new Date(),"-> [FoundersPass Init Error]:", error.message);
             return res.status(500).json({ message: error.message })
         }
     }
@@ -26,11 +26,11 @@ export class FoundersPassController {
         try {
             const result = await FoundersPassService.getFoundersPassAvailability();
             return res.status(200).json({
-                message: "[FoundersPass Availability  Success]: Check Successful",
+                message: new Date() + "-> [FoundersPass Availability  Success]: Check Successful",
                 data: result
             });
         } catch(error: any) {
-            console.error("[FoundersPass Availability Error]:", error.message);
+            console.error(new Date(),"-> [FoundersPass Availability Error]:", error.message);
             return res.status(500).json({ message: "Failed to fetch availability." });
         }
     }

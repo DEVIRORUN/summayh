@@ -6,7 +6,7 @@ export async function POST(request: Request) {
         // 1. extract the JSON body typed by the user in page
         const body = await request.json();
 
-        const backendRes = await proxyFetch(request, "/api/gigs/create", {
+        const backendRes = await proxyFetch(request, "/api/gig/create", {
             method: "POST",
             body: JSON.stringify(body),
         });
@@ -24,7 +24,8 @@ export async function POST(request: Request) {
 
         // 5. Success! Return
         return NextResponse.json(data);
-    } catch(error) {
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+    } catch (error) { 
+        console.error("Gig API Route Error:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }

@@ -25,7 +25,7 @@ export function GigsSection({ url, avatar }: GigsSectionProps) {
     // You can add your actual API call or state updates here!
   }
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-7.5">
+    <div className="flex gap-6 my-7.5">
       <GigCard
         id="1"
         title="I will create a professional 3D animated logo intro"

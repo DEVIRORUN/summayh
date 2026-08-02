@@ -91,7 +91,7 @@ async def search_gigs(payload: SearchRequest):
             SELECT
                 g.id, g.title, g.description, g.tags, g.service,
                 g."avgRating", g."totalReviews", g."coverImage", g."baseRankingScore",
-                sp."sellerUsername", sp."avgRating" as seller_rating, sp."isPro",
+                sp."sellerUsername", sp."avgRating" as seller_rating, sp."isPro", sp.avatar,
                 MIN(t.price) as starting_price,
                 1.0 as relevance
             FROM "Gig" g
@@ -103,7 +103,7 @@ async def search_gigs(payload: SearchRequest):
             {extra_conditions}
             GROUP BY g.id, g.title, g.description, g.tags, g.service,
                         g."avgRating", g."totalReviews", g."coverImage", g."baseRankingScore",
-                        sp."sellerUsername", sp."avgRating", sp."isPro"
+                        sp."sellerUsername", sp."avgRating", sp."isPro", sp.avatar
         """
         free_params = ilike_params + extra_params
 
@@ -115,7 +115,7 @@ async def search_gigs(payload: SearchRequest):
                 SELECT
                     g.id, g.title, g.description, g.tags, g.service,
                     g."avgRating", g."totalReviews", g."coverImage", g."baseRankingScore",
-                    sp."sellerUsername", sp."avgRating" as seller_rating, sp."isPro",
+                    sp."sellerUsername", sp."avgRating" as seller_rating, sp."isPro", sp.avatar,
                     MIN(t.price) as starting_price,
                     (1 - (g.embedding <=> %s::vector)) as relevance
                 FROM "Gig" g
@@ -127,7 +127,7 @@ async def search_gigs(payload: SearchRequest):
                 {extra_conditions}
                 GROUP BY g.id, g.title, g.description, g.tags, g.service,
                             g."avgRating", g."totalReviews", g."coverImage", g."baseRankingScore",
-                            sp."sellerUsername", sp."avgRating", sp."isPro", g.embedding
+                            sp."sellerUsername", sp."avgRating", sp."isPro", g.embedding, sp.avatar
                 HAVING (1 - (g.embedding <=> %s::vector)) > 0.5
             """
             pro_params = [query_embedding] + extra_params + [query_embedding]
@@ -176,8 +176,9 @@ async def search_gigs(payload: SearchRequest):
                 "sellerUsername": row[9], # index 8 is baseRankingScore, index 9 is sellerUsername
                 "sellerRating": float(row[10]) if row[10] else 0.0,
                 "isPro": bool(row[11]),
-                "startingPrice": float(row[12]) if row[12] else 0.0,
-                "relevance": round(float(row[13]), 4),
+                "avatar": row[12],
+                "startingPrice": float(row[13]) if row[13] else 0.0,
+                "relevance": round(float(row[14]), 4),
             })
 
         logger.info(f"[Search] Found {len(gigs)} gigs for query '{payload.query} ({len(all_rows)} before cap)")

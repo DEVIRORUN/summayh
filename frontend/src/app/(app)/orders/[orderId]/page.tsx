@@ -1,0 +1,75 @@
+import { PriceTag } from "@/components/axiom/PriceTag";
+import { OrderStatusTimeline, type TimelineStep } from "@/components/axiom/OrderStatusTimeline";
+// import { OrderRequirementsForm }
+import { OrderActionBar } from "@/components/axiom/OrderActionBar";
+import { ChatSection } from "@/components/theorems/ChatSection";
+import { getOrder } from "@/lib/order";
+import { getCurrentUser } from "@/lib/auth";
+
+
+function mapOrderStatusToSteps(status: string): TimelineStep[] {
+    const allSteps = ["PENDING", "ACTIVE", "DELIVERED", "COMPLETED"];
+    const currentIndex = allSteps.indexOf(status);
+
+    if (status === "CANCELLED" || status === "DISPUTED") {
+        return [{ id: "1", label: status === "CANCELLED" ? "Cancelled" : "Disputed", status: "failed" }]
+    }
+
+    return allSteps.map((s, i) => ({
+        id: s,
+        label: s.charAt(0) + s.slice(1).toLowerCase(),
+        status: i < currentIndex ? "completed" : i === currentIndex ? "current" : "upcoming",
+    }))
+}
+
+
+export default async function OrderDetailPage({ params }: { params: Promise<{ orderId: string }> }) {
+    const { orderId } =  await params;
+    const [order, currentUser] = await Promise.all([getOrder(orderId), getCurrentUser()]);
+    
+    console.log("CURRENT USER:", currentUser);
+    
+    if (!order) {
+        return <div className="max-w-4xl mx-auto px-4 py-16 text-center">Order not found.</div>
+    }
+    
+    if (!currentUser) {
+        return <div className="max-w-4xl mx-auto px-4 py-16 text-center">Please log in to view this order.</div>
+    }
+
+    const isBuyer = order?.buyer.id === currentUser?.id;
+    const otherUserId = isBuyer ? order?.seller.user.id : order?.buyer.id;
+
+
+    function handleSendMessage() {
+        console.log("Sending message")
+    }
+
+    return (
+        <div className="w-full max-w-5xl mx-auto px-4 py-8 flex flex-col gap-6 min-w-0">
+            <div className="w-full flex items-center justify-between border-b border-border pb-4 gap-4 min-w-0">
+                <div className="min-w-0 flex-1">
+                    <h1 className="text-xl font-semibold truncate">{order.gig.title}</h1>
+                    <p className="text-xs text-muted-foreground cursor-pointer">Order #{order.id.slice(0, 8)}</p>
+                </div>
+                <div className="shrink-0">
+                    <PriceTag price={Number(order.totalPrice)} size="lg"/>
+                </div>
+            </div>
+
+            <div className="w-full overflow-x-auto">
+                <OrderStatusTimeline steps={mapOrderStatusToSteps(order.status)} variant="line" orientation="horizontal" />
+            </div>
+
+            {/* {order.status === "ACTIVE" && !order.requirementsSubmittedAt && (
+                <OrderRequirementsForm orderId={order.id} /> I have not built this componenet yet
+            )} */}
+
+            <div className="w-full min-w-0">
+                <ChatSection otherUserId={otherUserId} currentUserId={currentUser.id}/>
+            </div>
+            
+            <OrderActionBar order={order} />
+        </div>
+    )
+}

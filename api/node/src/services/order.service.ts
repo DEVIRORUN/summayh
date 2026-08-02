@@ -42,8 +42,8 @@ export class OrderService {
                     throw new Error("This order is under dispute and cannot be modified until resolved.");
                 }
 
-                // Prevent duplicate if already paid
-                if (order.status === "PAID") {
+                // Prevent duplicate if already active not paid
+                if (order.status === "ACTIVE") {
                     console.log(`[Webhook Info]: Order ${orderId} is already marked as PAID.`);
                     return { success: true, duplicated: true };
                 }
@@ -52,7 +52,7 @@ export class OrderService {
                 const updatedOrder = await tx.order.update({
                     where: { id: orderId },
                     data: {
-                        status: 'PAID',
+                        status: 'ACTIVE',
                         paymentReference: reference,
                         updatedAt: new Date(),
                     },
@@ -86,7 +86,7 @@ export class OrderService {
             throw new Error("This order is under dispute and cannot be modified until resolved.");
         }
         
-        if (order.status !== "PAID") throw new Error("Only active orders can be delivered.");
+        if (order.status !== "ACTIVE") throw new Error("Only active orders can be delivered.");
 
         if (order.gig.sellerId !== sellerId) throw new Error("Unauthorized. Only the seller can deliver this order.");
 
@@ -135,6 +135,19 @@ export class OrderService {
 
         await PaystackService.releaseEscrowToSeller(sellerSubaccount, payoutAmountInKobo, orderId);
 
+        const payoutAmountInNaira = payoutAmountInKobo / 100;
+
+        await tx.ledgerEntry.create({
+            data: {
+                userId: order.gig.seller.userId,
+                type: "EARNING",
+                status: "COMPLETED",
+                amount: payoutAmountInNaira,
+                orderId: order.id,
+                description: `Earning from order ${order.id}`
+            }
+        })
+
         return { completedOrder, order }; // return order so controller has buyer/seller/data
     });
     
@@ -164,7 +177,7 @@ export class OrderService {
         return await prisma.order.update({
             where: { id: orderId },
             data: { 
-                status: "PAID",
+                status: "ACTIVE",
                 updatedAt: new Date()
             }
         });
@@ -172,6 +185,7 @@ export class OrderService {
     }
 
     static async getOrder(orderId: string, userId: string): Promise<any> {
+        console.log("[Order Service]: Hit!!");
         const order = await prisma.order.findUnique({
             where: { id: orderId },
             include: {
@@ -209,13 +223,13 @@ export class OrderService {
                 take: limit,
                 orderBy: { createdAt: "desc" },
                 include: {
-                    gig: { select: { title: true } },
-                    seller: { include: { user: { select: { name: true } } } }
+                    gig: { select: { title: true, coverImage: true } },
+                    seller: { select: { avatar: true, isOnline: true, user: { select: { name: true } } } }
                 }
             });
 
             const total = await prisma.order.count({ where: { buyerId: userId } });
-
+            console.log("ORDERS BY BUYERS: ", orders)
             return { data: orders, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
         } catch(error: any) {
             console.error("ERROR getting all order(s) as a Buyer", error)
@@ -237,13 +251,12 @@ export class OrderService {
                 take: limit,
                 orderBy: { createdAt: "desc" },
                 include: {
-                    gig: { select: { title: true } },
-                    buyer: { select: { name: true } }
+                    gig: { select: { title: true, coverImage: true } },
+                    buyer: { select: { name: true, avatar: true, isOnline: true } }
                 }
-            });
-
+            }); 
             const total = await prisma.order.count({ where: { sellerId: sellerProfile.id } });
-
+            console.log("ORDERS BY SELLERS: ", orders)
             return {
                 data: orders,
                 meta: {
@@ -257,6 +270,19 @@ export class OrderService {
             console.error("ERROR GETTING ORDER(S) AS SELLER", error);
             throw error;
         }
+    }
+
+    static async getOrderByReference(reference: string): Promise<any> {
+        const order = await prisma.order.findFirst({
+            where: { paymentReference: reference },
+            select: { id: true, status: true }
+        });
+
+        if(!order) {
+            throw new Error("Order not found for this payment reference.");
+        }
+
+        return order;
     }
 
     static async submitOrderRequirements(

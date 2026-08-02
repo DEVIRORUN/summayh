@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -19,7 +21,7 @@ export function GigGallery({ media }: GigGalleryProps) {
         {/* Main Display */}
       <div className="relative w-full aspect-video rounded-lg overflow-hidden ring-1 ring-muted-foreground bg-zinc-900">
         {media[active].type === "image" ? (
-          <Image src={media[active].url} alt="" fill sizes="600px" className="object-cover" />
+          <Image src={media[active].url} alt="" fill priority sizes="600px" className="object-cover" />
         ) : (
             // Inset-0 to make sure video conforms to aspect-video box
           <video src={media[active].url} controls className="absolut inset-0 w-full h-full object-cover" />
@@ -38,7 +40,7 @@ export function GigGallery({ media }: GigGalleryProps) {
                 active === i ? "border-primary" : "border-transparent")}
           >
             {m.type === "image" ? (
-                <Image src={m.type === "image" ? m.url : m.url} alt="" fill sizes="64px" className="object-cover" />
+                <Image src={m.type === "image" ? m.url : m.url} alt="" priority fill sizes="64px" className="object-cover" />
             ) : (
                 <video src={`${m.url}#t=0.1`} className="w-full h-full object-cover pointer-events-auto"></video>
             )}

@@ -20,6 +20,7 @@ Content-Type: application/json
   "password": "SecurePassword123"
 }
 
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI3MDljNDMwZS1kMzJhLTQ5NjQtYmY2OS00ZWQwN2IzMTU3OGEiLCJlbWFpbCI6InNleWlhZGViYXlvQGxhdXRlY2guZWR1Lm5nIiwicm9sZSI6IlNFTExFUiIsInRva2VuVmVyc2lvbiI6MCwiaWF0IjoxNzg1NDYxNTUwLCJleHAiOjE3ODYwNjYzNTB9.h1riYxIyk_OfbsPdeL-AWEYdcLrgE9ilIKttI6v2W6s
 ### Login BUYER
 POST http://localhost:3000/api/auth/login
 Content-Type: application/json
@@ -27,6 +28,24 @@ Content-Type: application/json
 {
   "email": "irorun757@lautech.edu.ng",
   "password": "Irorun1608"
+}
+
+### Login BUYER
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "idania@lasu.edu.ng",
+  "password": "AhmedIdan_717"
+}
+
+### Login BUYER
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "ola@uniben.edu.ng",
+  "password": "Olaidan_717"
 }
 
 

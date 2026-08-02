@@ -123,6 +123,43 @@ router.get("/seller", protectRoute, OrderController.getOrderAsSeller);
 
 /**
  * @openapi
+ * /api/orders/seller:
+ *   get:
+ *     summary: Get all orders belonging to the logged-in seller
+ *
+ *     tags:
+ *       - Orders
+ *
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *
+ *     responses:
+ *       200:
+ *         description: Seller orders retrieved successfully
+ *
+ *       401:
+ *         description: Unauthorized
+ *
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/verify/:reference", protectRoute, OrderController.verifyOrderByReference);
+
+/**
+ * @openapi
  * /api/orders/{orderId}:
  *   get:
  *     summary: Get a single Order

@@ -11,11 +11,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
     return (
         <div className="flex min-h-screen min-w-screen">
-            <Sidebar categories={categories} />
-            <div className="flex flex-1 flex-col">
+            {/* <Sidebar categories={categories} /> */}
+            <div className="flex flex-1 flex-col min-w-0">
                 <Navbar />
-                <main className="flex-1">{children}</main>
+                <main className="flex-1 min-w-0">{children}</main>
             </div>
         </div>
     )
 }
+

@@ -14,7 +14,7 @@ export function ReviewSummaryBar({ avgRating, totalReviews, breakdown }: ReviewS
   return (
     <div className="flex gap-6">
       <div className="flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold">{avgRating.toFixed(1)}</span>
+        <span className="text-3xl font-bold">{typeof avgRating === "number" ? avgRating.toFixed(1) : "0.0"}</span>
         <RatingInline avgRating={avgRating} size="sm" />
         <span className="text-xs text-muted-foreground mt-1">{totalReviews} reviews</span>
       </div>

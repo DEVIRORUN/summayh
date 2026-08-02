@@ -126,7 +126,7 @@ export class OrderController {
     static async createOrder(req: Request, res: Response): Promise<any> {
         try{
             const buyerId = (req as any).userId; 
-            const { buyerEmail, serviceId, amount, selectedTierLabel, requirements } = req.body;
+            const { buyerEmail, serviceId, selectedTierLabel, requirements } = req.body;
             const { quantity = 1 } = req.body; // from body
 
             if (!selectedTierLabel) {
@@ -139,7 +139,7 @@ export class OrderController {
              });
             if (!gig) return res.status(404).json({ message: "Gig not found." });
 
-            const buyer = await prisma.user.findUnique({ where: { id: buyerId } });
+            const buyer = await prisma.user.findUnique({ where: { id: buyerId }, select: { id: true, email: true, phoneNumber: true } });
             if (!buyer) return res.status(404).json({ message: "Buyer not found." })
 
             // Extract targeted tier configuration chosen by the user
@@ -171,7 +171,7 @@ export class OrderController {
             const newOrder = await prisma.order.create({
                 data: {
                     status: "PENDING",
-                    totalPrice: amount,
+                    totalPrice: finalPrice,
                     commission: finalPrice * 0.10, // 10% commission
                     quantity: quantity,
                     gig: {
@@ -183,7 +183,9 @@ export class OrderController {
                     seller: {
                         connect: { id: gig.sellerId }
                     },
-
+                    category: {
+                        connect: { id: gig.categoryId }
+                    },
                     gigTier: {
                         connect: { id: matchedTier.id }
                     },
@@ -200,17 +202,25 @@ export class OrderController {
             });
 
               // Fire and don't block the response on this — notification failure shouldn't break checkout
+            if (buyer.phoneNumber) {
                 TermiiService.notifyOrderPlaced(buyer.phoneNumber, gig.title).catch(err =>
                     console.error("Failed to notify buyer of order placement:", err)
                 );
+            }
 
             // 2. Call my beatiful Paystack Service
             const paymentInitialize = await PaystackService.initializeTransaction(
                 buyerEmail || buyer.email,
-                amount, // Paystack operate in Kobo
+                finalPrice, // Paystack operate in Kobo
                 { orderId: newOrder.id }
             )
 
+            await prisma.order.update({
+                where: { id: newOrder.id },
+                data: { paymentReference: paymentInitialize.data.reference }
+            })
+
+            console.log("[Order creation]: Succesful!!")
             // 3. Send the checkout link back to the frontend
             return res.status(201).json({
                 message: "Order created successfuly",
@@ -249,11 +259,13 @@ export class OrderController {
 
     static async getOrder(req: Request, res: Response): Promise<any> {
         try {
+            console.log("[Order Controller]: Hit!!");
             const { orderId } = req.params;
             if(!orderId) return res.status(400).json({ messsage: "No correct OrderId was Inputed In, bro." })
             const userId = (req as any).userId;
             const order = await OrderService.getOrder(orderId as string, userId);
 
+            console.log("[Order Controller]: Ftech Order deatils succesfully!!");
             return res.status(200).json({ data: order })
         } catch(error: any) {
             console.error("ERROR IN geting Order: ", error);
@@ -305,6 +317,31 @@ export class OrderController {
             const handled = handlePrismaError(error, res);
             if (handled) return;
             return res.status(500).json({ message: "Something went wrong IN gettign order as a seller." });
+        }
+    }
+
+    static async verifyOrderByReference(req: Request, res: Response): Promise<any> {
+        try {
+            console.log("[Verify Order By Reference]: Hit");
+            const { reference } = req.params;
+
+            if (!reference) {
+                return res.status(400).json({ message: "Payment reference is required." })
+            }
+
+            const order = await OrderService.getOrderByReference(reference as string);
+
+            console.log("[Verify Order By Reference]: Order Verified");
+            return res.status(200).json({
+                message:'order status fetched succesfully',
+                orderId: order.id,
+                status: order.status
+            });
+        } catch(error: any) {
+            console.error("ERROR VERIFYING ORDER BY REFERENCE:", error);
+            const handled = handlePrismaError(error, res);
+            if (handled) return;
+            return res.status(404).json({ message: error.message || "Order not found." });
         }
     }
 

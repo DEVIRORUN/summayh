@@ -63,7 +63,7 @@ export function SellerMiniRow({ avatar, name, isOnline, level, compact = false }
                     <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
 
-                {isOnline && (
+                {Boolean(isOnline) && (
                     <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-green-500 ring-2 ring-background" />
                 )}
             </div>

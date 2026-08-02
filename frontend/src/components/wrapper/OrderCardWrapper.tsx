@@ -79,6 +79,7 @@ export default function OrdersPage() {
           status={order.status}
           deadline={order.deadline}
           counterpart={order.counterpart}
+          link={`/orders/${order.id}`}
           onClick={() => console.log(`Clicked order: ${order.id}`)}
         />
       ))}

@@ -68,7 +68,7 @@ Return ONLY valid JSON, no markdown fences:
         assert 0.0 <= float(result["aiConfidence"] <= 1.0)
         return result
     except Exception as e:
-        print(f"[Gemini] Dispute analysis failed: {e}")
+        print("[Gemini] Dispute analysis failed: {e}")
         return {
             "aiSummary": "Automated analysis could not be completed",
             "aiRecommendation": "escalte",
@@ -102,7 +102,7 @@ Return ONLY valid JSON:
         assert 0.0 <= float(result["spamScore"]) <= 1.0
         return result
     except Exception as e:
-        print(f"[Gemini] Spam detection failed: {e}")
+        print("[Gemini] Spam detection failed: {e}")
         return {"spamScore": 0.0, "reasoning": "Analysis failed, defaulting to safe"}
     
 async def run_agentic_search(query: str, filters: dict) -> dict:
@@ -136,7 +136,7 @@ Return ONLY valid JSON:
         result = json.loads(clean_json(text))
         return result
     except Exception as e:
-        print(f"[Gemini] Agentic search extraction failed: {e}")
+        print("[Gemini] Agentic search extraction failed: {e}")
         return {
             "extractedSkill": query,
             "gigType": "DIGITAL",
@@ -185,7 +185,7 @@ Return Only a valid JSON object. Do not include markdown formatting, conversatio
         result = json.loads(clean_json(text))
         return result
     except Exception as e:
-        print(f"[Gemini]")
+        print("[Gemini]")
         return {
             "aiBio": "Could not generate bio"
         }

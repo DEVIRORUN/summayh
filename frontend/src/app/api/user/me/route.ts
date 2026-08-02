@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+console.log("NODE_API_URL:", process.env.NODE_API_URL)
 
 export async function GET(request: Request) {
     try {

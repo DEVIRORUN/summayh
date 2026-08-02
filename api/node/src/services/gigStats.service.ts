@@ -22,9 +22,10 @@ export class GigStatsService {
      * Increment clcik count per click from buyer upon gig opening
      */
     static async recordClick(gigId: string): Promise<void> {
-        await prisma.gigStats.update({
+        await prisma.gigStats.upsert({
             where: { gigId },
-            data: { clicks: { increment: 1 } }
+            update: { clicks: { increment: 1 } },
+            create: { gigId, clicks: 1 }
         });
     }
 }

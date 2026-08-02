@@ -1,9 +1,9 @@
-import { Check, X } from "lucide-react";
+import { Check, X, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type StepStatus = "completed" | "current" | "upcoming" | "failed"
 
-interface TimelineStep {
+export interface TimelineStep {
     id: string;
     label: string;
     status: StepStatus;
@@ -95,6 +95,7 @@ export function OrderStatusTimeline({
                                 dotStyles[step.status]
                             )}>
                                 {step.status === "completed" && <Check className="w-3.5 h-3.5"/>}
+                                {step.status === "current" && <Circle strokeWidth={3} className="w-3.5 h-3.5"/>}
                                 {step.status === "failed" && <X className="w-3.5 h-3.5"/>}
                             </div>
                         </div>

@@ -39,7 +39,7 @@ export function RatingInline({ avgRating, reviewCount, size = "sm" }: RatingInli
                 </div>
             </div>
 
-            <span className={cn("font-medium", classes.text)}>{avgRating.toFixed(1)}</span>
+            <span className={cn("font-medium", classes.text)}>{typeof avgRating === "number" ? avgRating.toFixed(1) : "0.0"}</span>
 
             {reviewCount !== undefined && (
                 <span className={cn("text-muted-foreground", classes.text)}>({reviewCount})</span>

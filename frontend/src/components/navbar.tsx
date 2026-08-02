@@ -15,7 +15,7 @@ export function Navbar() {
         <header className="flex h-14 items-center justify-between border-b px-4">
             <div className="flex items-center gap-3">
                 <button onClick={toggle} className="md:hidden" aria-label="Toggle menu">
-                    <Menu className="h-5 w-5"/>
+                    <Menu className="cursor-pointer h-5 w-5"/>
                 </button>
                 <h1 className="font-bold text-2xl tracking-tighter">SUMMAYH</h1>
             </div>

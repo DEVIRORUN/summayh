@@ -419,8 +419,8 @@ export default function CreateGigPage() {
         throw new Error(data.error || "[In Page]: Failed to create gig");
       }
 
-      const data = await res.json();
-      router.push(`/gigs/${data.id}`); // frontend url not BE
+      const {data: gig} = await res.json();
+      router.push(`/gigs/${gig.id}`); // frontend url not BE
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "[In Page]: Something went wrong",
@@ -435,7 +435,7 @@ export default function CreateGigPage() {
       <h1 className="text-xl font-semibold mb-6">Create a gig</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        <div className="flex flex-col gap">
+        <div className="flex flex-col gap-1">
           <Label>Title</Label>
           <Input
             value={title}
@@ -444,7 +444,7 @@ export default function CreateGigPage() {
           />
         </div>
 
-        <div className="flex flex-col gap">
+        <div className="flex flex-col gap-1">
           <Label>Description</Label>
           <Textarea
             value={description}
@@ -454,7 +454,7 @@ export default function CreateGigPage() {
           />
         </div>
 
-        <div className="flex flex-col gap">
+        <div className="flex flex-col gap-1">
           <Label>Tags (comma-separated)</Label>
           <Input
             value={tagsinput}
@@ -500,7 +500,7 @@ export default function CreateGigPage() {
 
         {error && <span className="text-xs text-red-500">{error}</span>}
 
-        <Button type="submit" disabled={isSubmitting}>
+        <Button className="cursor-pointer bg-foreground hover:bg-muted-foreground duration-150" type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Creating gig..." : "Create gig"}
         </Button>
       </form>
