@@ -6,6 +6,8 @@ import { Badge } from "../ui/badge";
 import { cn } from "@/lib/utils";
 import { ConversationListItem } from "@/lib/message";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+import { useEffect } from "react";
 
 interface ConversationListProps {
     conversations: ConversationListItem[];
@@ -14,6 +16,12 @@ interface ConversationListProps {
 
 export function ConversationList({ conversations, currentUserId }: ConversationListProps) {
     const router = useRouter();
+
+    useEffect(() => {
+        if (!currentUserId) return;
+
+        // const channel
+    })
     
     if (conversations.length === 0) {
         return <span className="text-muted-foreground">No conversation yet.</span>

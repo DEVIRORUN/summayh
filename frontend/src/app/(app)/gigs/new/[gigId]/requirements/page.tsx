@@ -27,6 +27,7 @@ export default function RequirementsGigPage() {
   const [requirements, setRequirements] = useState<RequirementInput[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [optionDrafts, setOptionDrafts] = useState<Record<number, string>>({});
 
   const addRequirement = () => {
     setRequirements((prev) => [
@@ -41,9 +42,25 @@ export default function RequirementsGigPage() {
     value: unknown, // <- better than any popping red squidly lines
   ) => {
     setRequirements((prev) =>
-      prev.map((r, i) => (i === index ? { ...r, [field]: value } : r)),
+      prev.map((r, i) => {
+        if (i !== index) return r;
+        const updated = { ...r, [field]: value };
+        if (field === "inputType" && value !== "MULTIPLE_CHOICE") {
+          updated.options = [];
+        }
+        return updated;
+      }),
     );
   };
+
+  const addOption = (index: number) => {
+    const val = (optionDrafts[index] ?? "").trim();
+    if (!val) return;
+    const current = requirements[index].options;
+    if (current.includes(val)) return;
+    updateRequirement(index, "options", [...current, val]);
+    setOptionDrafts((prev) => ({ ...prev, [index]: "" }));
+  }
 
   const removeRequirement = (index: number) => {
     setRequirements((prev) => prev.filter((_, i) => i !== index));
@@ -52,6 +69,14 @@ export default function RequirementsGigPage() {
   const handleSubmit = async () => {
     setError(null);
     setIsSubmitting(true);
+
+    const invalidMC = requirements.find(
+      (r) => r.inputType === "MULTIPLE_CHOICE" && r.options.length < 2
+    );
+    if (invalidMC) {
+      setError("Multiple choice questions need at least 2 options.");
+      return;
+    }
     try {
       const res = await fetch(`/api/gig/${gigId}/requirements`, {
         method: "PATCH",
@@ -108,6 +133,46 @@ export default function RequirementsGigPage() {
               <SelectItem className="rounded-xs cursor-pointer data-[highlighted]:bg-muted" value="YES_NO">Yes/No</SelectItem>
             </SelectContent>
           </Select>
+          {req.inputType === "MULTIPLE_CHOICE" && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-semibold">Options</span>
+              {req.options.map((opt, optIdx) => (
+                <span key={optIdx} className="flex items-center justify-between cursor-pointer gap-1 bg-muted text-xs px-2 py-1 rounded-xs">
+                  {opt}
+                  <Button
+                    type="button"
+                    className="bg-unset hover:bg-muted-foreground/60 transition-colors duration-100 cursor-pointer"
+                    onClick={() => 
+                      updateRequirement(
+                        i,
+                        "options",
+                        req.options.filter((_, oi) => oi !== optIdx)
+                      )
+                    }
+                  >
+                    <X strokeWidth="3" className="h-3 w-3 text-foreground"/>
+                  </Button>
+                </span>
+              ))}
+              <div className="flex gap-1">
+                <Input
+                  type="text"
+                  onChange={(e) => 
+                    setOptionDrafts((prev) => ({ ...prev, [i]: e.target.value }))
+                  }
+                  placeholder="Type an option, press Enter"
+                  className="flex-1 min-w-[100px] text-xs outline-none bg-transparent rounded-xs py-1.5"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addOption(i);
+                    }
+                  }}
+                />
+                <Button type="button" className="text-xs cursor-pointer rounded-xs" onClick={() => addOption(i)}>Add</Button>
+              </div>
+            </div>
+          )}
         </div>
       ))}
 

@@ -5,6 +5,8 @@ import { OrderActionBar } from "@/components/axiom/OrderActionBar";
 import { ChatSection } from "@/components/theorems/ChatSection";
 import { getOrder } from "@/lib/order";
 import { getCurrentUser } from "@/lib/auth";
+import { DeliverySection } from "@/components/axiom/DeliverySection";
+import { LiveSessionSection } from "@/components/axiom/LiveSessionSection";
 
 
 function mapOrderStatusToSteps(status: string): TimelineStep[] {
@@ -27,8 +29,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
     const { orderId } =  await params;
     const [order, currentUser] = await Promise.all([getOrder(orderId), getCurrentUser()]);
     
-    console.log("CURRENT USER:", currentUser);
-    
     if (!order) {
         return <div className="max-w-4xl mx-auto px-4 py-16 text-center">Order not found.</div>
     }
@@ -39,6 +39,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
 
     const isBuyer = order?.buyer.id === currentUser?.id;
     const otherUserId = isBuyer ? order?.seller.user.id : order?.buyer.id;
+    const isLive = order.gig.deliveryMode === "LIVE";
+
+    const nextBooking = order.sessionPackage?.bookings
+        ?.filter((b: any) => b.status === "SCHEDULED")
+        ?.sort((a: any, b: any) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime())
+        ?.[0];
 
 
     function handleSendMessage() {
@@ -66,7 +72,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
             )} */}
 
             <div className="w-full min-w-0">
-                <ChatSection otherUserId={otherUserId} currentUserId={currentUser.id}/>
+                <ChatSection messagePage={false} otherUserId={otherUserId} currentUserId={currentUser.id}/>
+                {isLive ? (
+                    <LiveSessionSection order={order} nextBooking={nextBooking} isBuyer={isBuyer} />
+                ) : (
+                    <DeliverySection orderId={order.id} deliveries={order.orderDeliveries ?? []} variant={isBuyer ? "buyer" : "seller"} canSubmit={!isBuyer && (order.status === "ACTIVE" || order.status === "REVISION_REQUESTED")} />
+                )}
             </div>
             
             <OrderActionBar order={order} />

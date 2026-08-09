@@ -12,15 +12,22 @@ type pageProps = {
 export default async function GigsDahboardPage({
   searchParams,
 }: pageProps) {
-    const gigs = await getSellerGigs();
+    const rawGigs = await getSellerGigs();
 
+    const gigs = rawGigs?.data?.map((gig) => ({
+      ...gig,
+      images: gig.images?.map((img: any) => (typeof img === "string" ? img : img.url)) ?? [],
+      coverImage: typeof gig.coverImage === "object" && gig.coverImage !== null 
+        ? (gig.coverImage as { url: string }).url
+        : gig.coverImage,
+    })) ?? []
     // console.log("Response payload:", gigs)
 
-    if (!gigs|| !Array.isArray(gigs.data)) {
+    if (!gigs|| !Array.isArray(gigs)) {
         return <div className="max-4xl mx-auto px-4 py-16 text-center">Gig not found.</div>
     }
 
-    if(gigs.data.length === 0) {
+    if(gigs.length === 0) {
         return (
             <div className="flex items-center gap-4">
                 <span className="text-muted-foreground">You have no gigs, go create a gig.</span>
@@ -34,7 +41,7 @@ export default async function GigsDahboardPage({
   const { page = "1", limit = "10" } = await searchParams;
 
   const sortBy = (await searchParams)?.sort || "recent";
-  const sortedGigs = [...gigs.data].sort((a: any, b: any) => {
+  const sortedGigs = [...gigs].sort((a: any, b: any) => {
     if (sortBy === "recent") {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     }
@@ -74,7 +81,8 @@ export default async function GigsDahboardPage({
               key={gig.id}
               id={gig.id}
               title={gig.title}
-              thumbnail={gig.coverImage || gig.thumbnail || "/placeholder.jpg"}
+              thumbnail={gig.coverImage}
+              images={gig.images}
               price={gig.price}
               tiers={gig.tiers}
               deliveryTime={gig.deliveryTime}

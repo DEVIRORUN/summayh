@@ -359,6 +359,7 @@ export default function CreateGigPage() {
   const [description, setDescription] = useState("");
   const [tagsinput, setTagsInput] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [deliveryMode, setDeliveryMode] = useState<"DIGITAL" | "LIVE">("DIGITAL");
 
   // GigTiers
   const [basic, setBasic] = useState<TierFormData>({
@@ -404,6 +405,7 @@ export default function CreateGigPage() {
         .map((t) => t.trim())
         .filter(Boolean), //removing white spaces in tags
       categoryId,
+      deliveryMode,
       tiers: { basic, standard, premium },
     };
 
@@ -464,7 +466,7 @@ export default function CreateGigPage() {
           />
         </div>
 
-        <div className="flex flex-col gap">
+        <div className="flex flex-col gap-1">
           <Label>Category</Label>
           <Select value={categoryId} onValueChange={setCategoryId}>
             <SelectTrigger>
@@ -476,6 +478,19 @@ export default function CreateGigPage() {
                   {c.name}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <Label>Delivery Mode</Label>
+          <Select value={deliveryMode} onValueChange={(v: "DIGITAL" | "LIVE") => setDeliveryMode(v)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="DIGITAL">Recorded / Async Delivery</SelectItem>
+              <SelectItem value="LIVE">Live Video Session</SelectItem>
             </SelectContent>
           </Select>
         </div>

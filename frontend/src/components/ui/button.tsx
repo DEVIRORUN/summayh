@@ -58,6 +58,7 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
+      // disabled={disabled ?? undefined}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />

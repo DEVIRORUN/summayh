@@ -4,27 +4,45 @@ import Image from "next/image";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
+type MediaItem = 
+  | string
+  | { type: "image" | "video"; url: string };
+
 interface GigGalleryProps {
-  media: { type: "image" | "video"; url: string }[];
+  media: MediaItem[];
 }
 
-export function GigGallery({ media }: GigGalleryProps) {
+function normalizeMedia(item: MediaItem): { type: "image" | "video"; url: string } {
+  if (typeof item === "object") return item;
+
+
+    const isVideo = /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(item);
+    return {
+      type: isVideo ? "video" : "image",
+      url: item
+    };
+}
+
+export function GigGallery({ media: rawMedia }: GigGalleryProps) {
   const [active, setActive] = useState(0);
 
-  if (!media || media.length === 0) return (
+  const media = rawMedia?.map(normalizeMedia) ?? [];
+
+  if (media.length === 0) return (
     <div className="text-foreground text-sm p-1">No media Found!</div>
   );
 
+  const current = media[active] || media[0];
+
   return (
     <div className="flex flex-col gap-2 w-full">
-
-        {/* Main Display */}
+      {/* Main Display */}
       <div className="relative w-full aspect-video rounded-lg overflow-hidden ring-1 ring-muted-foreground bg-zinc-900">
-        {media[active].type === "image" ? (
-          <Image src={media[active].url} alt="" fill priority sizes="600px" className="object-cover" />
+        {current.type === "image" ? (
+          <Image src={current.url} alt="" fill priority sizes="600px" className="object-cover" />
         ) : (
             // Inset-0 to make sure video conforms to aspect-video box
-          <video src={media[active].url} controls className="absolut inset-0 w-full h-full object-cover" />
+          <video src={current.url} controls className="absolut inset-0 w-full h-full object-cover" />
         )}
       </div>
 

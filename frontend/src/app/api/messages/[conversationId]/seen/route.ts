@@ -7,12 +7,9 @@ export async function PATCH(
 ) {
     try {
         const { conversationId } = await params;
-        const body = await request.json();
-
 
         const backendRes = await proxyFetch(request, `/api/messages/${conversationId}/seen`, {
             method: "PATCH",
-            // body: JSON.stringify(body), // No body needed
         });
 
         if (!backendRes.ok) {

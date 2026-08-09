@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 
 interface ChatSectionProps {
     messagePage: boolean;
@@ -17,15 +18,13 @@ export function ChatSection({ messagePage, otherUserId, conversationId: initialC
     const router = useRouter();
     
     const [messages, setMessages] = useState<ChatMessage[]>([]);
-    const [conversationId, setConversationId] = useState<string | null>(null);
+    const [conversationId, setConversationId] = useState<string | null>(initialConversationId ?? null);
 
     useEffect(() => {
         async function loadMessages(id: string) {
-           
             const msgRes = await fetch(`/api/messages/${id}`);
             if (!msgRes.ok) return;
             const msgJson = await msgRes.json();
-            // map backend message shape -> ChatMessage shape here
             console.log("Message", msgJson);
 
             const mapped: ChatMessage[] = msgJson.data.data.map((m: any) => ({
@@ -74,30 +73,102 @@ export function ChatSection({ messagePage, otherUserId, conversationId: initialC
         init();
     }, [otherUserId, initialConversationId, currentUserId]);
 
+    useEffect(() => {
+        if (!conversationId) return;
+        const filterString = `conversationId=${conversationId}`;
+        console.log("FILTER STRING:", filterString);
+
+        const channel = supabase
+            .channel(`conversation:${conversationId}`)
+            .on(
+                "postgres_changes",
+                {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "Message",
+                    // filter: filterString
+                },
+                (payload) => {
+                    console.log("REALTIME PAYLOAD:", payload);
+                    const m = payload.new;
+
+                    if (m.conversationId !== conversationId) return;
+                    if (m.senderId === currentUserId) return;
+
+                    setMessages((prev) => [
+                        ...prev,
+                        {
+                            id: m.id,
+                            senderId: m.senderId,
+                            senderAvatar: "",
+                            text: m.content,
+                            timestamp: new Date(m.createdAt).toLocaleTimeString("en-NG", { timeZone: "Africa/Lagos" }),
+                            isOwn: false,
+                        }
+                    ]);
+
+                    fetch(`/api/messages/${conversationId}/seen`, { method: "PATCH" }).catch(() => {});
+                }
+            )
+            .subscribe((status) => {
+                console.log("REALTIME PAYLOAD:", status);
+            });
+        
+        return () => {
+            console.log("[SUPABASE REALTIME]: WORKED")
+            supabase.removeChannel(channel);
+        }
+    }, [conversationId, currentUserId]);
+
 
     async function handleSendMessage(text: string) {
         if (!conversationId) return;
 
-        const res = await fetch(`/api/messages/${conversationId}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content: text })
-        });
+        const tempId = `temp=${Date.now()}`;
+        const optimisticMessage: ChatMessage =  {
+            id: tempId,
+            senderId: currentUserId,
+            senderAvatar: "",
+            text,
+            timestamp: new Date().toLocaleTimeString("en-NG", { timeZone: "Africa/Lagos" }),
+            isOwn: true,
+        }
 
-        if (!res) return;
-        const { data: newMessage } = await res.json();
-        
-        setMessages((prev) => [
-            ...prev,
-            {
-                id: newMessage.id,
-                senderId: newMessage.senderId,
-                senderAvatar: "",
-                text: newMessage.content,
-                timestamp: new Date(newMessage.createdAt).toLocaleTimeString(),
-                isOwn: true,
-            }
-        ]);
+        setMessages((prev) => [...prev, optimisticMessage]); // Immediate show
+
+        try {
+            const res = await fetch(`/api/messages/${conversationId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content: text })
+            });
+
+            if (!res.ok) {
+                // Roll back
+                setMessages((prev) => prev.filter((m) => m.id !== tempId));
+                return;
+            };
+
+            const { data: newMessage } = await res.json();
+            
+            setMessages((prev) =>
+                prev.map((m) => 
+                    m.id === tempId
+                        ?   {
+                                id: newMessage.id,
+                                senderId: newMessage.senderId,
+                                senderAvatar: "",
+                                text: newMessage.content,
+                                timestamp: new Date(newMessage.createdAt).toLocaleTimeString(),
+                                isOwn: true,
+                            }
+                        : m
+                    )
+            );
+        } catch (err) {
+            setMessages((prev) => prev.filter((m) => m.id !== tempId))
+            console.error("Failed to send message:", err);
+        }
     }
 
     return (

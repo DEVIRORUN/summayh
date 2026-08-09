@@ -45,7 +45,6 @@ export default function DescriptionPage() {
 
   return (
     <div className="bg-card text-muted-foreground flex gap-4 flex-col min-w-0">
-      <GigStepper gigId={gigId}/>
       <span className="text-2xl font-semibold">Description</span>
       <span className="border-b-1 border-border" />
       <div className="contain border rounded-xs border-border">

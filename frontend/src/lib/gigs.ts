@@ -3,7 +3,7 @@ import { type GigCardProps } from "@/components/theorems/GigCard";
 
 
 interface GigsResponse {
-    data: GigCardProps[];
+    data: GigCardProps[] | null;
     meta: { total: number; page: number; limit: number; totalPages: number }
 }
 

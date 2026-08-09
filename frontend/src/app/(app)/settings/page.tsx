@@ -5,6 +5,8 @@ import { useTheme } from "next-themes";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import SellerAvailabilityForm from "@/components/axiom/SellerAvailabilityForm";
+
 interface ThemeOption {
     id: string;
     name: string;
@@ -77,6 +79,10 @@ export default function SettingsPage() {
                     Customize your workspace interface, theme states, and layout preferences.
                 </p>
             </div>
+
+            <hr className="border-border" />
+            
+            <SellerAvailabilityForm />
 
             <hr className="border-border" />
 

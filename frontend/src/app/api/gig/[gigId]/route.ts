@@ -21,7 +21,14 @@ export async function GET(
     }
 
     const data = await backendRes.json();
-    return NextResponse.json(data);
+
+    const transformedData = {
+      ...data,
+      gallery: [...(Array.isArray(data.images) ? data.images : []), 
+      ...(data.video ? [data.video] : [])],
+    }
+
+    return NextResponse.json(transformedData);
   } catch (error) { // Not needed
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

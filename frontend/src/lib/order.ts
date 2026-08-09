@@ -1,15 +1,40 @@
 import { cookies } from "next/headers";
 
+interface DeliveryFile {
+    id: string;
+    fileName: string;
+    fileSize: string;
+}
+
+interface Delivery {
+    id: string;
+    message: string | null;
+    createdAt: string;
+    files: DeliveryFile[];
+}
+
+interface Booking {
+  id: string;
+  scheduledStart: string;
+  scheduledEnd: string;
+  status: string;
+}
+
 interface Order {
   id: string;
   status: string;
   totalPrice: string;
   requirementsSubmittedAt: string;
+  orderDeliveries: Delivery[];
   gig: {
     id: string;
     title: string;
-    price?: string;
+    coverImage?: string;
+    deliveryMode: string;
   };
+  sessionPackage?: {
+    bookings: Booking[]
+  }
   buyer: { name?: string; avatar?: string; id: string; }
   seller: { user: { name: string; id: string }, avatar: string; isOnline: boolean; };
 }
@@ -52,6 +77,7 @@ export async function getOrder(rawOrderId: string): Promise<Order | null> {
     }
 
     const body = await res.json();
+    console.log("RAW ORDER", body.data); // Debugging Order
     return body.data;
   } catch (err) {
     console.error("Fetch error: ", err);

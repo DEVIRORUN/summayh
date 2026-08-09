@@ -16,6 +16,7 @@ export async function PATCH(
 
     if (!backendRes.ok) {
       const errorData = await backendRes.json().catch(() => ({}));
+      console.log("[BFF TIERS PATCH] backend error:", errorData);
       return NextResponse.json(
         { error: errorData.message || "Failed to save tiers" },
         { status: backendRes.status }

@@ -201,7 +201,7 @@ export default function BasicsGigPage() {
             <div className="flex flex-col w-[220px] md:w-[280px] shrink-0">
               <span className="font-semibold">Delivery Mode</span>
               <div className="text-xs">
-                How will you dleiver this tutoring gig?
+                How will you deliver this tutoring gig?
               </div>
             </div>
             <RadioGroup
@@ -235,7 +235,7 @@ export default function BasicsGigPage() {
               onClick={() => document.getElementById("tag-input")?.focus()}
               className="items-center flex flex-wrap border rounded-xs min-w-0 min-h-10 p-2 font-semibold">
                 {tags.map((tag, i) => (
-                <Badge key={i} className="text-muted-foreground flex items-center gap-1 bg-muted mx-1 rounded-xs">
+                <Badge key={i} className="my-1 text-muted-foreground flex items-center gap-1 bg-muted mx-1 rounded-xs">
                   {tag}
                   <button
                     type="button"

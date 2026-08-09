@@ -44,21 +44,21 @@ export function DeliverableUplaod({ onUpload, uploadedFiles = [], maxFiles }: De
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             className="border-2 border-dashed rounded-lg p-6 text-center">
-            <input ref={inputRef} type="file" multiple hidden onChange={handleChange}/>
-            <UploadCloud className="w-8 h-8 mx-auto text-muted-foreground" />
-            <p className="text-sm mt-2">Drag file here or</p>
-            <Button variant="outline" size="sm" className="mt-2" onClick={() => inputRef.current?.click()}>
-                Browse files
-            </Button>
-            <p className="text-xs mt-1 text-muted-foreground">Up to {maxFiles}</p>
+                <input ref={inputRef} type="file" multiple hidden onChange={handleChange}/>
+                <UploadCloud className="w-8 h-8 mx-auto text-muted-foreground" />
+                <p className="text-sm mt-2">Drag file here or</p>
+                <Button variant="outline" size="sm" className="mt-2" onClick={() => inputRef.current?.click()}>
+                    Browse files
+                </Button>
+                <p className="text-xs mt-1 text-muted-foreground">Up to {maxFiles}</p>
 
-            {uploadedFiles.length > 0 && (
-                <div className="flex flex-col gap-1 mt-4 text-left">
-                    {uploadedFiles.map((f, i) => (
-                        <a key={i} href={f.url} className="text-xs text-blue-600 underline truncate">{f.name}</a>
-                    ))}
-                </div>
-            )}
+                {uploadedFiles.length > 0 && (
+                    <div className="flex flex-col gap-1 mt-4 text-left">
+                        {uploadedFiles.map((f, i) => (
+                            <a key={i} href={f.url} className="text-xs text-blue-600 underline truncate">{f.name}</a>
+                        ))}
+                    </div>
+                )}
         </div>
     )
 }

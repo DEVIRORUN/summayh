@@ -47,22 +47,21 @@ export default async function GigDetailPage({
         <GigGallery
           media={
             gig.coverImage
-              ? [{ type: "image" as const, url: gig.coverImage }]
-              : [
-                  {
-                    type: "image" as const,
-                    url: "https://hsfrsqsscahuvkakghab.supabase.co/storage/v1/object/public/SUMMAYH/pp.jpe",
-                  },
-                ]
+              ? [gig.coverImage, ...gig.images.filter((img: any) => img !== gig.coverImage)]
+              : gig.images ?? []
           }
         />
 
-        <GigDescriptionAccordion description={gig.description} />
+        <GigDescriptionAccordion 
+          description={gig.description} 
+          deliveryMode={gig.deliveryMode}
+          tiers={gig.tiers} 
+        />
       </div>
 
       {/* Right column — pricing tiers + order action, client-interactive */}
       <div className="md:col-span-1">
-        <GigOrderPanel gigId={gig.id} tiers={gig.tiers} />
+        <GigOrderPanel sellerId={gig.seller.id} gigId={gig.id} tiers={gig.tiers} deliveryMode={gig.deliveryMode}/>
       </div>
     </div>
   );

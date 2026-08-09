@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { PricingTierTabs } from "@/components/theorems/PricingTierTabs";
 import { Button } from "@/components/ui/button";
 import { Zap, Star, Crown } from "lucide-react";
+import { SlotPicker } from "../axiom/SlotPicker";
 
 // Matches your backend's GigTier model shape (label, customName, description,
 // price, deliveryDays, revisionCount) — this is what gig.tiers contains
@@ -16,6 +17,9 @@ interface BackendTier {
   price: number;
   deliveryDays: number;
   revisionCount: number;
+  sessionLengthMin?: number | null;
+  breakLengthMin?: number | null;
+  totalSessions?: number | null;
 }
 
 const tierThemeMap = {
@@ -24,10 +28,13 @@ const tierThemeMap = {
   premium: { label: "Premium", accentColor: "border-amber-500", icon: <Crown className="w-4 h-4 text-amber-500" />, headerStyle: "gradient" as const },
 };
 
-export function GigOrderPanel({ gigId, tiers }: { gigId: string; tiers: BackendTier[] }) {
+export function GigOrderPanel({ sellerId, gigId, tiers, deliveryMode }: { sellerId: string; gigId: string; tiers: BackendTier[]; deliveryMode: "LIVE" | "DIGITAL"}) {
   const router = useRouter();
   const [selectedTier, setSelectedTier] = useState<"basic" | "standard" | "premium">("standard");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<{ start: string; end: string } | null>(null);
+  const isLive = deliveryMode === "LIVE";
+
   if(!tiers || !Array.isArray(tiers) || tiers.length === 0) {
     return (
         <div className="border rounded-lg p-6 bg-card text-card-foreground shadow-sm">
@@ -65,7 +72,8 @@ export function GigOrderPanel({ gigId, tiers }: { gigId: string; tiers: BackendT
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           serviceId: gigId,
-          selectedTierLabel: activeTier.label
+          selectedTierLabel: activeTier.label,
+          ...(isLive && selectedSlot ? { scheduledStart: selectedSlot.start, scheduledEnd: selectedSlot.end } : {})
         }),
       });
 
@@ -90,8 +98,20 @@ export function GigOrderPanel({ gigId, tiers }: { gigId: string; tiers: BackendT
         onTierChange={setSelectedTier}
       />
 
-      <Button size="lg" onClick={handleOrderNow} disabled={isProcessing || !activeTier}>
-        {isProcessing ? "Redirecting to payment..." : `Order Now - ₦${activeTier?.price.toLocaleString()}`}
+      {isLive && activeTier?.sessionLengthMin && (
+        <SlotPicker
+          sellerId={sellerId}
+          sessionLengthMin={activeTier.sessionLengthMin}
+          onSelect={setSelectedSlot}
+        />
+      )}
+
+      <Button size="lg" className="cursor-pointer rounded-sm" onClick={handleOrderNow} disabled={isProcessing || !activeTier || !selectedSlot }>
+        {isProcessing 
+          ? "Redirecting to payment..." 
+          : isLive && !selectedSlot
+          ? "Select a time slot"
+          : `Order Now - ₦${activeTier?.price.toLocaleString()}`}
       </Button>
     </div>
   );

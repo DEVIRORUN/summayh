@@ -8,19 +8,14 @@ const nextConfig: NextConfig = {
         hostname: "hsfrsqsscahuvkakghab.supabase.co",
         pathname: "/**", // Allows any image path from your Supabase domain
       },
+      {
+        protocol: "https",
+        hostname: "pub-7a5f3654ed9f4e12ad67aa55c2f897a6.r2.dev",
+        pathname: "/**", // Allows any image path from your Supabase domain
+      },
     ],
   },
 };
 
-// module.exports = {
-//   async rewrites() {
-//     return [
-//       {
-//         source: "/api/:path*",
-//         destination: "http://localhost:3001/api/:path*"
-//       }
-//     ]
-//   }
-// }
 
 export default nextConfig;

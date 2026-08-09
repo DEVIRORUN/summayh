@@ -18,7 +18,11 @@ export async function GET(request: Request) {
 
         // 3. If the user isn't logged in (cookie expired or missing)
         if(!backendRes.ok) {
-            return NextResponse.json({ user: null }, { status: backendRes.status })
+            const errorData = await backendRes.json().catch(() => ({ message: "Unauthorized" }));
+            return NextResponse.json(
+                { error: errorData.message || "Authentication failed" },
+                { status: backendRes.status }
+            );
         }
 
         const data = await backendRes.json();

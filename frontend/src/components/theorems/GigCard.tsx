@@ -22,6 +22,7 @@ export interface GigCardProps{
     title: string;
     thumbnail?: string;
     coverImage?: string;
+    images?: string[];
     tiers?: GigTier[] | string[]
     price: number
     deliveryTime: string;
@@ -42,6 +43,7 @@ export function GigCard({
     title,
     coverImage,
     thumbnail,
+    images = [],
     tiers,
     price,
     deliveryTime,
@@ -75,7 +77,14 @@ export function GigCard({
     const displayAvgRating = avgRating ?? rating.avgRating ?? 0;
     const displayReviewCount = totalReviews ?? rating?.reviewCount ?? 0;
 
-    const displayImage = coverImage || thumbnail || "/placeholder.jpg"
+    const rawImage =  coverImage || thumbnail || images?.[0];
+    const displayImage = 
+        typeof rawImage === "string"
+            ? rawImage
+            : typeof rawImage === "object" && rawImage !== null && "url" in rawImage
+            ? (rawImage as { url: string }).url
+            : null;
+
     const sellerName = seller?.name || seller.sellerUsername || "Seller"
     const sellerAvatar = seller?.avatar || "";
 
@@ -90,10 +99,9 @@ export function GigCard({
             >
                 {/* Thumbnail */}
                 <div className={cn(
-                    "relative", 
+                    "relative shrink-0 overflow-hidden", 
                     isList 
-                        ? "w-40 shrink-0" 
-                        :  "w-full aspect-video")}>
+                        ? "w-40 min-h-[140px]" :  "w-full aspect-video")}>
                     <Image 
                         src={displayImage || "/placeholder.jpg"} 
                         alt={title} 
