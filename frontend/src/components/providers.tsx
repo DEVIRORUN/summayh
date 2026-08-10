@@ -9,11 +9,11 @@ import { ReactNode } from "react";
 export function Providers({ children }: { children: ReactNode }) {
     return (
         <ThemeProvider
-            attribute="data-theme"
-            defaultTheme="cream"
+            attribute="class"
+            defaultTheme="system"
             storageKey="theme" // 👈 Forces next-themes to explicitly save to localStorage under this key
-            themes={["cream", "slate", "dark"]}
-            enableSystem={false}
+            themes={["light", "dark"]}
+            enableSystem
             disableTransitionOnChange
             >
             <AuthProvider>

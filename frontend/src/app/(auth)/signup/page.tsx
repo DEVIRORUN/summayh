@@ -19,7 +19,7 @@ export default function LoginPage() {
     setError(undefined);
 
     try {
-      const res = await fetch("api/auth/signup", {
+      const res = await fetch("api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
@@ -51,8 +51,8 @@ export default function LoginPage() {
       footer={
         <span>
           {"Already have an account? "}
-          <Link href="/signup" className="text-primary font-medium underline">
-            Log in
+          <Link href="/login" className="text-primary font-medium underline">
+            log in
           </Link>
         </span>
       }
