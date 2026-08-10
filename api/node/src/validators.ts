@@ -1,8 +1,8 @@
-import schoolsData from "../../../frontend/src/data/schools.json";
+import schools from "./data/schools.json";
 
 type School = { school: string; value: string } 
 
-const ALL_SCHOOLS: School[] = [...schoolsData.edu_ng, ...schoolsData.sch_ng];
+const ALL_SCHOOLS: School[] = [...schools.edu_ng, ...schools.sch_ng];
 
 const ALLOWED_SCHOOL_DOMAINS = new Set(
   ALL_SCHOOLS.map((s) => s.value.toLowerCase())
