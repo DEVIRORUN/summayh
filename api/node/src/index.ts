@@ -1,6 +1,6 @@
 // api/node/src/index.ts
-import './workers/call.worker'; // just importing starts it listening
 import "dotenv/config";
+import './workers/call.worker'; // just importing starts it listening
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 import express from "express";
@@ -241,6 +241,6 @@ app.use("/api/session-material", sessionMaterialRoutes);
 initSocket(io);
 
 // Start listening
-app.listen(PORT, () => {
-  console.log(`🚀 Summayh 1.0.0 Engine running on http://localhost:${PORT}`);
+server.listen(PORT, () => {
+  console.log(`🚀 Summayh 1.0.0 Engine running on ${PORT}`);
 });
