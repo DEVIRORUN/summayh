@@ -4,6 +4,7 @@ export function createBullMQConnection() {
     const redis = new Redis(process.env.REDIS_URL!, {
         maxRetriesPerRequest: null,
         connectTimeout: 10000,
+        keepAlive: 10000, // send TCP keep-alive probe every 10s
         retryStrategy(times) {
             if (times > 5) {
                 console.error("Redis: giving up after 5 retries");
