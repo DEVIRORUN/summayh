@@ -64,6 +64,8 @@ export function SchoolEmailInput({
       <Input
         type="email"
         autoComplete="new-password"
+        placeholder="idan@student.lautech.edu.ng"
+        className="text-sm"
         value={value}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setTimeout(() => setIsFocused(false), 150)} // allow click before blur closes it

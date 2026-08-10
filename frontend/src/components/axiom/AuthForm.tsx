@@ -5,8 +5,7 @@ import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
-import { CircleCheck, CircleX } from "lucide-react";
-import { Eye, EyeOff } from "lucide-react";
+import { CircleCheck, CircleX, Eye, EyeOff } from "lucide-react";
 import { isSchoolDomainValid, SchoolEmailInput } from "./SchoolEmalInput";
 
 type AuthMode = "login" | "signup";
@@ -47,15 +46,13 @@ export function AuthForm({
   ];
 
   const isSignup = mode === "signup";
-
-  
   const passwordRef = useRef<HTMLInputElement>(null);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setEmailValidationError(null)
     
-    if (!isSchoolDomainValid(email)) {
+    if (isSignup && !isSchoolDomainValid(email)) {
         setEmailValidationError(
             "Please use your school email address (e.g. yourname@unilag.edu.ng). If your school isn't listed, contact support."
         );
@@ -65,24 +62,22 @@ export function AuthForm({
     onSubmit(isSignup ? { name, email, password } : { email, password });
   }
 
-  function onSchoolSelected() {
-
-  }
-  
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full min-w-0">
       {isSignup && (
-        <div className="flex flex-col gap-1">
-          <Label>Full name</Label>
+        <div className="flex flex-col gap-1.5 w-full">
+          <Label className="text-xs font-medium text-foreground">Full name</Label>
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
+            placeholder="Abdulmalik Idan"
             required
+            className="text-sm bg-background border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0"
           />
         </div>
       )}
 
-      <div className="relative flex flex-col gap-1">
+      <div className="flex flex-col gap-1.5 w-full min-w-0">
         <SchoolEmailInput
             value={email}
             onChange={setEmail}
@@ -92,19 +87,23 @@ export function AuthForm({
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <Label htmlFor="password">Password</Label>
-        <div className="relative">   
+      <div className="flex flex-col gap-1.5  w-full">
+        <Label htmlFor="password" className="text-xs font-medium text-foreground">
+          Password
+        </Label>
+        <div className="relative w-full">   
           <Input
             id="password"
             ref={passwordRef}
             type={showPassword ? "text" : "password"}
             value={password}
+            placeholder="........"
             onChange={(e) => setPassword(e.target.value)}
             onFocus={() => setIsPasswordFocused(true)}
             onBlur={() => setIsPasswordFocused(false)}
             required
             minLength={8}
+            className="bg-background"
           />
           <button
             type="button"
