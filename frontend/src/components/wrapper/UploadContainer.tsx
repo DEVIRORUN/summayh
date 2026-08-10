@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { DeliverableUplaod } from "../axiom/DeliverableUpload"; 
+import { DeliverableUplaod } from "@/components/axiom/DeliverableUpload"; 
 
 interface MockFile {
   name: string;

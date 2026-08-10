@@ -1,6 +1,6 @@
 "use client";
 
-import { GigGallery } from "../axiom/GigGallery";
+import { GigGallery } from "@/components/axiom/GigGallery";
 
 // 1. Defining the data structure for the gallery items
 interface GigGalleryProps {

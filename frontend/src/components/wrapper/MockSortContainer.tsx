@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { SortDropdown } from "../axiom/SortOption";
+import { SortDropdown } from "@/components/axiom/SortOption";
 
 // Match your custom component type declaration exactly
 type SortOption = "relevance" | "price-low" | "price-high" | "rating" | "newest";

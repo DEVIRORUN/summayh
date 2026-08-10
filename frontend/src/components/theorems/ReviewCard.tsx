@@ -1,5 +1,5 @@
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { RatingInline } from "../axiom/RatingInline";
+import { RatingInline } from "@/components/axiom/RatingInline";
 
 export interface ReviewCardProps {
   reviewer: { avatar: string; name: string };

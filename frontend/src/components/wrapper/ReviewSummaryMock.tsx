@@ -1,7 +1,7 @@
 // MockReviewSummaryContainer.tsx
 "use client";
 
-import { ReviewSummaryBar } from "../theorems/ReviewSummaryBar"; 
+import { ReviewSummaryBar } from "@/components/theorems/ReviewSummaryBar"; 
 
 export default function MockReviewSummaryContainer() {
   // Mock data setup matching your exact component prop interfaces

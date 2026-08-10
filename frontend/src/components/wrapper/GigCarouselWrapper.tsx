@@ -1,7 +1,7 @@
 // MockCarouselContainer.tsx
 "use client";
 
-import { RelatedGigsCarousel } from "../theorems/RelatedGigCarousel";
+import { RelatedGigsCarousel } from "@/components/theorems/RelatedGigCarousel";
 
 export default function MockCarouselContainer() {
   // Real Supabase asset URLs mapped safely into the card layout metrics

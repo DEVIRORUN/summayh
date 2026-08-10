@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { PriceTag } from "../axiom/PriceTag";
+import { PriceTag } from "@/components/axiom/PriceTag";
 
 interface StickyOrderCTAProps {
   selectedTier: { label: string; price: number };

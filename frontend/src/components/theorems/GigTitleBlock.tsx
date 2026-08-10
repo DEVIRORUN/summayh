@@ -1,5 +1,5 @@
-import { SellerMiniRow, type SellerLevel } from "../axiom/SellerMiniRow";
-import { RatingInline } from "../axiom/RatingInline";
+import { SellerMiniRow, type SellerLevel } from "@/components/axiom/SellerMiniRow";
+import { RatingInline } from "@/components/axiom/RatingInline";
 
 interface GigTitleBlockProps {
   title: string;

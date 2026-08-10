@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { PricingTierTabs } from "@/components/theorems/PricingTierTabs";
 import { Button } from "@/components/ui/button";
 import { Zap, Star, Crown } from "lucide-react";
-import { SlotPicker } from "../axiom/SlotPicker";
+import { SlotPicker } from "@/components/axiom/SlotPicker";
 
 // Matches your backend's GigTier model shape (label, customName, description,
 // price, deliveryDays, revisionCount) — this is what gig.tiers contains

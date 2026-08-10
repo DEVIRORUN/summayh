@@ -1,8 +1,8 @@
 // components/MockOrders.tsx
 "use client";
 
-import { OrdersTable } from "../theorems/OrdersTable"; 
-import { type OrderStatus } from "../theorems/OrderCard"; // Adjust this import path as well
+import { OrdersTable } from "@/components/theorems/OrdersTable"; 
+import { type OrderStatus } from "@/components/theorems/OrderCard"; // Adjust this import path as well
 
 // 1. Static mock data representing different statuses
 const MOCK_ORDERS = [

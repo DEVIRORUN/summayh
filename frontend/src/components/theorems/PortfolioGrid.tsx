@@ -1,4 +1,4 @@
-import { EmptyState } from "../axiom/EmptyState";
+import { EmptyState } from "@/components/axiom/EmptyState";
 import { ImageIcon } from "lucide-react";
 import Image from "next/image";
 

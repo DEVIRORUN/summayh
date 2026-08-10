@@ -1,5 +1,5 @@
 import { Table, TableHeader,  TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
-import { PriceTag } from "../axiom/PriceTag";
+import { PriceTag } from "@/components/axiom/PriceTag";
 import { Badge } from "@/components/ui/badge";
 import { type OrderStatus, statusStyles } from "./OrderCard";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import { EmptyState } from "../axiom/EmptyState";
+import { EmptyState } from "@/components/axiom/EmptyState";
 import { SearchX } from "lucide-react";
 
 export function EmptyStateWrapper() {

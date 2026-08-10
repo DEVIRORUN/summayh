@@ -1,7 +1,7 @@
 "use client"; // 👈 This makes the wrapper a client component!
 
 import { useState } from "react";
-import { GigCard } from "../theorems/GigCard";
+import { GigCard } from "@/components/theorems/GigCard";
 
 
 // 1. Destructure { url } from the props object here

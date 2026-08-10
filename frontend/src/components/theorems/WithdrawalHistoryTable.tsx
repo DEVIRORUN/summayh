@@ -1,8 +1,8 @@
 import { Wallet } from "lucide-react";
-import { EmptyState } from "./EmptyState";
+import { EmptyState } from "@/components/axiom/EmptyState";
 import { Table, TableHeader, TableRow, TableCell, TableBody, TableHead } from "../ui/table";
-import { PriceTag } from "./PriceTag";
-import { Badge } from "../ui/badge";
+import { PriceTag } from "@/components/axiom/PriceTag";
+import { Badge } from "@/components/ui/badge";
 
 interface WithdrawalRow {
     id: string;

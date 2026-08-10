@@ -2,9 +2,9 @@
 
 import { Heart } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { PriceTag } from "../axiom/PriceTag";
-import { RatingInline } from "../axiom/RatingInline";
-import { SellerMiniRow, type SellerLevel } from "../axiom/SellerMiniRow";
+import { PriceTag } from "@/components/axiom/PriceTag";
+import { RatingInline } from "@/components/axiom/RatingInline";
+import { SellerMiniRow, type SellerLevel } from "@/components/axiom/SellerMiniRow";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";

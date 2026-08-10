@@ -1,5 +1,5 @@
-import { PriceTag } from "../axiom/PriceTag";
-import { FeatureListItem } from "../axiom/FeatureListItem";
+import { PriceTag } from "@/components/axiom/PriceTag";
+import { FeatureListItem } from "@/components/axiom/FeatureListItem";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";

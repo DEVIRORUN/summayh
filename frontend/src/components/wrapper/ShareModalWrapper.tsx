@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ShareModal } from "../axiom/ShareModal";
+import { ShareModal } from "@/components/axiom/ShareModal";
 
 
 export default function ShareDemoPage() {

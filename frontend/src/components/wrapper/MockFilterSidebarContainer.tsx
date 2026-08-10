@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { FilterSidebar } from "../axiom/FilterSIidebar"; 
+import { FilterSidebar } from "@/components/axiom/FilterSIidebar"; 
 
 // Re-exporting types for external type safety validation if needed
 export interface FilterConfig {

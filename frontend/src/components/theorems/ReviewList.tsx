@@ -1,4 +1,4 @@
-import { EmptyState } from "../axiom/EmptyState";
+import { EmptyState } from "@/components/axiom/EmptyState";
 import { MessageSquare } from "lucide-react";
 import { ReviewCard, type ReviewCardProps } from "./ReviewCard";
 import { Button } from "@/components/ui/button";

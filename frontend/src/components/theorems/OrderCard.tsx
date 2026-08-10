@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PriceTag } from "../axiom/PriceTag";
-import { SellerMiniRow, type SellerLevel } from "../axiom/SellerMiniRow";
+import { PriceTag } from "@/components/axiom/PriceTag";
+import { SellerMiniRow, type SellerLevel } from "@/components/axiom/SellerMiniRow";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";

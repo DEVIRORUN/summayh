@@ -1,6 +1,6 @@
 "use client"; // Required since Recharts uses client-side rendering APIs
 
-import { EarningsSummaryCard } from "../axiom/EarningsSummaryCard"; 
+import { EarningsSummaryCard } from "@/components/axiom/EarningsSummaryCard"; 
 
 // Mock data representing earnings over a 7-day period
 const mockChartData = [

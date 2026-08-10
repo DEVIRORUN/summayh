@@ -1,7 +1,7 @@
 // MockGigAccordionContainer.tsx
 "use client";
 
-import { GigDescriptionAccordion } from "../axiom/GigDescriptionAccordion"; 
+import { GigDescriptionAccordion } from "@/components/axiom/GigDescriptionAccordion"; 
 
 export default function MockGigAccordionContainer() {
   const sampleDescription = 

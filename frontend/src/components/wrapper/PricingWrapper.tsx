@@ -1,7 +1,7 @@
 "use client";
 
 import { Zap, Star, Crown } from "lucide-react";
-import { PricingTierTabs } from "../theorems/PricingTierTabs";
+import { PricingTierTabs } from "@/components/theorems/PricingTierTabs";
 
 const tierData = [
   {

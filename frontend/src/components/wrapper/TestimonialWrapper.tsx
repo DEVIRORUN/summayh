@@ -1,5 +1,5 @@
-import { TestimonialCard } from "../axiom/TestimonialCard";
-import { type TestimonialCardProps } from "../axiom/TestimonialCard";
+import { TestimonialCard } from "@/components/axiom/TestimonialCard";
+import { type TestimonialCardProps } from "@/components/axiom/TestimonialCard";
 
 const MOCK_TESTIMONIALS = [
   {

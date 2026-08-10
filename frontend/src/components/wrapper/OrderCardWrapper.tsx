@@ -1,8 +1,8 @@
 // page.tsx
 "use client";
 
-import { SellerLevel } from "../axiom/SellerMiniRow";
-import { OrderCard } from "../theorems/OrderCard";
+import { SellerLevel } from "@/components/axiom/SellerMiniRow";
+import { OrderCard } from "@/components/theorems/OrderCard";
 
 // mockOrders.ts
 export interface MockOrder {

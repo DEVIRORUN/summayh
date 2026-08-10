@@ -1,4 +1,4 @@
-import { RatingInline } from "../axiom/RatingInline";
+import { RatingInline } from "@/components/axiom/RatingInline";
 import { Progress } from "@/components/ui/progress";
 
 

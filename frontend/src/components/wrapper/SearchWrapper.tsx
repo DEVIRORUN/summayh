@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { SearchBar } from "../axiom/SearchBar"; // adjustments based on your folder structure
+import { SearchBar } from "@/components/axiom/SearchBar"; // adjustments based on your folder structure
 
 // Mock Database of suggestions based on your freelance niche
 const ALL_MOCK_SUGGESTIONS = [
