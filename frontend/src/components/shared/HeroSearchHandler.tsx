@@ -12,5 +12,5 @@ export function HeroSearchHandler() {
         router.push(`/search?q=${encodeURIComponent(query)}`);  //Changes the browser's URL without reloading the page and URIComponent converts into safe stuff browser can use
     }
 
-    return<HeroSection onSearch={handleSearch} />
+    return <HeroSection onSearch={handleSearch} />
 }

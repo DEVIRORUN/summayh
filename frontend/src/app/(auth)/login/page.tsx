@@ -49,21 +49,23 @@ export default function LoginPage() {
       title="Welcome back"
       subtitle="Log in to continue to SUMMAYH"
       footer={
-        <span>
-          {"Don't have an account? "}
-          <Link href="/signup" className="text-primary font-medium underline">
+        <p className="text-xs text-muted-foreground text-center">
+          Don&apos;t have an account?{" "}
+          <Link href="/signup" className="text-foreground hover:text-primary font-medium underline underline-offset-4 transition-colors">
             Sign up
           </Link>
-        </span>
+        </p>
       }
     >
-      <AuthForm
-        mode="login"
-        onSubmit={handleLogin}
-        isSubmitting={isSubmitting}
-        error={error}
-      />
-      <SocialAuthButtons onGoogleAuth={handleGoogleAuth} />
+      <div className="flex flex-col gap-5 min-w-0">
+        <AuthForm
+          mode="login"
+          onSubmit={handleLogin}
+          isSubmitting={isSubmitting}
+          error={error}
+        />
+        <SocialAuthButtons onGoogleAuth={handleGoogleAuth} />
+      </div>
     </AuthCard>
   );
 }

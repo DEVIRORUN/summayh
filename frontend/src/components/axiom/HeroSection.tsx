@@ -24,7 +24,7 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
 
     return (
         <div className="flex flex-col items-center text-center gap-6 py-16 px-4">
-        <h1 className="text-3xl md:text-5xl font-bold max-w-2xl">
+        <h1 className="text-3xl md:text-5xl font-bold max-w-2xl font-heading">
             Find the right freelancer for your project
         </h1>
         <p className="text-muted-foreground max-w-lg">
