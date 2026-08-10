@@ -12,7 +12,7 @@ interface HowItWorksStepsProps {
 
 export function HowItWorksSteps({ steps }: HowItWorksStepsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-max mx-auto">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
       {steps.map((s, i) => (
         <div key={i} className="flex flex-col items-center text-center hover:bg-accent hover:shadow transition-colors duration-300 select-none cursor-pointer gap-3 border border-border rounded-lg p-6 max-w-sm">
           <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold">
