@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getBalance, getLedger } from "@/lib/payment"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
