@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { getConversations } from "@/lib/message";
 import { getCurrentUser } from "@/lib/auth";
 import { ConversationList } from "@/components/theorems/ConversationList";

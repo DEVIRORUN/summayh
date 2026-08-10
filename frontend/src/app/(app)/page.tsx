@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { HeroSearchHandler } from "@/components/shared/HeroSearchHandler";
 import {
   Code,

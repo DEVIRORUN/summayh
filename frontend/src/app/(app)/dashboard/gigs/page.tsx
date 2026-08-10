@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { getSellerGigs } from "@/lib/gigs";
 import { type GigCardProps } from "@/components/theorems/GigCard";
 import { GigFilterBar, type GigSortOption } from "@/components/axiom/GigFilterBar";

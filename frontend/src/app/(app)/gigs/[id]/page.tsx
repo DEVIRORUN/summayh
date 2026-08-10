@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { GigGallery } from "@/components/axiom/GigGallery";
 import { GigTitleBlock } from "@/components/theorems/GigTitleBlock";
 import { GigDescriptionAccordion } from "@/components/axiom/GigDescriptionAccordion";

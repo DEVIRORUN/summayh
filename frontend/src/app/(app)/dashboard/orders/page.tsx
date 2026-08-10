@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { getBuyerOrders, getSellerOrders, type OrderListItem } from "@/lib/order";
 import { getCurrentUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";

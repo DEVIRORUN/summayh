@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { PriceTag } from "@/components/axiom/PriceTag";
 import { OrderStatusTimeline, type TimelineStep } from "@/components/axiom/OrderStatusTimeline";
 // import { OrderRequirementsForm }

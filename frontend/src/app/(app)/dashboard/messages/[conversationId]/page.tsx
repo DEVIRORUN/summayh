@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { getCurrentUser } from "@/lib/auth";
 import { ChatSection } from "@/components/theorems/ChatSection";
 
