@@ -51,7 +51,7 @@ router.post("/draft", protectRoute, requireSeller, GigController.createDraftGig)
  *       201:
  *         description: Gig created successfully
  */
-router.post("/create", protectRoute, requireSeller, GigController.createGig);
+// router.post("/create", protectRoute, requireSeller, GigController.createGig);
 
 /**
  * @openapi

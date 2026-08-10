@@ -41,15 +41,20 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
     const otherUserId = isBuyer ? order?.seller.user.id : order?.buyer.id;
     const isLive = order.gig.deliveryMode === "LIVE";
 
-    const nextBooking = order.sessionPackage?.bookings
-        ?.filter((b: any) => b.status === "SCHEDULED")
-        ?.sort((a: any, b: any) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime())
-        ?.[0];
+    function getNextBooking(bookings: any[] | undefined) {
+        const now = Date.now();
+        return bookings
+            ?.filter((b: any) => b.status === "SCHEDULED" && new Date(b.scheduledEnd).getTime() > now)
+            ?.sort((a: any, b: any) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime())
+            ?.[0];
+    }
 
 
     function handleSendMessage() {
         console.log("Sending message")
     }
+
+    const nextBooking = getNextBooking(order.sessionPackage?.bookings);
 
     return (
         <div className="w-full max-w-5xl mx-auto px-4 py-8 flex flex-col gap-6 min-w-0">

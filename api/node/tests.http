@@ -36,8 +36,8 @@ Content-Type: application/json
 
 {
   "email": "idania@lasu.edu.ng",
-  "password": "AhmedIdan_717"
-}
+  "password": "
+}"AhmedIdan_717
 
 ### Login BUYER
 POST http://localhost:3000/api/auth/login

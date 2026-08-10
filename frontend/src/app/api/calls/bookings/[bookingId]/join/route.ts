@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { proxyFetch } from "@/lib/proxy-fetch";
 
-export async function GET(
+export async function POST(
     request: Request,
     { params }: { params: Promise<{ bookingId: string }> }
 ) {
     try {
         const { bookingId } = await params;
+        console.log("[BFF] bookingId:", bookingId);
 
         const backendRes = await proxyFetch(request, `/api/calls/bookings/${bookingId}/join`, {
-            method: "GET",
+            method: "POST",
         });
 
         if (!backendRes.ok) {
@@ -21,7 +22,7 @@ export async function GET(
         }
 
         const data = await backendRes.json();
-
+        console.log("[BFF DATA JOIN SESSION]:", data);
         return NextResponse.json(data);
     } catch (error) {
         console.error("[Next.js Gateway Error]: (Calls/Bookings/[bookingId]) ->", error);

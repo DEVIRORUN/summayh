@@ -135,6 +135,44 @@ enum LedgerEntryStatus {
   REVERSED
 }
 
+enum CallStatus {
+  PENDING
+  RINGING
+  ACTIVE
+  ENDED
+  MISSED
+}
+
+enum BoardMode {
+  DIGITAL
+  CAMERA
+  RESOURCE
+}
+
+enum PurchaseType {
+  FULL_COURSE
+  SESSION_RANGE
+}
+
+enum OvertimeStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
+enum PackageStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+}
+
+enum BookingStatus {
+  SCHEDULED
+  COMPLETED
+  MISSED
+  CANCELLED
+}
+
 // model TestConnection {
 //   id        String   @id @default(uuid())
 //   createdAt DateTime @default(now())
@@ -150,7 +188,7 @@ model User {
   university         String           @default("Unkown University")
   dateOfBirth        DateTime?
   avatar             String?
-  isOnline Boolean?
+  isOnline           Boolean?
   phoneNumber        String?          @unique
   isPhoneVerified    Boolean          @default(false)
   role               Role             @default(BUYER)
@@ -173,8 +211,11 @@ model User {
   withdrawals          Withdrawal[]
   messages             Message[]
   conversations        Conversation[]
-  conversationsAsUserA Conversation[]   @relation("ConversationsAsUserA")
-  conversationsAsUserB Conversation[]   @relation("ConversationsAsUserB")
+  conversationsAsUserA Conversation[]     @relation("ConversationsAsUserA")
+  conversationsAsUserB Conversation[]     @relation("ConversationsAsUserB")
+  CallerSessions       CallSession[]      @relation("CallerSessions")
+  CalleeSessions       CallSession[]      @relation("CalleeSessions")
+  courseEnrollments    CourseEnrollment[]
 }
 
 model SellerProfile {
@@ -220,6 +261,21 @@ model SellerProfile {
   testimonialWritten    Testimonial[]
   withdrawals           Withdrawal[]
   ledgerEntries         LedgerEntry[]
+  sellerAvailabilities  SellerAvailability[]
+}
+
+model SellerAvailability {
+  id        String   @id @default(uuid())
+  sellerId  String
+  dayOfWeek Int // 0-6 -> 7 days
+  startTime String
+  endTime   String
+  timeZone  String   @default("Africa/Lagos")
+  createdAt DateTime @default(now())
+
+  seller SellerProfile @relation(fields: [sellerId], references: [id])
+
+  @@index([sellerId, dayOfWeek])
 }
 
 model FoundersPassPurchase {
@@ -280,6 +336,7 @@ model Gig {
   reviews              Review[]
   gigStats             GigStats?
   gigFAQs              GigFAQ[]
+  gigCourse            GigCourse?
 }
 
 model GigStats {
@@ -305,10 +362,15 @@ model GigTier {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @default(now()) @updatedAt
 
+  sessionLengthMin Int?
+  breakLengthMin   Int?
+  totalSessions    Int?
+
   // Relationships
   gig             Gig                 @relation(fields: [gigId], references: [id], onDelete: Cascade)
   quantityPricing TierQuantityPrice[]
   orders          Order[]
+  sessionPackages SessionPackage[]
 
   @@unique([gigId, label]) // a gig can only have ONE TIER not label duplicates
 }
@@ -337,6 +399,113 @@ model TierQuantityPrice {
   gigTier GigTier @relation(fields: [gigTierId], references: [id], onDelete: Cascade)
 
   @@unique([gigTierId, quantity]) // no duplicate quantity bands per tier
+}
+
+model GigCourse {
+  id        String   @id @default(uuid())
+  gigId     String   @unique
+  title     String // Full Concept "Full Qur'an Memorization"
+  createdAt DateTime @default(now())
+
+  gig               Gig                @relation(fields: [gigId], references: [id])
+  topics            GigTopic[]
+  gigSessionUnits   GigSessionUnit[]
+  courseEnrollments CourseEnrollment[]
+}
+
+model GigTopic {
+  id       String @id @default(uuid())
+  courseId String
+  order    Int
+  title    String // Full Concept "Full Qur'an Memorization"
+
+  course       GigCourse        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  sessionUnits GigSessionUnit[]
+
+  @@unique([courseId, order])
+}
+
+model GigSessionUnit {
+  id               String @id @default(uuid())
+  topicId          String
+  courseId         String // denormalized, range in course (56-67) cheap
+  globalIndex      Int // Position across the WHOLE course i,e 1..128
+  title            String
+  estimatedMinutes Int    @default(30)
+
+  topic    GigTopic         @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  course   GigCourse        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  bookings SessionBooking[]
+
+  @@unique([courseId, globalIndex])
+}
+
+model CourseEnrollment {
+  id                      String       @id @default(uuid())
+  orderId                 String       @unique
+  courseId                String
+  buyerId                 String
+  purchaseType            PurchaseType
+  startIndex              Int? // Used for SESSION_RANGE
+  endIndex                Int?
+  sessionsPerDayPref      Int? // Pacing choice, FULL_COURSE only
+  totalSesssionsPurchased Int
+  sessionsCompleted       Int          @default(0)
+  createdAt               DateTime     @default(now())
+
+  order    Order            @relation(fields: [orderId], references: [id])
+  course   GigCourse        @relation(fields: [courseId], references: [id])
+  buyer    User             @relation(fields: [buyerId], references: [id])
+  bookings SessionBooking[]
+}
+
+model SessionPackage {
+  id               String        @id @default(uuid())
+  orderId          String        @unique
+  gigTierid        String
+  sessionLengthMin Int
+  breakLengthMin   Int
+  totalSessions    Int
+  sessionused      Int           @default(0)
+  status           PackageStatus @default(ACTIVE)
+
+  order    Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  gigTier  GigTier          @relation(fields: [gigTierid], references: [id], onDelete: Cascade)
+  bookings SessionBooking[]
+}
+
+model SessionBooking {
+  id             String        @id @default(uuid())
+  packageId      String?
+  enrollmentId   String?
+  sessionUnitId  String?
+  callSessionId  String?       @unique // links to CallSession once it happens
+  scheduledStart DateTime
+  scheduledEnd   DateTime
+  status         BookingStatus @default(SCHEDULED)
+  roadmapStepId  String? // which topic this session covers
+
+  package     SessionPackage?   @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  enrollment  CourseEnrollment? @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  sessionUnit GigSessionUnit?   @relation(fields: [sessionUnitId], references: [id])
+  callSession CallSession?      @relation(fields: [callSessionId], references: [id], onDelete: SetNull)
+
+  @@index([packageId])
+  @@index([enrollmentId])
+  @@index([scheduledStart])
+}
+
+model SessionOvertimeRequest {
+  id            String         @id @default(uuid())
+  callSessionId String
+  requestedBy   String
+  extraMinutes  Int
+  amount        Float
+  status        OvertimeStatus @default(PENDING)
+  createdAt     DateTime       @default(now())
+  respondedAt   DateTime?
+
+  callSession CallSession @relation(fields: [callSessionId], references: [id])
 }
 
 model GigFAQ {
@@ -400,14 +569,40 @@ model Order {
   paymentReference        String?     @unique
 
   // Relationships
-  buyer         User          @relation(fields: [buyerId], references: [id])
-  seller        SellerProfile @relation(fields: [sellerId], references: [id])
-  category      Category?     @relation(fields: [categoryId], references: [id])
-  gigTier       GigTier       @relation(fields: [gigTierId], references: [id])
-  gig           Gig           @relation(fields: [gigId], references: [id])
-  dispute       Dispute?
-  review        Review?
-  ledgerEntries LedgerEntry[]
+  buyer            User              @relation(fields: [buyerId], references: [id])
+  seller           SellerProfile     @relation(fields: [sellerId], references: [id])
+  category         Category?         @relation(fields: [categoryId], references: [id])
+  gigTier          GigTier           @relation(fields: [gigTierId], references: [id])
+  gig              Gig               @relation(fields: [gigId], references: [id])
+  dispute          Dispute?
+  review           Review?
+  ledgerEntries    LedgerEntry[]
+  orderDeliveries  OrderDelivery[]
+  courseEnrollment CourseEnrollment?
+  sessionPackage   SessionPackage?
+  callSessions     CallSession[]
+}
+
+model OrderDelivery {
+  id        String          @id @default(uuid())
+  orderId   String
+  message   String?
+  type      GigDeliveryMode @default(DIGITAL)
+  files     DeliveryFile[]
+  createdAt DateTime        @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+}
+
+model DeliveryFile {
+  id         String   @id @default(uuid())
+  deliveryId String?
+  fileKey    String
+  fileName   String
+  fileSize   Int
+  createdAt  DateTime @default(now())
+
+  delivery OrderDelivery? @relation(fields: [deliveryId], references: [id])
 }
 
 model LedgerEntry {
@@ -598,4 +793,65 @@ model Testimonial {
 
   @@index([sellerId])
   @@index([buyerId])
+}
+
+model CallSession {
+  id           String        @id @default(uuid())
+  roomName     String        @unique
+  orderId      String?
+  callerId     String
+  calleeId     String
+  status       CallStatus    @default(PENDING)
+  startedAt    DateTime?
+  endedAt      DateTime?
+  recordingUrl String?
+  boardSession BoardSession?
+  events       CallEvent[]
+  createdAt    DateTime      @default(now())
+
+  caller                  User                     @relation("CallerSessions", fields: [callerId], references: [id])
+  callee                  User                     @relation("CalleeSessions", fields: [calleeId], references: [id])
+  order                   Order?                   @relation(fields: [orderId], references: [id])
+  sessionOvertimeRequests SessionOvertimeRequest[]
+  sessionBooking          SessionBooking?
+  sessionMaterials        SessionMaterial[]
+
+  @@index([callerId])
+  @@index([calleeId])
+}
+
+model CallEvent {
+  id        String   @id @default(uuid())
+  sessionId String
+  type      String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  session CallSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+}
+
+model BoardSession {
+  id            String    @id @default(uuid())
+  callSessionId String    @unique
+  mode          BoardMode @default(DIGITAL)
+  eventLogUrl   String?
+  createdAt     DateTime  @default(now())
+
+  callSession CallSession @relation(fields: [callSessionId], references: [id])
+}
+
+model SessionMaterial {
+  id            String   @id @default(uuid())
+  callSessionId String
+  uploadedBy    String
+  fileUrl       String
+  fileName      String
+  fileType      String
+  createdAt     DateTime @default(now())
+
+  callSession CallSession @relation(fields: [callSessionId], references: [id])
+
+  @@index([callSessionId])
 }

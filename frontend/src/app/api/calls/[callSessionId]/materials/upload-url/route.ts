@@ -7,10 +7,13 @@ export async function POST(
 ) {
     try {
         const { callSessionId } = await params;
+        const body = await request.text();
 
         const backendRes = await proxyFetch(request, `/api/session-material/${callSessionId}/generate`, {
             method: "POST",
+            body,
         });
+        console.log("Forwarding body:", body);
 
         if (!backendRes.ok) {
             const errorData = await backendRes.json().catch(() => ({}));

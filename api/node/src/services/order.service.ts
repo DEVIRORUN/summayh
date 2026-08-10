@@ -19,6 +19,7 @@ export class OrderService {
         // 1. Extract your application identifiers (e.g., orderId passed during initialization)
         // Paystack allows passing custom fields inside a 'metadata' object
         const orderId = metadata?.orderId;
+        const { scheduledStart, scheduledEnd } = metadata || {};
 
         if (!orderId) {
             console.log(`[Webhook Error]: No orderId found in metadata for reference: ${reference}`);
@@ -31,6 +32,7 @@ export class OrderService {
                 // Find the target order using the orderId from metadata
                 const order = await tx.order.findUnique({
                     where: { id: orderId },
+                    include: { gigTier: true, gig: true },
                 });
 
                 if (!order) {
@@ -57,6 +59,42 @@ export class OrderService {
                         updatedAt: new Date(),
                     },
                 });
+
+                // LIVE gig: create the session apckgae + lock in the first booking
+                if (order.gig.deliveryMode === "LIVE" && scheduledStart && scheduledEnd) {
+                    const sessionPackage = await tx.sessionPackage.create({
+                        data: {
+                            orderId: order.id,
+                            gigTierid: order.gigTier.id,
+                            sessionLengthMin: order.gigTier.sessionLengthMin ?? 30,
+                            breakLengthMin: order.gigTier.breakLengthMin ?? 0,
+                            totalSessions: order.gigTier.totalSessions ?? 1,
+                        }
+                    });
+                    // re-check clash at moment of payment [SURE CONFIRMATION]
+                    // e got booked btw slot-selection and oayment completing
+                    const conflict = await tx.sessionBooking.findFirst({
+                        where: {
+                            status: "SCHEDULED",
+                            scheduledStart: { lt: new Date(scheduledEnd) },
+                            scheduledEnd: { gt: new Date(scheduledStart) },
+                            package: { gigTier: { gig: { sellerId: order.sellerId } } },
+                        },
+                    });
+
+                    if (conflict) {
+                        console.warn (`[Webhook Warning]: Slot conflict on order ${orderId}, booking not auto-created.`)
+                    } else {
+                        await tx.sessionBooking.create({
+                            data: {
+                                packageId: sessionPackage.id,
+                                scheduledStart: new Date(scheduledStart),
+                                scheduledEnd: new Date(scheduledEnd),
+                                status: "SCHEDULED",
+                            },
+                        })
+                    }
+                }
                 console.log(`[Webhook Success]: Order ${orderId} marked as PAID with reference: ${reference} from customer: ${customer}`);
 
                 return { success: true, order: updatedOrder };
@@ -189,14 +227,21 @@ export class OrderService {
         const order = await prisma.order.findUnique({
             where: { id: orderId },
             include: {
-                gig: { select: { title: true, coverImage: true } },
+                gig: { select: { id: true, title: true, coverImage: true, deliveryMode: true } },
                 buyer: { select: { id: true, name: true } },
                 seller: {
                     include: {
-                        user: { select: { id: true, name: true }}
+                        user: { select: { id: true, name: true }},
                     }
                 },
-                gigTier: true
+                gigTier: true,
+                sessionPackage: {
+                    include: { bookings: true }
+                },
+                orderDeliveries: {
+                        include: { files: true },
+                        orderBy: { createdAt: "desc" }
+                },
             }
         });
 
@@ -256,7 +301,7 @@ export class OrderService {
                 }
             }); 
             const total = await prisma.order.count({ where: { sellerId: sellerProfile.id } });
-            console.log("ORDERS BY SELLERS: ", orders)
+            // console.log("ORDERS BY SELLERS: ", orders)
             return {
                 data: orders,
                 meta: {
@@ -379,6 +424,56 @@ export class OrderService {
         } catch(error: any) {
             console.error("ERROR SUBMITTING ORDER REQUIREMENTS", error);
         }
+    }
+
+    static async scheduleNextSession(
+        orderId: string,
+        buyerId: string,
+        scheduledStart: string,
+        scheduledEnd: string,
+    ) {
+        return prisma.$transaction(async (tx) => {
+            const order = await tx.order.findUnique({
+                where: { id: orderId },
+                include: { sessionPackage: true, seller: true }
+            });
+
+            if (!order) throw new Error("Order not found");
+            if (order.buyerId !== buyerId) throw new Error("Unauthorized.");
+            if (!order.sessionPackage) throw new Error("This order has no session package.");
+
+            const pkg = order.sessionPackage;
+            if (pkg.sessionused >= pkg.totalSessions) {
+                throw new Error("All sessions in this package have already been scheduled.")
+            }
+
+            // re-check clash at booking time
+            const conflict = await tx.sessionBooking.findFirst({
+                where: {
+                    status: "SCHEDULED",
+                    scheduledStart: { lt: new Date(scheduledEnd) },
+                    scheduledEnd: { gt: new Date(scheduledStart) },
+                    package: { gigTier: { gig: { sellerId: order.sellerId } } }
+                },
+            });
+            if (conflict) throw new Error("This slot was just taken. Please pick another.");
+            
+            const booking = await tx.sessionBooking.create({
+                data: {
+                    packageId: pkg.id,
+                    scheduledStart: new Date(scheduledStart),
+                    scheduledEnd: new Date(scheduledEnd),
+                    status: "SCHEDULED",
+                },
+            });
+
+            await tx.sessionPackage.update({
+                where: { id: pkg.id },
+                data: { sessionused: { increment: 1 } },
+            });
+            
+            return booking;
+        })
     }
 
     static async cancelOrder(orderId: string, userId: string, reason: string): Promise<any> {

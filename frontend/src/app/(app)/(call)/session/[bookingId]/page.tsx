@@ -10,6 +10,7 @@ import ConnectionQualityBadge from "@/components/axiom/ConnectionQualityBadge";
 import { getBookingDetails } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import FileViewer from "@/components/theorems/FileViewer";
+import { resolveFileTypeAndName } from "@/lib/file-validation";
 
 interface Booking {
     id: string;
@@ -40,14 +41,6 @@ export default function CallSessionPage({
     const [viewMode, setViewMode] = useState<"BOARD" | "FILES">("BOARD");
 
     useEffect(() => {
-        async function fetchBooking() {
-            const data = await getBookingDetails(bookingId);
-            setBooking(data);
-        }
-        fetchBooking();
-    }, [bookingId]);
-
-    useEffect(() => {
         if (!room) return;
 
         function handleQualityChanged(quality: ConnectionQuality, participant: Participant) {
@@ -60,7 +53,7 @@ export default function CallSessionPage({
         return () => { room.off(RoomEvent.ConnectionQualityChanged, handleQualityChanged); };
     }, [room]);
 
-    const isSellerForThisBooking = !!user && !!booking && user.id === booking.callSession.calleeId;
+    const isSellerForThisBooking = !!user && !!booking && user.id === booking?.callSession?.calleeId;
 
     useEffect(() => {
         const mq = window.matchMedia("(min-width: 1024px)");
@@ -80,6 +73,9 @@ export default function CallSessionPage({
             const { token, url } = await res.json();
 
             if (cancelled) return; // effect was torn down while we were fetching — bail before connecting
+
+            const fresh = await getBookingDetails(bookingId);
+            if (!cancelled) setBooking(fresh);
 
             const newRoom = new Room({
                 adaptiveStream: true, // degardes automatically on poor connection instead of failing
@@ -147,6 +143,11 @@ export default function CallSessionPage({
         connect();
         return () => { 
             cancelled = true;
+            if (roomInstance) {
+                roomInstance.localParticipant.trackPublications.forEach((pub) => {
+                    pub.track?.stop();
+                })
+            }
             roomInstance?.disconnect(); 
         };
     }, [bookingId]);
@@ -217,9 +218,12 @@ export default function CallSessionPage({
                     <Button onClick={() => setViewMode("BOARD")} className={cn("text-xs px-2 py-1 rounded-xs cursor-pointer", viewMode === "BOARD" && "bg-muted")}>Board</Button>
                     <Button onClick={() => setViewMode("FILES")} className={cn("text-xs px-2 py-1 rounded-xs cursor-pointer", viewMode === "FILES" && "bg-muted")}>Files</Button>
                 </div>
-                    {viewMode === "BOARD"
-                        ? <Whiteboard room={room} isEnlarged={isEnlarged} onToggleEnlarge={toggleEnlarge} isHost={isSellerForThisBooking}/>
-                        : <FileViewer room={room} callSessionId={booking.callSession.id} activeMaterialId={activeMaterialId} onSelect={setActiveMaterialId}/>}
+                <div className={cn("h-full", viewMode !== "BOARD" && "hidden")}>
+                    <Whiteboard room={room} isEnlarged={isEnlarged} onToggleEnlarge={toggleEnlarge} isHost={isSellerForThisBooking}/>
+                </div>
+                <div className={cn("h-full", viewMode !== "FILES" && "hidden")}>
+                    <FileViewer room={room} callSessionId={booking.callSession.id} activeMaterialId={activeMaterialId} onSelect={setActiveMaterialId}/>
+                </div>
                 </div>
                 <div className="flex flex-col shrink-0 w-64 gap-4 min-h-0">
                     <div className="flex-1 min-h-0 flex flex-col border rounded p-2 relative overflow-hidden">
@@ -266,8 +270,17 @@ export default function CallSessionPage({
 
     return (
         <div className="h-full w-full min-h-0 min-w-0 bg-slate-50 flex flex-row relative">
-            <div className="flex-1 min-h-0 relative">
-                <Whiteboard room={room} isEnlarged={isEnlarged} onToggleEnlarge={toggleEnlarge} isHost={isSellerForThisBooking}/>
+            <div className="flex-1 min-w-0 h-full w-full min-h-0 relative">
+                <div className="flex gap-1 p-1 border-b border-border">
+                    <Button onClick={() => setViewMode("BOARD")} className={cn("text-xs px-2 py-1 rounded-xs cursor-pointer", viewMode === "BOARD" && "bg-muted")}>Board</Button>
+                    <Button onClick={() => setViewMode("FILES")} className={cn("text-xs px-2 py-1 rounded-xs cursor-pointer", viewMode === "FILES" && "bg-muted")}>Files</Button>
+                </div>
+                <div className={cn("h-full", viewMode !== "BOARD" && "hidden")}>
+                    <Whiteboard room={room} isEnlarged={isEnlarged} onToggleEnlarge={toggleEnlarge} isHost={isSellerForThisBooking}/>
+                </div>
+                <div className={cn("h-full", viewMode !== "FILES" && "hidden")}>
+                    <FileViewer room={room} callSessionId={booking.callSession.id} activeMaterialId={activeMaterialId} onSelect={setActiveMaterialId}/>
+                </div>
             </div>
             <div className="shrink-0 w-28 flex flex-col gap-2 p-2 bg-slate-900 overflow-y-auto">
                 <div className="w-full h-20 shrink-0 relative rounded overflow-hidden border border-slate-700">

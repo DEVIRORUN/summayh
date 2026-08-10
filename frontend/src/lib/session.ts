@@ -2,8 +2,8 @@ export interface CallSessionData {
     id: string;
     callerId: string;
     calleeId: string;
-    status: string;
-    roomName: string;
+    status?: string;
+    roomName?: string;
 }
 
 export interface BookingWithSession {
@@ -18,6 +18,7 @@ export async function  getBookingDetails(bookingId: string): Promise<BookingWith
         const res = await fetch(`/api/calls/bookings/${bookingId}/details`);
         if (!res.ok) return null;
         const data = await res.json();
+        console.log("DATA FOR BOOKINGID}:", data);
         return data;
     } catch (err) {
         console.error("Failed to fetch booking details:", err);

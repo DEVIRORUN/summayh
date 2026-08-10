@@ -13,8 +13,11 @@ interface TierInput {
   customName?: string;
   description: string;
   price: number;
-  deliveryDays: number;
-  revisionCount: number;
+  deliveryDays?: number;
+  revisionCount?: number;
+  sessionLengthMin?: number;
+  breakLengthMin?: number;
+  totalSessions?: number;
 }
 interface GigTiersInput {
   basic: TierInput;
@@ -39,6 +42,17 @@ interface GigFAQInput {
   order?: number;
 }
 
+interface GigUpsertInput {
+  title: string;
+  category: string;
+  tags: string[];
+  description: string;
+  status?: string;
+  tiers: GigTiersInput[];
+  gallery: string[]
+}
+
+
 export class GigService {
   /**
    * For creation of gig + all 3 mandatory tiers (Basic, Standard, Premium)
@@ -49,6 +63,7 @@ export class GigService {
     categoryId: string,
     tags: string[],
     userId: string,
+    deliveryMode: "DIGITAL" | "LIVE" = "DIGITAL",
   ): Promise<any> {
     try {
       console.log(new Date(), "-> [GIG DRAFT CREATION]: Hit!!!");
@@ -56,7 +71,6 @@ export class GigService {
       const seller = await prisma.sellerProfile.findUnique({
         where: { userId },
       });
-
       if (!seller) {
         throw new Error("Seller not found.");
       }
@@ -66,6 +80,7 @@ export class GigService {
           title,
           tags,
           state: "DRAFT",
+          deliveryMode,
           seller: {
             connect: { id: seller.id },
           },
@@ -76,7 +91,6 @@ export class GigService {
       });
 
       console.log(new Date(), "-> [GIG DRAFT CREATION]: Draft Gig created!!!");
-
       return draftGig;
     } catch (err: any) {
       throw err;
@@ -143,39 +157,30 @@ export class GigService {
 
         await tx.gigTier.deleteMany({ where: { gigId } });
 
+        const isLive = newGig.deliveryMode === "LIVE";
+
+        const buildTierData = (label: TierLabel, tier: any) => ({
+            gigId,
+            label,
+            customName: tier.customName || label,
+            description: tier.description,
+            price: tier.price,
+            deliveryDays: isLive ? 0 : tier.deliveryDays,
+            revisionCount: isLive ? 0 : tier.revisionCount,
+            sessionLengthMin: isLive ? tier.sessionLengthMin : null,
+            breakLengthMin: isLive ? tier.breakLengthMin : null,
+            totalSessions: isLive ? tier.totalSessions : null,
+        })
+
         await tx.gigTier.createMany({
           data: [
-            {
-              gigId,
-              label: TierLabel.BASIC,
-              customName: tiers.basic.customName || "BASIC",
-              description: tiers.basic.description,
-              price: tiers.basic.price,
-              deliveryDays: tiers.basic.deliveryDays,
-              revisionCount: tiers.basic.revisionCount,
-            },
-            {
-              gigId,
-              label: TierLabel.STANDARD,
-              customName: tiers.standard.customName || "STANDARD",
-              description: tiers.standard.description,
-              price: tiers.standard.price,
-              deliveryDays: tiers.standard.deliveryDays,
-              revisionCount: tiers.standard.revisionCount,
-            },
-            {
-              gigId,
-              label: TierLabel.PREMIUM,
-              customName: tiers.premium.customName || "PREMIUM",
-              description: tiers.premium.description,
-              price: tiers.premium.price,
-              deliveryDays: tiers.premium.deliveryDays,
-              revisionCount: tiers.premium.revisionCount,
-            },
+            buildTierData(TierLabel.BASIC, tiers.basic),
+            buildTierData(TierLabel.STANDARD, tiers.standard),
+            buildTierData(TierLabel.PREMIUM, tiers.premium),
           ],
         });
 
-      console.log(new Date(), "-> [ADD TIERS TO DRAFT]: Draft Gig created!!!");
+        console.log(new Date(), "-> [ADD TIERS TO DRAFT]: Draft Gig created!!!");
         return newGig;
       });
       return tierGig;
@@ -189,6 +194,8 @@ export class GigService {
     fileType: string,
     slot: "image" | "video",
   ): Promise<{ uploadUrl: string; publicUrl: string }> {
+      console.log(new Date(), "-> [GET UPLOAD URL GIG]: Hit!!!");
+      console.log("R2_PUBLIC_URL =", process.env.R2_PUBLIC_URL);
     const gig = await prisma.gig.findFirst({
       where: { id: gigId, sellerId },
     });
@@ -214,6 +221,7 @@ export class GigService {
 
     // Now the URL FE/DB would display and store
     const publicUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
+    console.log("publicUrl", publicUrl);
 
     return { uploadUrl, publicUrl };
   }
@@ -232,6 +240,7 @@ export class GigService {
         data: {
           images,
           video,
+          coverImage: images?.[0] // Next tiem this coverImage alwways gets its pic
         },
       }); // so with these from teh types from schema no stress needed, the work is done
 
@@ -269,7 +278,23 @@ export class GigService {
         if (gig.images.length < 1)
           throw new Error("At least one image is required before publishing.");
 
-        const isPro = gig?.seller.isPro; // I don't think i need this anymore
+        const isLive = gig.deliveryMode === "LIVE";
+
+        if (isLive) {
+          const invalidTier = gig.tiers.find(
+            (t) => !t.sessionLengthMin || !t.totalSessions,
+          )
+          if (invalidTier) {
+            throw new Error("All tiers must have session length and total sessions set before publishing");
+          }
+
+          const availabilityCount = await tx.sellerAvailability.count({
+            where: { sellerId: gig.sellerId }
+          });
+          if (availabilityCount === 0) {
+            throw new Error("Please set your availability before publishing a live gig")
+          }
+        }
 
         const updatedGig = await tx.gig.update({
           where: { id: gigId, sellerId },
@@ -336,107 +361,107 @@ export class GigService {
       throw err;
     }
   }
-  static async initiateGigCreation(
-    title: string,
-    description: string,
-    tags: string[],
-    categoryId: string,
-    userId: string,
-    tiers: GigTiersInput,
-    requirementTemplates?: RequirementTemplateInput[], // Optional
-  ): Promise<any> {
-    try {
-      const newGig = await prisma.$transaction(async (tx) => {
-        const rookieExpiry = new Date(Date.now() + 72 * 60 * 60 * 1000); // 3 days form now()
+  // static async initiateGigCreation(
+  //   title: string,
+  //   description: string,
+  //   tags: string[],
+  //   categoryId: string,
+  //   userId: string,
+  //   tiers: GigTiersInput,
+  //   requirementTemplates?: RequirementTemplateInput[], // Optional
+  // ): Promise<any> {
+  //   try {
+  //     const newGig = await prisma.$transaction(async (tx) => {
+  //       const rookieExpiry = new Date(Date.now() + 72 * 60 * 60 * 1000); // 3 days form now()
 
-        const gig = await tx.gig.create({
-          data: {
-            title,
-            description,
-            tags,
-            rookieExpiredAt: rookieExpiry,
-            seller: {
-              connect: { userId: userId },
-            },
-            category: {
-              connect: { id: categoryId },
-            },
-          },
-        });
+  //       const gig = await tx.gig.create({
+  //         data: {
+  //           title,
+  //           description,
+  //           tags,
+  //           rookieExpiredAt: rookieExpiry,
+  //           seller: {
+  //             connect: { userId: userId },
+  //           },
+  //           category: {
+  //             connect: { id: categoryId },
+  //           },
+  //         },
+  //       });
 
-        await tx.gigStats.create({
-          data: { gigId: gig.id },
-        });
+  //       await tx.gigStats.create({
+  //         data: { gigId: gig.id },
+  //       });
 
-        await tx.gigTier.createMany({
-          data: [
-            {
-              gigId: gig.id,
-              label: TierLabel.BASIC,
-              customName: tiers.basic.customName || "BASIC",
-              description: tiers.basic.description,
-              price: tiers.basic.price,
-              deliveryDays: tiers.basic.deliveryDays,
-              revisionCount: tiers.basic.revisionCount,
-            },
-            {
-              gigId: gig.id,
-              label: TierLabel.STANDARD,
-              customName: tiers.standard.customName || "STANDARD",
-              description: tiers.standard.description,
-              price: tiers.standard.price,
-              deliveryDays: tiers.standard.deliveryDays,
-              revisionCount: tiers.standard.revisionCount,
-            },
-            {
-              gigId: gig.id,
-              label: TierLabel.PREMIUM,
-              customName: tiers.premium.customName || "PREMIUM",
-              description: tiers.premium.description,
-              price: tiers.premium.price,
-              deliveryDays: tiers.premium.deliveryDays,
-              revisionCount: tiers.premium.revisionCount,
-            },
-          ],
-        });
+  //       await tx.gigTier.createMany({
+  //         data: [
+  //           {
+  //             gigId: gig.id,
+  //             label: TierLabel.BASIC,
+  //             customName: tiers.basic.customName || "BASIC",
+  //             description: tiers.basic.description,
+  //             price: tiers.basic.price,
+  //             deliveryDays: 0,
+  //             revisionCount: tiers.basic.revisionCount,
+  //           },
+  //           {
+  //             gigId: gig.id,
+  //             label: TierLabel.STANDARD,
+  //             customName: tiers.standard.customName || "STANDARD",
+  //             description: tiers.standard.description,
+  //             price: tiers.standard.price,
+  //             deliveryDays: tiers.standard.deliveryDays,
+  //             revisionCount: tiers.standard.revisionCount,
+  //           },
+  //           {
+  //             gigId: gig.id,
+  //             label: TierLabel.PREMIUM,
+  //             customName: tiers.premium.customName || "PREMIUM",
+  //             description: tiers.premium.description,
+  //             price: tiers.premium.price,
+  //             deliveryDays: tiers.premium.deliveryDays,
+  //             revisionCount: tiers.premium.revisionCount,
+  //           },
+  //         ],
+  //       });
 
-        // We only create requiremnets templates if sller provided them
-        if (requirementTemplates && requirementTemplates.length > 0) {
-          await tx.gigRequirementTemplate.createMany({
-            data: requirementTemplates.map((rt, index) => ({
-              gigId: gig.id,
-              question: rt.question,
-              inputType: rt.inputType,
-              options: rt.options ?? [],
-              isRequired: rt.isRequired,
-              order: rt.order ?? index, // fallback to array order
-            })),
-          });
-        }
+  //       // We only create requiremnets templates if sller provided them
+  //       if (requirementTemplates && requirementTemplates.length > 0) {
+  //         await tx.gigRequirementTemplate.createMany({
+  //           data: requirementTemplates.map((rt, index) => ({
+  //             gigId: gig.id,
+  //             question: rt.question,
+  //             inputType: rt.inputType,
+  //             options: rt.options ?? [],
+  //             isRequired: rt.isRequired,
+  //             order: rt.order ?? index, // fallback to array order
+  //           })),
+  //         });
+  //       }
 
-        // Return the gig with its tiers attached, so the controller
-        // doesn't need a second round-trip query
-        return tx.gig.findUnique({
-          where: { id: gig.id },
-          include: {
-            tiers: true,
-            seller: {
-              select: { isPro: true },
-            },
-            requirementTemplates: {
-              orderBy: { order: "asc" },
-            },
-            // stats: true // well i don't think stats is upposed ot be here at initation of the Gig
-          },
-        });
-      });
+  //       // Return the gig with its tiers attached, so the controller
+  //       // doesn't need a second round-trip query
+  //       return tx.gig.findUnique({
+  //         where: { id: gig.id },
+  //         include: {
+  //           tiers: true,
+  //           seller: {
+  //             select: { isPro: true },
+  //           },
+  //           requirementTemplates: {
+  //             orderBy: { order: "asc" },
+  //           },
+  //           // stats: true // well i don't think stats is upposed ot be here at initation of the Gig
+  //         },
+  //       });
+  //     });
 
-      return newGig;
-    } catch (error) {
-      console.error("Error in GigService.initiateGigCreation:", error);
-      throw error;
-    }
-  }
+  //     return newGig;
+  //   } catch (error) {
+  //     console.error("Error in GigService.initiateGigCreation:", error);
+  //     throw error;
+  //   }
+  // }
   static async readGigData(userId: string, gigId: string): Promise<any> {
     try {
       console.log(new Date(), "-> [Gig Service read]: Hit!");
@@ -453,19 +478,55 @@ export class GigService {
         },
       });
 
+      
       if (!mainGig) throw new Error("Gig not found.");
-      // if (mainGig.state !== "ACTIVE") {
-      //     const sellerProfile = await prisma.sellerProfile.findUnique({ where: { userId } });
-      //     if (!sellerProfile || sellerProfile.id !== mainGig.sellerId) {
-      //         throw new Error("You don't permission to view this draft");
-      //     }
-      // }
+
+      console.log(mainGig);
       return mainGig;
     } catch (error) {
       console.error("Error in GigService.readGigData:", error);
       throw error;
     }
   }
+  // static async upsertGig(
+  //   sellerId: string, 
+  //   gigId?: string | undefined,
+  //   gigData: GigUpsertInput
+  // ): Promise<any> {
+  //   try {
+  //     console.log(new Date(), "-> [UPSERT GIG]: Hit!!!");
+
+  //     const { title, category, tags, description, status, tiers, gallery } = gigData;
+
+  //     const baseData = {
+  //       title, 
+  //       categoryId: category,
+  //       tags,
+  //       description,
+  //       status: status ?? "DRAFT",
+  //     };
+
+  //     if (gigId) {
+  //       const existing = await prisma.gig.findUnique({ where: { id: gigId } });
+  //       if(!existing) throw new Error("Gig not found");
+  //       if (existing.sellerId !== sellerId) throw new Error("Not your gig. Go fidn yours");
+
+  //       return prisma.$transaction(async (tx) => {
+  //         const updated = await tx.gig.update({
+  //           where: { id: gigId },
+  //           data: baseData,
+  //         });
+
+  //         await tx.gigTier.deleteMany({ where: { id: gigId } });
+  //         await tx.gigTier.createMany({
+  //           data: tiers.map((t) => ({ ...t, gigId }))
+  //         });
+
+  //         await tx.gig
+  //       })
+  //     }
+  //   }
+  // }
   static async updateGigData(
     gigId: string,
     userId: string,
@@ -543,7 +604,7 @@ export class GigService {
                   description: tierData.description,
                 }),
                 ...(tierData.deliveryDays !== undefined && {
-                  delieveryDays: tierData.deliveryDays,
+                  deliveryDays: tierData.deliveryDays,
                 }),
                 ...(tierData.revisionCount !== undefined && {
                   revisionCount: tierData.revisionCount,
@@ -646,6 +707,7 @@ export class GigService {
       });
       /// count the toal for frontend pagination math
       const totalGigs = await prisma.gig.count({ where: whereClause });
+      console.log(totalGigs);
 
       return {
         data: gigs,

@@ -2,6 +2,11 @@
 import { prisma } from "../utils/prisma";
 import { TierLabel } from "../../generated/prisma"
 
+interface AvailabilityBlockInput {
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+}
 
 export class SellerService {
     static async getSellerByUserId(userId: string): Promise<any> {
@@ -124,4 +129,100 @@ export class SellerService {
             throw error;
         }
     }
+    static async setSellerAvailability(
+        sellerId: string, 
+        availability: AvailabilityBlockInput[]
+    ): Promise<any> {
+        try {
+            console.log("[SET SELLER AVAILABILITY]: Hit!!!");
+            const seller = await prisma.sellerProfile.findUnique({ where: { id: sellerId } });
+            if (!seller) throw new Error("Seller not found");
+
+            const result = await prisma.$transaction(async (tx) => {
+                await tx.sellerAvailability.deleteMany({ where: { sellerId } });
+
+                if (availability.length > 0) {
+                    await tx.sellerAvailability.createMany({
+                        data: availability.map((block) => ({
+                            sellerId,
+                            dayOfWeek: block.dayOfWeek,
+                            startTime: block.startTime,
+                            endTime: block.endTime,
+                        })),
+                    });
+                }
+
+                return tx.sellerAvailability.findMany({ where: { sellerId } })
+            })
+            
+            console.log("[SET SELLER AVAILABILITY]: Successful!!!");
+            return result;
+        } catch (err) {
+            throw err;
+        }
+    }
+    static async getAvailableSlots(
+        sellerId: string,
+        date: string,
+        sessionLengthMin: number,
+    ): Promise<{ start: string; end: string }[]> {
+        try {
+        // Which day is this?
+        const targetDate = new Date(date + "T00:00:00");
+        const dayOfWeek = targetDate.getDay();
+
+        // Now we get teh avaialable the seller's Got // Queried with dayOfWeek
+        const availability = await prisma.sellerAvailability.findMany({
+            where: { sellerId, dayOfWeek },
+        })
+        if (availability.length === 0) return [];
+
+        // Midnight of chosen day
+        const dayStart = new Date(targetDate);
+        const dayEnd = new Date(targetDate);
+        // Midnight of next day
+        dayEnd.setDate(dayEnd.getDate() + 1);
+
+        const existingBookings = await prisma.sessionBooking.findMany({
+            where: {
+            status: { in: ["SCHEDULED"] },
+            scheduledStart: { gte: dayStart, lt: dayEnd },
+            package: { gigTier: { gig: { sellerId } } }
+            },
+            select: { scheduledStart: true, scheduledEnd: true }
+        })
+
+        const slots: { start: string; end: string }[] = [];
+
+        for (const block of availability) {
+            // Boundary for seller availability
+            const [startH, startM] = block.startTime.split(":").map(Number);
+            const [endH, endM] = block.endTime.split(":").map(Number);
+
+            let cursor = new Date(targetDate);
+            cursor.setHours(startH, startM, 0, 0);
+            const blockEnd = new Date(targetDate);
+            blockEnd.setHours(endH, endM, 0, 0);
+
+            while (cursor.getTime() + sessionLengthMin * 60000 <= blockEnd.getTime()) {
+            const slotStart = new Date(cursor);
+            const slotEnd = new Date(cursor.getTime() + sessionLengthMin * 60000);
+
+            const overlaps = existingBookings.some(
+                (b) => slotStart < b.scheduledEnd && slotEnd > b.scheduledStart,
+            );
+
+            if (!overlaps) {
+                slots.push({ start: slotStart.toISOString(), end: slotEnd.toISOString() })
+            }
+
+            cursor = new Date(cursor.getTime() + sessionLengthMin * 60000);
+            }
+        }
+
+        return slots;
+        } catch (error: any) {
+        throw error;
+        }
+    } 
 }

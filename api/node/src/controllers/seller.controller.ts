@@ -3,6 +3,7 @@ import { prisma } from "../utils/prisma";
 import { PaystackService } from "../services/paystack.service";
 import { SellerService } from "../services/seller.service";
 import { handlePrismaError } from "../utils/prismaErrorHandler";
+import { textSync } from "node:stream/iter";
 
 export class SellerController {
   // POST /api/seller/onboard
@@ -138,6 +139,93 @@ export class SellerController {
     } catch (error: any) {
       console.error("ERROR in Updating Seller Profile: ", error);
       throw error;
+    }
+  }
+  static async setAvailability(req: Request, res: Response): Promise<any> {
+    try {
+      const sellerId = (req as any).sellerId;
+      const { availability } = req.body;
+
+      if (!Array.isArray(availability)) {
+        return res.status(400).json({ message: "availability must be an array." })
+      }
+
+      for (const block of availability) {
+        if (
+          typeof block.dayOfWeek !== "number" ||
+          block.dayOfWeek < 0 ||
+          block.dayOfWeek > 6
+        ) {
+          return res.status(400).json({ message: 'Each block needs a valid dayOfWeek (0-6).' })
+        }
+        if (!block.startTime || !block.endTime) {
+          return res.status(400).json({ message: "Ecah block needs startTime and endTime." })
+        }
+      }
+
+      const result = await SellerService.setSellerAvailability(sellerId as string, availability);
+
+      return res.status(200).json({
+        message: "Availability saved succesfully",
+        data: result,
+      });
+    } catch (error: any) {
+      console.log("SET AVAILABILITY FAILED");
+      const handled = handlePrismaError(error, res);
+      if (handled) return;
+      return res.status(500).json({ message: "Failed to save availability." })
+    }
+  }
+  static async getAvailability(req: Request, res: Response): Promise<any> {
+  try {
+    const userId = (req as any).userId;
+
+    const seller = await prisma.sellerProfile.findUnique({ where: { userId } });
+    if (!seller) {
+      return res.status(404).json({ message: "Seller profile not found." });
+    }
+
+    const availability = await prisma.sellerAvailability.findMany({
+      where: { sellerId: seller.id },
+      orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+    });
+
+    return res.status(200).json({
+      message: "Availability fetched successfully",
+      data: availability,
+    });
+  } catch (error: any) {
+    console.log("GET AVAILABILITY FAILED");
+    const handled = handlePrismaError(error, res);
+    if (handled) return;
+    return res.status(500).json({ message: "Failed to fetch availability." });
+  }
+  }
+  static async getAvailableSlots(req: Request, res: Response): Promise<any> {
+    try {
+      console.log("[GET AVAILABILITY SLOTS]: HIT!!!");
+      const { sellerId } = req.params;
+      const { date, sessionLengthMin } = req.query;
+
+      if (!date || !sessionLengthMin) {
+        return res.status(400).json({ message: "date and sessionLengthMin are required." })
+      }
+
+      const slots = await SellerService.getAvailableSlots(
+        sellerId as string,
+        date as string,
+        Number(sessionLengthMin),
+      );
+
+      console.log("[GET AVAILABILITY SLOTS]: SUCCESS");
+      return res.status(200).json({ data: slots })
+    } catch (error: any) {
+      console.error("ERROR FETCHING AVAILABILITY SLOTS: ", error);
+      const handled = handlePrismaError(error, res);
+      if (handled) return;
+      return res
+        .status(500)
+        .json({ message: "Failed to get availability on seller!!!" });
     }
   }
 }

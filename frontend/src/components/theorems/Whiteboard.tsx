@@ -168,6 +168,28 @@ export default function Whiteboard({
         }
     }
 
+    const MAX_CHUNK_BYTES = 60000; // headroom under 64000
+    function sendHistoryBulk(room: Room, strokes: StoredSegment[]) {
+        let chunk: StoredSegment[] = [];
+        let chunkBytes = 0;
+
+        function flush() {
+            if (chunk.length === 0) return;
+            const message: BoardMessage = { type: "history_bulk", strokes: chunk }
+            room.localParticipant.publishData(encoder.encode(JSON.stringify(message)), { reliable: true });
+            chunk = [];
+            chunkBytes = 0;
+        }
+
+        for (const seg of strokes) {
+            const segBytes = encoder.encode(JSON.stringify(seg)).length;
+            if (chunkBytes + segBytes > MAX_CHUNK_BYTES) flush();
+            chunk.push(seg);
+            chunkBytes += segBytes;
+        }
+        flush();
+    }
+
     const sendStroke = useCallback((strokeId: string, from: Point, to: Point) => {
         if (!room) {
             console.warn("sendStroke skipped: room not ready yet");
@@ -193,22 +215,16 @@ export default function Whiteboard({
 
     // Late-join catch-up: host broadcast full history
     useEffect(() => {
-        if (!room || !isHost) return;
-
-        function handleParticipantConnected() {
-            const message: BoardMessage = { type: "history_bulk", strokes: strokeHistory.current };
-            room!.localParticipant.publishData(encoder.encode(JSON.stringify(message)), { reliable: true })
-        }
-
-        room.on(RoomEvent.ParticipantConnected, handleParticipantConnected);
-        return () => { room.off(RoomEvent.ParticipantConnected, handleParticipantConnected); };
-    }, [room, isHost]);
+        if (!room) return;
+        const message: BoardMessage = { type: "history_request" };
+        room.localParticipant.publishData(encoder.encode(JSON.stringify(message)), { reliable: true })
+    }, [room]);
 
     // Guest:  on mount/join, ask host for current state (cover refresh-mid-call)
     useEffect(() => {
-        if (!room || !isHost) return;
+        if (!room || isHost) return;
         const message: BoardMessage = { type: "history_request" };
-        room.localParticipant.publishData(encoder.encode(JSON.stringify(message)))
+        room.localParticipant.publishData(encoder.encode(JSON.stringify(message)), { reliable: true })
     }, [room]);
 
     // Incoming message to draw and store, and resize replays em
@@ -250,16 +266,17 @@ export default function Whiteboard({
                 }
 
                 if (message.type === "history_bulk") {
-                    if (message.strokes.length > strokeHistory.current.length) {
-                        strokeHistory.current = message.strokes;
+                    const existingIds = new Set(strokeHistory.current.map(s => s.strokeId));
+                    const newSegs = message.strokes.filter(s => !existingIds.has(s.strokeId));
+                    if (newSegs.length > 0) {
+                        strokeHistory.current = [...strokeHistory.current, ...message.strokes];
                         redrawAll();
                     }
                 }
 
                 if (message.type === "history_request") {
                     if (strokeHistory.current.length > 0) {
-                        const reply: BoardMessage = { type: "history_bulk", strokes: strokeHistory.current };
-                        room!.localParticipant.publishData(encoder.encode(JSON.stringify(reply)), { reliable: true })
+                        sendHistoryBulk(room!, strokeHistory.current);
                     }
                 }
 

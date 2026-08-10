@@ -20,6 +20,24 @@ export class PaymentController {
             return res.status(500).json({ message: "Something went wrong getting balance." });
         }
     }
+    static async getEarningsSummary(req: Request, res: Response): Promise<any> {
+        try {
+            const sellerId = (req as any).sellerId;
+            const summary = await PaymentService.getEarningsSummary(sellerId);
+
+            return res.status(200).json({
+                message: "Summary gotten succesfully",
+                data: summary
+            })
+        } catch (error: any) {
+            console.log("ERROR GETTING EARNING SUMMARY")
+            const handled = handlePrismaError(error, res);
+            if (handled) return;
+            return res.status(500).json({
+                message: "Faield to get Eraning Summary",
+            })
+        }
+    }
     static async getLedger(req: Request, res: Response): Promise<any> {
         try {
             const userId = (req as any).userId;

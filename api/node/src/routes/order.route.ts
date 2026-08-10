@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { OrderController } from "../controllers/order.controller";
 import { protectRoute } from "../middleware/auth";
+import { requireSeller } from "../middleware/isSeller";
+import { DeliveryController } from "../controllers/delivery.controller"; 
+import { OrderService } from "../services/order.service";
 
 const router = Router();
 
@@ -422,4 +425,129 @@ router.post("/:orderId/revision", protectRoute, OrderController.requestRevision)
  */
 router.post("/:orderId/cancel", protectRoute, OrderController.cancelOrder);
 
+/**
+ * @openapi
+ * /api/orders/{orderId}/deliveries/upload-url:
+ *   post:
+ *     summary: Generate delivery file upload URL
+ *     description: Generates a presigned URL or upload parameters for sellers to attach delivery files to an order.
+ *     tags:
+ *       - Orders
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The unique identifier of the order.
+ *     responses:
+ *       200:
+ *         description: Upload URL generated successfully.
+ *       401:
+ *         description: Unauthorized - Authentication required.
+ *       403:
+ *         description: Forbidden - Only the seller can perform this action.
+ *       404:
+ *         description: Order not found.
+ *       500:
+ *         description: Internal server error.
+ */
+router.post("/:orderId/deliveries/upload-url", protectRoute, requireSeller, DeliveryController.getUploadUrl);
+
+/**
+ * @openapi
+ * /api/orders/{orderId}/deliveries:
+ *   post:
+ *     summary: Submit order delivery
+ *     description: Submits the final work or delivery files for an order to complete or fulfill a buyer's request.
+ *     tags:
+ *       - Orders
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The unique identifier of the order.
+ *     responses:
+ *       201:
+ *         description: Delivery submitted successfully.
+ *       400:
+ *         description: Bad request - Missing or invalid delivery parameters.
+ *       401:
+ *         description: Unauthorized - Authentication required.
+ *       403:
+ *         description: Forbidden - Only the seller can perform this action.
+ *       404:
+ *         description: Order not found.
+ *       500:
+ *         description: Internal server error.
+ */
+router.post("/:orderId/deliveries", protectRoute, requireSeller, DeliveryController.submitDelivery);
+
+/**
+ * @openapi
+ * /api/orders/deliveries/{fileId}/download-url:
+ *   get:
+ *     summary: Get delivery file download URL
+ *     description: Retrieves a secure presigned URL to download an order's delivery file.
+ *     tags:
+ *       - Orders
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: fileId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The unique identifier of the delivery file.
+ *     responses:
+ *       200:
+ *         description: Download URL generated successfully.
+ *       401:
+ *         description: Unauthorized - Authentication required.
+ *       403:
+ *         description: Forbidden - User does not have access to this delivery file.
+ *       404:
+ *         description: File or delivery not found.
+ *       500:
+ *         description: Internal server error.
+ */
+router.get("/deliveries/:fileId/download-url", protectRoute, DeliveryController.getDownloadUrl);
+
+/**
+ * @openapi
+ * /api/orders/{orderId}/schedule-session:
+ *   post:
+ *     summary: Get delivery file download URL
+ *     description: Retrieves a secure presigned URL to download an order's delivery file.
+ *     tags:
+ *       - Orders
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: fileId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The unique identifier of the delivery file.
+ *     responses:
+ *       200:
+ *         description: Download URL generated successfully.
+ *       401:
+ *         description: Unauthorized - Authentication required.
+ *       403:
+ *         description: Forbidden - User does not have access to this delivery file.
+ *       404:
+ *         description: File or delivery not found.
+ *       500:
+ *         description: Internal server error.
+ */
+router.post("/:orderId/schedule-session", protectRoute, OrderController.scheduleNextSession);
 export default router;

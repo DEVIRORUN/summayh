@@ -3,58 +3,13 @@ import { GigService } from "../services/gig.service";
 import { handlePrismaError } from "../utils/prismaErrorHandler";
 import { RequirementInputType } from "../../generated/prisma";
 import { GigStatsService } from "../services/gigStats.service";
-
-// Then some services
-
-/**
- * 
- * My router, umm under pressuere does thsi at times, when i try imultiple pandpoints at once with diffrent tabs,
- * if i would lauch this this error might happen
- * codespace ➜ /workspaces/summayh/api/node (main) $ npm run dev
-
-> node@1.0.0 dev
-> tsx watch src/index.ts
-
-◇ injected env (0) from ../../.env // tip: ◈ encrypted .env [www.dotenvx.com]
-🚀 Summayh 1.0.0 Engine running on http://localhost:3000
-Error in GigService.initiateGigCreation: PrismaClientKnownRequestError: Transaction API error: Unable to start a transaction in the given time.
-    at #c (/workspaces/summayh/api/node/generated/prisma/runtime/client.js:61:14054)
-    at jt.transaction (/workspaces/summayh/api/node/generated/prisma/runtime/client.js:62:1816)
-    at async Proxy._transactionWithCallback (/workspaces/summayh/api/node/generated/prisma/runtime/client.js:79:4678)
-    at async Function.initiateGigCreation (/workspaces/summayh/api/node/src/services/gig.service.ts:42:28)
-    at async createGig (/workspaces/summayh/api/node/src/controllers/gig.controller.ts:64:28) {
-  code: 'P2028',
-  meta: {},
-  clientVersion: '7.8.0'
-}
-ERROR CREATING GIG bro:  PrismaClientKnownRequestError: Transaction API error: Unable to start a transaction in the given time.
-    at #c (/workspaces/summayh/api/node/generated/prisma/runtime/client.js:61:14054)
-    at jt.transaction (/workspaces/summayh/api/node/generated/prisma/runtime/client.js:62:1816)
-    at async Proxy._transactionWithCallback (/workspaces/summayh/api/node/generated/prisma/runtime/client.js:79:4678)
-    at async Function.initiateGigCreation (/workspaces/summayh/api/node/src/services/gig.service.ts:42:28)
-    at async createGig (/workspaces/summayh/api/node/src/controllers/gig.controller.ts:64:28) {
-  code: 'P2028',
-  meta: {},
-  clientVersion: '7.8.0'
-}
-Unhandled Prisma error code: P2028 PrismaClientKnownRequestError: Transaction API error: Unable to start a transaction in the given time.
-    at #c (/workspaces/summayh/api/node/generated/prisma/runtime/client.js:61:14054)
-    at jt.transaction (/workspaces/summayh/api/node/generated/prisma/runtime/client.js:62:1816)
-    at async Proxy._transactionWithCallback (/workspaces/summayh/api/node/generated/prisma/runtime/client.js:79:4678)
-    at async Function.initiateGigCreation (/workspaces/summayh/api/node/src/services/gig.service.ts:42:28)
-    at async createGig (/workspaces/summayh/api/node/src/controllers/gig.controller.ts:64:28) {
-  code: 'P2028',
-  meta: {},
-  clientVersion: '7.8.0'
-}
-
- */
+import { prisma } from "../utils/prisma";
 
 export class GigController {
   static async createDraftGig(req: Request, res: Response): Promise<any> {
     try {
       const userId = (req as any).userId;
-      const { title, tags, categoryId } = req.body;
+      const { title, tags, categoryId, deliveryMode } = req.body;
 
       if (!title || !categoryId) {
         return res.status(400).json({
@@ -74,6 +29,7 @@ export class GigController {
         categoryId,
         tags,
         userId,
+        deliveryMode,
       );
 
       return res.status(201).json({
@@ -150,6 +106,18 @@ export class GigController {
         });
       }
 
+      // NEVER TRUST CLIENT, fetch gig to know validRoute for deliveryMode
+      const gig = await prisma.gig.findFirst({
+        where: { id: gigId as string, sellerId },
+        select: { deliveryMode:true }
+      });
+
+      if (!gig) {
+        return res.status(404).json({ message: "Gig not found or you don't have permission to edit it." })
+      }
+
+      const isLive = gig.deliveryMode === "LIVE";
+
       for (const key of requiredTierKeys) {
         const tier = tiers[key];
         const tierError: string[] = [];
@@ -157,10 +125,20 @@ export class GigController {
         if (!tier.description) tierError.push("DESCRIPTION: No description");
         if (typeof tier.price != "number" || tier.price <= 500)
           tierError.push("PRICE: (must be higer than 500 naira)");
-        if (typeof tier.deliveryDays != "number" || tier.deliveryDays <= 0)
-          tierError.push("DELIVERY DAYS:   MUST BE POSITIVE");
-        if (typeof tier.revisionCount != "number" || tier.revisionCount < 0)
-          tierError.push("REVISION COUNT: MUST BE 0 OR MORE");
+
+        if (isLive) {
+          if (typeof tier.sessionLengthMin != "number" || tier.sessionLengthMin <= 0)
+            tierError.push("SESSION LENGTH: must be positive");
+          if (typeof tier.totalSessions != "number" || tier.tierSessions <= 0)
+            tierError.push("TOTAL SESSION: must be positive");
+          if (typeof tier.breakLengthMin != "number" || tier.breakLengthMin < 0)
+            tierError.push("BREAK LENGTH: must be 0 or more");
+        } else {
+          if (typeof tier.deliveryDays != "number" || tier.deliveryDays <= 0)
+            tierError.push("DELIVERY DAYS:   MUST BE POSITIVE");
+          if (typeof tier.revisionCount != "number" || tier.revisionCount < 0)
+            tierError.push("REVISION COUNT: MUST BE 0 OR MORE");
+        }
 
         if (tierError.length > 0) {
           return res.status(400).json({
@@ -226,9 +204,13 @@ export class GigController {
   }
   static async getUploadUrl(req: Request, res: Response): Promise<any> {
     try {
+      console.log("[GET UPLAOD URL]: HIT!!!");
       const sellerId = (req as any).sellerId;
       const { gigId } = req.params;
       const { fileType, slot } = req.body;
+
+      console.log("[REQ BODY]:", req.body);
+      console.log("[SELLER ID]:", (req as any).sellerId);
 
       if (!fileType || !slot) {
         return res
@@ -248,7 +230,7 @@ export class GigController {
         fileType,
         slot,
       );
-
+console.log("[GET UPLAOD URL]: SUCCESSFUL!!!");
       return res.status(200).json({
         message: "Upload URL generated",
         data: { uploadUrl, publicUrl },
@@ -340,115 +322,115 @@ export class GigController {
     }
   }
   // POST /api/gig/create
-  static async createGig(req: Request, res: Response): Promise<any> {
-    console.log(new Date(), "-> [Gig Controller]: Hit!");
-    console.log(`[Gig Controller]: Data: ${req.body}`);
-    try {
-      const {
-        title,
-        description,
-        tags,
-        categoryId,
-        tiers,
-        requirementTemplates,
-      } = req.body;
-      const userId = (req as any).userId;
+  // static async createGig(req: Request, res: Response): Promise<any> {
+  //   console.log(new Date(), "-> [Gig Controller]: Hit!");
+  //   console.log(`[Gig Controller]: Data: ${req.body}`);
+  //   try {
+  //     const {
+  //       title,
+  //       description,
+  //       tags,
+  //       categoryId,
+  //       tiers,
+  //       requirementTemplates,
+  //     } = req.body;
+  //     const userId = (req as any).userId;
 
-      // Validation first: required fields
-      if (!title || !description || !categoryId) {
-        return res.status(400).json({
-          message: "title, description, and categoryId are required.",
-        });
-      }
+  //     // Validation first: required fields
+  //     if (!title || !description || !categoryId) {
+  //       return res.status(400).json({
+  //         message: "title, description, and categoryId are required.",
+  //       });
+  //     }
 
-      // Validate if the tiers are in Array
-      if (!Array.isArray(tags)) {
-        return res.status(400).json({
-          message: "tags must be an array (can be empty: []).",
-        });
-      }
+  //     // Validate if the tiers are in Array
+  //     if (!Array.isArray(tags)) {
+  //       return res.status(400).json({
+  //         message: "tags must be an array (can be empty: []).",
+  //       });
+  //     }
 
-      // Validation: all 3 tiers must be present
-      if (!tiers || typeof tiers != "object") {
-        return res.status(400).json({
-          message:
-            "tiers must be present, containing basic, standard, and premium.",
-        });
-      }
+  //     // Validation: all 3 tiers must be present
+  //     if (!tiers || typeof tiers != "object") {
+  //       return res.status(400).json({
+  //         message:
+  //           "tiers must be present, containing basic, standard, and premium.",
+  //       });
+  //     }
 
-      const requiredTierKeys = ["basic", "standard", "premium"] as const;
-      const missingTiers = requiredTierKeys.filter((key) => !tiers[key]);
+  //     const requiredTierKeys = ["basic", "standard", "premium"] as const;
+  //     const missingTiers = requiredTierKeys.filter((key) => !tiers[key]);
 
-      if (missingTiers.length > 0) {
-        return res.status(400).json({
-          message: `Missing required tier(s): ${missingTiers.join(", ")}. All three tiers are mandatory.`,
-        });
-      }
+  //     if (missingTiers.length > 0) {
+  //       return res.status(400).json({
+  //         message: `Missing required tier(s): ${missingTiers.join(", ")}. All three tiers are mandatory.`,
+  //       });
+  //     }
 
-      // Validation: each tier's required fields
-      for (const key of requiredTierKeys) {
-        const tier = tiers[key];
-        const tierError: string[] = [];
+  //     // Validation: each tier's required fields
+  //     for (const key of requiredTierKeys) {
+  //       const tier = tiers[key];
+  //       const tierError: string[] = [];
 
-        if (!tier.description) tierError.push("description: No description.");
-        if (typeof tier.price != "number" || tier.price <= 500)
-          tierError.push("price (must be higher than 500 niara)");
-        if (typeof tier.deliveryDays != "number" || tier.deliveryDays <= 0)
-          tierError.push("deliveryDays (must be a positive number)");
-        if (typeof tier.revisionCount != "number" || tier.revisionCount < 0)
-          tierError.push("revisionCount (must be 0 or more)");
+  //       if (!tier.description) tierError.push("description: No description.");
+  //       if (typeof tier.price != "number" || tier.price <= 500)
+  //         tierError.push("price (must be higher than 500 niara)");
+  //       if (typeof tier.deliveryDays != "number" || tier.deliveryDays <= 0)
+  //         tierError.push("deliveryDays (must be a positive number)");
+  //       if (typeof tier.revisionCount != "number" || tier.revisionCount < 0)
+  //         tierError.push("revisionCount (must be 0 or more)");
 
-        if (tierError.length > 0) {
-          return res.status(400).json({
-            message: `Tier "${key}": is missing or has invalid field(s): ${tierError.join(", ")}.`,
-          });
-        }
-      }
-      // Now All good, lets create the gig
-      const newGig = await GigService.initiateGigCreation(
-        title,
-        description,
-        tags,
-        categoryId,
-        userId,
-        tiers,
-        requirementTemplates,
-      );
+  //       if (tierError.length > 0) {
+  //         return res.status(400).json({
+  //           message: `Tier "${key}": is missing or has invalid field(s): ${tierError.join(", ")}.`,
+  //         });
+  //       }
+  //     }
+  //     // Now All good, lets create the gig
+  //     const newGig = await GigService.initiateGigCreation(
+  //       title,
+  //       description,
+  //       tags,
+  //       categoryId,
+  //       userId,
+  //       tiers,
+  //       requirementTemplates,
+  //     );
 
-      // Fire-and-forget: only pro sellers get embeddings generated
-      if (newGig.seller?.isPro) {
-        fetch(`${process.env.FASTAPI_URL}/api/embeddings/gig`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            gigId: newGig.id,
-            title: newGig.title,
-            description: newGig.description,
-            tags: newGig.tags,
-          }),
-        }).catch((err) =>
-          console.error("Failed to trigger gig embedding: ", err),
-        );
-      }
+  //     // Fire-and-forget: only pro sellers get embeddings generated
+  //     if (newGig.seller?.isPro) {
+  //       fetch(`${process.env.FASTAPI_URL}/api/embeddings/gig`, {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({
+  //           gigId: newGig.id,
+  //           title: newGig.title,
+  //           description: newGig.description,
+  //           tags: newGig.tags,
+  //         }),
+  //       }).catch((err) =>
+  //         console.error("Failed to trigger gig embedding: ", err),
+  //       );
+  //     }
 
-      console.log(
-        new Date(),
-        "-> [Gig Controller]: Succesfully created the Gig!",
-      );
-      return res.status(201).json({
-        message: "Gig creation successful",
-        data: newGig,
-      });
-    } catch (error) {
-      console.error("ERROR CREATING GIG bro: ", error);
-      const handled = handlePrismaError(error, res);
-      if (handled) return;
-      // Fallback for really unexpected errors
-      return res
-        .status(500)
-        .json({ message: "Failed to create gig. Please try again." });
-    }
-  }
+  //     console.log(
+  //       new Date(),
+  //       "-> [Gig Controller]: Succesfully created the Gig!",
+  //     );
+  //     return res.status(201).json({
+  //       message: "Gig creation successful",
+  //       data: newGig,
+  //     });
+  //   } catch (error) {
+  //     console.error("ERROR CREATING GIG bro: ", error);
+  //     const handled = handlePrismaError(error, res);
+  //     if (handled) return;
+  //     // Fallback for really unexpected errors
+  //     return res
+  //       .status(500)
+  //       .json({ message: "Failed to create gig. Please try again." });
+  //   }
+  // }
   static async updateGig(req: Request, res: Response): Promise<any> {
     try {
       const { title, description, tags, categoryId, tiers, gigId } = req.body;
@@ -669,6 +651,7 @@ export class GigController {
 
       const gigs = await GigService.getAllGigsBySeller(userId, page, limit);
 
+      // console.log(gigs);
       return res.status(200).json({
         message: "Fetched all gigs by seller successfully.",
         ...gigs,

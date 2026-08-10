@@ -24,6 +24,24 @@ router.get("/balance", protectRoute, PaymentController.getBalance);
 
 /**
  * @openapi
+ * /api/payment/summary:
+ *   get:
+ *     summary: Get the authenticated user's wallet summary
+ *     tags: [Payment]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Balance retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/summary", protectRoute, PaymentController.getEarningsSummary);
+
+/**
+ * @openapi
  * /api/payment/ledger:
  *   get:
  *     summary: Get the authenticated user's ledger history

@@ -20,6 +20,7 @@ export const requireSeller = async (req: SellerRequest, res: Response, next: Nex
         req.sellerId = seller.id;
         next();
     } catch(err: any) {
+        console.log("[REQUIRE SELLER MIDDLEWARE ERROR]", err)
         return res.status(500).json({ message: "Failed to verify seller status." })
     }
 }

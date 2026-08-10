@@ -1,6 +1,7 @@
 import { Router } from "express"
 import { SellerController } from "../controllers/seller.controller"
 import { protectRoute } from "../middleware/auth"
+import { requireSeller } from "../middleware/isSeller";
 
 const router = Router();
 
@@ -71,6 +72,55 @@ router.post("/onboard", protectRoute, SellerController.onboardSeller);
  *         description: Seller profile not found
  */
 router.get("/me", protectRoute, SellerController.getSellerProfile);
+
+/**
+ * @openapi
+ * /api/seller/availability:
+ *  patch:
+ *     summary: Get the authenticated seller's profile
+ *     tags: [Seller]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Seller profile retrieved successfully
+ *       404:
+ *         description: Seller profile not found
+ */
+router.patch("/availability", protectRoute, requireSeller, SellerController.setAvailability);
+
+/**
+ * @openapi
+ * /api/seller/{sellerId}/available-slots:
+ *  get:
+ *     summary: Get the authenticated seller's profile
+ *     tags: [Seller]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Seller profile retrieved successfully
+ *       404:
+ *         description: Seller profile not found
+ */
+router.get("/:sellerId/available-slots", SellerController.getAvailableSlots);
+
+
+/**
+ * @openapi
+ * /api/seller/availability:
+ *  get:
+ *     summary: Get the authenticated seller's profile
+ *     tags: [Seller]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Seller profile retrieved successfully
+ *       404:
+ *         description: Seller profile not found
+ */
+router.get("/availability", protectRoute, requireSeller, SellerController.getAvailability);
 
 /**
  * @openapi

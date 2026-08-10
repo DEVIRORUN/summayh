@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import Image from "next/image";
+import { resolveFileTypeAndName } from "@/lib/file-validation";
 
 
 interface Material {
@@ -36,6 +37,26 @@ export default function FileViewer({
             .then((res) => res.json())
             .then(({ data }) => setMaterials(data || []));
     }, [callSessionId]);
+
+    useEffect(() => {
+        if (!room) return;
+
+        function handleData(payload: Uint8Array) {
+            try {
+                const msg = JSON.parse(new TextDecoder().decode(payload));
+                if (msg.type === "MATERIAL_UPLOADED") {
+                    setMaterials((prev) =>
+                        prev.some((m) => m.id === msg.material.id) ? prev : [...prev, msg.material]
+                    );
+                }
+            } catch (err) {
+                console.error("Failed to parse file message:", err)
+            }
+        }
+
+        room.on(RoomEvent.DataReceived, handleData);
+        return () => { room.off(RoomEvent.DataReceived, handleData) }
+    }, [room])
     
         function selectMaterial(id: string) {
             onSelect(id); // pushes up to paarent - a single source of truth
@@ -50,15 +71,31 @@ export default function FileViewer({
         e.target.value = "";
         if (!file) return;
 
+        
+        const resolved = resolveFileTypeAndName(file);
+        if (!resolved) {
+            console.error("Could not determine file type for:", file.name);
+            alert("Couldn't read this file's type. Try renaming it with a proper extension (.pdf, .png, .jpg).");
+            return;
+        }
+        const { fileType, fileName } = resolved;
+
         setIsUploading(true);
         try {
             const res = await fetch(`/api/calls/${callSessionId}/materials/upload-url`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ fileType: file.type, fileName: file.name }),
+                body: JSON.stringify({ fileType, fileName }),
             });
-            const { data } = await res.json();
-            const { uploadUrl, publicUrl } = data;
+            
+            const json = await res.json();
+
+            if (!res.ok) {
+                console.error("Material upload failed:", json?.error ?? json);
+                alert(json?.error ?? "Upload failed. Please try again.");
+                return;
+            }
+            const { uploadUrl, publicUrl } = json.data;
 
             await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
 
@@ -67,10 +104,21 @@ export default function FileViewer({
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ fileUrl: publicUrl, fileName: file.name, fileType: file.type }),
             });
-            const { data: material } = await saveRes.json();
+            const saveJson = await saveRes.json();
+            if (!saveRes.ok) {
+                console.error("Save material failed:", saveJson?.error ?? saveJson?.message);
+                alert(saveJson?.error ?? saveJson?.message ?? "Failed to save file.");
+                return;
+            }
 
+            const material = saveJson.data;
             setMaterials((prev) => [...prev, material]);
             selectMaterial(material.id)
+
+            room?.localParticapant?.publishData(
+                new TextEncoder().encode(JSON.stringify({ type: "MATERIAL_UPLOADED", material })),
+                { reliable: true }
+            )
         } catch (err) {
             console.error("Material upload failed: ", err);
         } finally {
@@ -81,8 +129,8 @@ export default function FileViewer({
     const activeMaterial = materials.find((m) => m.id === activeMaterialId);
 
     return (
-        <div className="flex flex-col h-full min-w-0">
-            <div className="flex items-center gap-1 5 p-2 border-b border-border overflow-x-auto shrink-0">
+        <div className="flex flex-col h-full min-w-0 min-h-0">
+            <div className="flex items-center gap-1.5 p-2 border-b border-border overflow-x-auto shrink-0">
                 {materials.map((m) => (
                     <Button
                         key={m.id}

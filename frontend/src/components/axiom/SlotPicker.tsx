@@ -25,6 +25,13 @@ function groupByPeriod(slots: Slot[]) {
     return { morning, afternoon, evening }
 }
 
+function toLocaleDateString(d: Date) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`
+}
+
 export function SlotPicker({
     sellerId,
     sessionLengthMin,
@@ -34,10 +41,14 @@ export function SlotPicker({
     sessionLengthMin: number;
     onSelect: (slot: Slot) => void;
 }) {
-    const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
+    const [date, setDate] = useState("");
     const [slots, setSlots] = useState<Slot[]>([]);
     const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        setDate(toLocaleDateString(new Date()))
+    }, []);
 
     useEffect(() => {
         async function loadSlots() {
@@ -64,9 +75,9 @@ export function SlotPicker({
     function renderGroup(label: string, group: Slot[]) {
         if (group.length === 0) return null;
         return (
-            <div className="flex flex-col gap-1 5">
+            <div className="flex flex-col gap-1.5">
                 <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{label}</span>
-                <div className="grid grid-cols-3 gap-1 5">
+                <div className="grid grid-cols-3 gap-1.5">
                     {group.map((slot) => {
                         const isSelected = selectedSlot?.start === slot.start;
                         return (
@@ -81,7 +92,7 @@ export function SlotPicker({
                                     "text-xs border rounded-xs py-1.5 cursor-pointer transition-colors",
                                     isSelected
                                         ? "bg-foreground text-background border-foreground"
-                                        : "borde-border hover:border-muted-foreground hover:bg-muted"
+                                        : "border-border hover:border-muted-foreground hover:bg-muted"
                                 )}
                             >
                                 {new Date(slot.start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -99,18 +110,18 @@ export function SlotPicker({
                 <Input
                     type="date"
                     value={date}
-                    min={new Date().toISOString().split("T")[0]}
+                    min={toLocaleDateString(new Date())}
                     onChange={(e) => setDate(e.target.value)}
                     className="text-xs border border-border rounded-xs px-2 py-1 w-fit"
                 />
 
                 {isLoading ? (
-                    <div className="flex items-center gadiv-2 text-xs text-muted-foreground justify-center">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
                         <Loader2 className="h-3 w-3 animate-spin"/>
                         Checking availability
                     </div>
                 ) : slots.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-4">No availablt slots on this date.</p>
+                    <p className="text-xs text-muted-foreground text-center py-4">No available slots on this date.</p>
                 ) : (
                     <div className="flex flex-wrap gap-1">
                         {renderGroup("Morning", morning)}

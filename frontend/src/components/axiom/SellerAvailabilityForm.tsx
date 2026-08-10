@@ -14,7 +14,7 @@ interface TimeBlock {
     endTime: string;
 }
 
-const DAYS = ["Sun", "Mon", "Tue", "Web", "thu", "Fri", "Sat"];
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 
 function toMinutes(t: string) {

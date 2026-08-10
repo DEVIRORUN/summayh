@@ -7,9 +7,11 @@ export async function POST(
 ) {
     try {
         const { callSessionId } = await params;
+        const body = await request.text();
 
         const backendRes = await proxyFetch(request, `/api/session-material/${callSessionId}`, {
             method: "POST",
+            body,
         });
 
         if (!backendRes.ok) {

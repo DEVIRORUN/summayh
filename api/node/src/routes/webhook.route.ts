@@ -5,7 +5,7 @@ const router = Router();
 
 /**
  * @openapi
- * /api/webhooks/paystack:
+ * /api/webhook/paystack:
  *  post:
  *      summary: Pays through paystack
  *      tags: [Payment Webhook]

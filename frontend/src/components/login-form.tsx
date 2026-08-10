@@ -57,7 +57,7 @@ export function LoginForm() {
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="flex flex-col gap-1 5">
+                    <div className="flex flex-col gap-1.5">
                         <Label htmlFor="email">Email</Label>
                         <Input
                             id="email"
@@ -69,7 +69,7 @@ export function LoginForm() {
                         />
                     </div>
 
-                    <div className="flex flex-col gap-1 5">
+                    <div className="flex flex-col gap-1.5">
                         <Label htmlFor="password">Email</Label>
                         <Input
                             id="password"

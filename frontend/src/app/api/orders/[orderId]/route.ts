@@ -15,6 +15,8 @@ export async function GET(
         }
 
         const data = await backendRes.json();
+        
+        console.log("[BFF /api/orders/:orderId] backend data:", JSON.stringify(data, null, 2)); // temp
         return NextResponse.json(data);
     } catch(error) {
         console.error("[BFF Order GET]: ", error);

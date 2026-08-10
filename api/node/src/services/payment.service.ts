@@ -47,6 +47,34 @@ export class PaymentService {
       throw error;
     }
   }
+  static async getEarningsSummary(sellerId: string): Promise<any> {
+    try {
+      console.log("[SUMMARY EARNING]: HIT!!!");
+
+      const [balance, pendingEarnings, orderCount] = await Promise.all([
+        this.getBalance(sellerId),
+        prisma.ledgerEntry.aggregate({
+          where: { sellerId, type: "EARNING", status: "PENDING" },
+          _sum: { amount: true }
+        }),
+        prisma.order.count({
+          where: { sellerId: sellerId }
+        }),
+      ]);
+
+
+      console.log("[SUMMARY EARNING]: SUCESSFUL!!!", orderCount);
+      return {
+        totalEarned: balance.totalEarned,
+        pendingPayout: Number(pendingEarnings._sum.amount || 0),
+        orderCount: orderCount ?? 0,
+        available: balance.available,
+      }
+    } catch (error: any) {
+      console.error("ERROR GETTING EARNINGS SUMMARY", error);
+      throw error;
+    }
+  }
   static async getLedger(userId: string, page: number = 1, limit: number = 20): Promise<any> {
     try {
         const skip = (page - 1) * limit;

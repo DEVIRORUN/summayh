@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 
 export function LiveSessionSection({ order, nextBooking, isBuyer}: {  order: any; nextBooking: any; isBuyer: boolean; }) {
     const [mounted, setMounted] = useState(false);
-    useEffect(() => setMounted(true), []);
+    const[now, setNow] = useState<Date | null>(null);
+    useEffect(() => {
+        setMounted(true)
+        setNow(new Date());
+    }, []);
     console.log("Next Booking:", nextBooking)
     if (!nextBooking) {
         return (
@@ -25,8 +29,9 @@ export function LiveSessionSection({ order, nextBooking, isBuyer}: {  order: any
     }
 
     const sessionTime = new Date(nextBooking.scheduledStart);
-    const now = new Date();
-    const canJoin = sessionTime.getTime() - now.getTime() < 5 * 60 * 1000; // 5 min beforee
+    const canJoin = now 
+        ? sessionTime.getTime() - now.getTime() < 5 * 60 * 1000 && new Date(nextBooking.scheduledEnd).getTime() > now.getTime()
+        : false; // 5 min beforee
 
     return (
         <div className="border border-border rounded-md p-4 flex flex-col gap-2">
@@ -42,11 +47,13 @@ export function LiveSessionSection({ order, nextBooking, isBuyer}: {  order: any
                     <span className="animate-pulse text-sm">Laoding...</span>
                 )}
             </p>
-            <Link href={`/session/${nextBooking.id}`}>
-                <Button size="sm" disabled={!canJoin} className="w-fit cursor-pointer">
-                    {canJoin ? "Join session" : "Not yet available"}
-                </Button>
-            </Link>
+            {mounted && canJoin ? (
+                <Link href={`/session/${nextBooking.id}`}>
+                    <Button size="sm" className="w-fit cursor-pointer">Join session</Button>
+                </Link>
+            ) : (
+                <Button size="sm" disabled className="w-fit cursor-pointer">Not yet available</Button>
+            )}
         </div>
     )
 }

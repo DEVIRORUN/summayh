@@ -12,5 +12,16 @@
     }
   },
   "forwardPorts": [3000, 8000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Next.js Frontend",
+      "onAutoForward": "notify",
+      "elevationRequirement": "none"
+    },
+    "8000": {
+      "label": "FastAPI Backend",
+      "onAutoForward": "notify"
+    }
+  },
   "postCreateCommand": "cd api/node && npm install ; cd ../fastapi && pip install --no-cache-dir --break-system-packages -r requirements.txt || echo 'pip install failed, run manually'"
 }

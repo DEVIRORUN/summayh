@@ -126,7 +126,7 @@ export class OrderController {
     static async createOrder(req: Request, res: Response): Promise<any> {
         try{
             const buyerId = (req as any).userId; 
-            const { buyerEmail, serviceId, selectedTierLabel, requirements } = req.body;
+            const { buyerEmail, serviceId, selectedTierLabel, requirements, scheduledStart, scheduledEnd } = req.body;
             const { quantity = 1 } = req.body; // from body
 
             if (!selectedTierLabel) {
@@ -207,12 +207,20 @@ export class OrderController {
                     console.error("Failed to notify buyer of order placement:", err)
                 );
             }
+            console.log("METADATA BEING SENT:", {
+                orderId: newOrder.id,
+                scheduledStart,
+                scheduledEnd,
+            });
 
             // 2. Call my beatiful Paystack Service
             const paymentInitialize = await PaystackService.initializeTransaction(
                 buyerEmail || buyer.email,
                 finalPrice, // Paystack operate in Kobo
-                { orderId: newOrder.id }
+                { 
+                    orderId: newOrder.id,
+                    ...(scheduledStart && scheduledEnd ? { scheduledStart, scheduledEnd } : {})
+                }
             )
 
             await prisma.order.update({
@@ -385,6 +393,27 @@ export class OrderController {
             const handled = handlePrismaError(error, res);
             if (handled) return;
             return res.status(500).json({ message: "Something went wrong." });
+        }
+    }
+
+    static async scheduleNextSession(req: Request, res: Response): Promise<any> {
+        try {
+            const buyerId = (req as any).userId;
+            const { orderId } = req.params;
+            const { scheduledStart, scheduledEnd } = req.body;
+
+            if (!scheduledStart || !scheduledEnd) {
+                return res.status(400).json({ message: "scheduledStart and scheduledEnd are required." })
+            }
+
+            const booking = await OrderService.scheduleNextSession(orderId as string, buyerId, scheduledStart, scheduledEnd);
+
+            return res.status(200).json({ message: "Session scheduled successfully" })
+        } catch(error: any) {
+            console.error("SCHEDULE NEXT SESSION FAILED:", error);
+            const handled = handlePrismaError(error, res);
+            if (handled) return;
+            return res.status(500).json({ message: "Failed ot schedule session." });
         }
     }
 
