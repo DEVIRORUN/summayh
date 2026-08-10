@@ -14,7 +14,7 @@ interface Tier {
 
 interface GigDescriptionAccordionProps {
   description: string;
-  deliveryMode: "DIGITAL" | "LIVE" | "PHYSICAL";
+  deliveryMode?: "DIGITAL" | "LIVE" | "PHYSICAL";
   tiers?: Tier[];
 }
 

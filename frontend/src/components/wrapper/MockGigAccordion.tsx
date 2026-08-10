@@ -27,10 +27,10 @@ export default function MockGigAccordionContainer() {
   return (
     <div className="w-full max-w-xl p-6 bg-card rounded-xl border shadow-sm">
       <h2 className="text-base font-bold tracking-tight mb-4">Service Details</h2>
-      <GigDescriptionAccordion 
+      {/* <GigDescriptionAccordion 
         description={sampleDescription} 
         sections={sampleSections} 
-      />
+      /> */}
     </div>
   );
 }
