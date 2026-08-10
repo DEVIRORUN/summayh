@@ -111,30 +111,30 @@ export function AuthForm({
               e.preventDefault();
               setShowPassword((prev) => !prev)
             }}
-            className="cursor-pointer absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} /> }
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} /> }
           </button>
         </div>
-       {isPasswordFocused && password.length > 1 && (
-            <ul className="mt-2 flex flex-col gap-1 text-sm">
+       {isSignup && isPasswordFocused && password.length > 1 && (
+            <ul className="mt-2 flex flex-col gap-1.5 text-xs bg-muted/40 p-3 rounded-md border border-border">
                 {verificationRules.map((r, i) => (
                     <li
                     key={i}
                     className={cn(
                         "flex items-center gap-2 transition-colors duration-150",
                         r.valid
-                        ? "text-emerald-600 dark:text-emerald-400"
+                        ? "text-success"
                         : "text-muted-foreground",
                     )}
                     >
                     {r.valid ? (
-                        <CircleCheck className="w-4 h-4 text-emerald-600 fill-emerald-100 dark:fill-emerald-950/50" />
+                        <CircleCheck className="w-3.5 h-3.5 text-success" />
                     ) : (
-                        <CircleX className="w-4 h-4 text-red-600 fill-red-100 dark:fill-red-950/50" />
+                        <CircleX className="w-3.5 h-3.5 text-destructive" />
                     )}
-                    <span className={r.valid ? "line-through opacity-60" : ""}>
+                    <span className={r.valid ? "line-through opacity-70" : ""}>
                         {r.label}
                     </span>
                     </li>
@@ -143,9 +143,12 @@ export function AuthForm({
         )}
       </div>
 
-      {error && <span className="text-xs text-red-500">{error}</span>}
+      {error && 
+        <div className="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-md p-2.5 font-medium">
+          {error}
+        </div>}
 
-      <Button type="submit" disabled={isSubmitting}>
+      <Button type="submit" disabled={isSubmitting} className="w-full bg-primary/80 text-primary-foreground hover:bg-primary font-medium transition-colors mt-1">
         {isSubmitting
           ? "Please wait..."
           : isSignup

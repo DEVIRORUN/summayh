@@ -60,7 +60,7 @@ export function SchoolEmailInput({
 
   return (
     <div className="flex flex-col gap-1 relative">
-      <Label>Email</Label>
+      <Label className="text-xs font-medium text-foreground">Email</Label>
       <Input
         type="email"
         autoComplete="new-password"

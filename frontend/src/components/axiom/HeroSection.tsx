@@ -34,16 +34,18 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
         {/* Reusing plain Input + Button here rather than the full SearchBar component —
             SearchBar has autocomplete/suggestions logic which isn't needed on the
             homepage hero, just a simple "type and hit go" that redirects to /search */}
-        <div className="flex w-full max-w-md gap-2">
+        <div className="flex w-full max-w-md gap-1">
             <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && executeSearch()}
-            placeholder="Try 'logo design' or 'video editing'"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && executeSearch()}
+                placeholder="Try 'logo design' or 'video editing'"
+                className="rounded-sm focus-visible:ring-1"
             />
             <Button 
                 onClick={() => (executeSearch())} 
                 disabled={query.trim().length < 3}
+                className="rounded-sm"
                 suppressHydrationWarning    
             >Search</Button>
         </div>
