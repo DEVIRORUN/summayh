@@ -103,7 +103,7 @@ export function AuthForm({
             onBlur={() => setIsPasswordFocused(false)}
             required
             minLength={8}
-            className="bg-background"
+            className="bg-background border-input text-foreground placeholder:text-muted-foreground pr-10 focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0"
           />
           <button
             type="button"

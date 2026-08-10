@@ -8,7 +8,7 @@ import { AuthForm } from "@/components/axiom/AuthForm";
 import { SocialAuthButtons } from "@/components/axiom/SocialAuthButtonProps";
 import { useAuth } from "@/contexts/auth-context";
 
-export default function LoginPage() {
+export default function SignUpPage() {
   const router = useRouter();
   const { refetch } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,7 +19,7 @@ export default function LoginPage() {
     setError(undefined);
 
     try {
-      const res = await fetch("api/auth/login", {
+      const res = await fetch("api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
