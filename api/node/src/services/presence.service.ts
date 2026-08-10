@@ -1,4 +1,4 @@
-import redis from "../utils/redis";
+import { redis } from "../utils/redis";
 
 const PRESENSE_TTL = 60; // seconds
 

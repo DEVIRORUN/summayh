@@ -27,11 +27,12 @@ callWorker.on("failed", (job, err) => {
     console.error(`[JOB ${job?.id} FAILED]:`, err);
 });
 
-callQueue.add(
+callQueue.upsertJobScheduler(
     "sweep-overdue-sessions",
-    {},
+    { every: 5 * 60_000 },
     {
-        repeat: { every: 5 * 60_000 },
-        jobId: "sweep-overdue-sessions"
+        name: "sweep-overdue-sessions",
+        data: {},
+        opts: {},
     }
-)
+);

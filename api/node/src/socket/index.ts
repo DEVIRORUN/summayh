@@ -1,5 +1,5 @@
+const cookie = require("cookie");
 import { Server, Socket } from "socket.io";
-import * as cookie from "cookie";
 import jwt from "jsonwebtoken"
 import { PresenceService } from "../services/presence.service";
 
