@@ -46,17 +46,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
 
     return (
-        <div className="flex min-h-screen bg-background">
+        <div className="flex h-dvh w-full bg-background overflow-hidden">
             {/* Desktop Dashboard Sidebar */}
-            <aside className="hidden md:flex w-56 border-r border-border shrink-0 flex-col bg-card">
-                <div className="p-4 border-b border-border">
+            <aside className="hidden md:flex w-56 border-r border-border shrink-0 flex-col bg-card h-full overflow-hidden">
+                <div className="p-4 border-b border-border shrink-0">
                     <p className="text-sm font-semibold truncate">{user.name}</p>
                     <p className="text-sm text-muted-foreground capitalize">
                         {user.role === "SELLER" ? "Seller account" : "Buyer account"}
                         {user.isPro && <span className="ml-1 font-bold text-foreground">Pro</span>}
                     </p>
                 </div>
-                <nav className="flex flex-col gap-1 p-2 flex-1">
+                <nav className="flex flex-col gap-1 p-2 flex-1 overflow-y-auto min-h-0">
                     {navItems.map((item) => {
                         const isActive = item.exact
                             ? pathname === item.href
@@ -67,7 +67,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 key={item.href}
                                 href={item.href}
                                 className={cn(
-                                    "flex items-center gap-2.5 px-3 py-2 rounded-sm text-xs transition-colors",
+                                    "flex items-center gap-2.5 px-3 py-2 rounded-sm text-xs transition-colors shrink-0",
                                     isActive 
                                         ? "bg-accent text-accent-foreground font-medium"
                                         : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -82,7 +82,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </aside>
 
             {/* Main Dashboard Content Area */}
-            <main className="flex-1 min-w-0 overlflow-y-auto">
+            <main className="flex-1 min-w-0 h-full overflow-y-auto">
                 {children}
             </main>
         </div>

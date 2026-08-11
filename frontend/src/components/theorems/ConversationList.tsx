@@ -74,16 +74,16 @@ export function ConversationList({
     }
 
     return (
-        <div className="flex flex-col gap-1 w-full">
+        <div className="flex flex-col gap-1 w-full h-full min-h-0 overflow-y-auto pr-1">
             {conversations.map((convo) => {
                 const isUserA = convo.userAId === currentUserId;
                 const other = isUserA ? convo.userB : convo.userA;
-                const lastMessage = convo.messages[0];
+                const lastMessage = convo?.messages[0];
 
                 const isUnread = 
-                    lastMessage && // If there's a new message
-                    lastMessage.senderId !== currentUserId && // And the sender is not me
-                    !lastMessage.seenAt; // show it as seenAt
+                    Boolean(lastMessage) && // If there's a new message
+                    lastMessage?.senderId !== currentUserId && // And the sender is not me
+                    !lastMessage?.seenAt; // show it as seenAt
 
                 return (
                     <Link

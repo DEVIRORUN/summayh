@@ -12,12 +12,14 @@ export default async function MessagesPage() {
     }
 
     return (
-        <div className="flex flex-col max-w-3xl gap-4 w-full min-w-0 p-4">
-            <header>
+        <div className="flex flex-col h-[calc(100dvh-4rem)] max-w-3xl gap-4 w-full min-w-0 p-4 mx-auto overflow-hidden">
+            <header className="shrink-0">
                 <span className="text-2xl font-semibold">Messages</span>
             </header>
 
-            <ConversationList conversations={conversations ?? []} currentUserId={currentUser.id} />
+            <div className="flex-1 min-h-0 w-full overflow-hidden">
+                <ConversationList conversations={conversations ?? []} currentUserId={currentUser.id} />
+            </div>
         </div>
     )
 }
