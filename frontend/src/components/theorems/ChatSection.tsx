@@ -19,6 +19,7 @@ export function ChatSection({ messagePage, otherUserId, conversationId: initialC
     
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [conversationId, setConversationId] = useState<string | null>(initialConversationId ?? null);
+    const [isLoadin, setIsLaoding] = useState<boolean>(true);
 
     useEffect(() => {
         async function loadMessages(id: string) {

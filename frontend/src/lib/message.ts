@@ -7,7 +7,7 @@ export interface ConversationListItem {
     lastMessageAt: string | null;
     userA: { id: string; name: string; avatar: string | null };
     userB: { id: string; name: string; avatar: string | null };
-    messages: { id: string; content: string; senderId: string; seenAt: string | null; createdAt: string }[];
+    messages: { id: string; content: string; senderId: string; seenAt: Date | null; createdAt: string }[];
 }
 
 export async function getConversations(): Promise<ConversationListItem[] | null> {

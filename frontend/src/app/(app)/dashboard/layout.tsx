@@ -34,29 +34,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }, [isLoading, user, router])
 
     if (isLoading) {
-        return <div className="p-6 text-sm text-muted-foreground">Loading...</div>
+        return <div className="p-6 text-sm text-muted-foreground animate-pulse">Loading dashboard...</div>
     }
 
      if (!user) {
         return null;
     }
 
-    
     const visibleNavItems = navItems.filter(
         (item) => !item.sellerOnly || user.role === "SELLER"
     );
 
     return (
-        <div className="flex min-h-screen">
-            <aside className="w-56 border-r shrink-0 flex flex-col">
-                <div className="p-4 border-b">
-                    <p className="text-sm font-semibold">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                        {user.role === "SELLER" ? "Seller" : "Buyer"}
-                        {user.isPro && <span className="ml-1 font-bold">Pro</span>}
+        <div className="flex min-h-screen bg-background">
+            {/* Desktop Dashboard Sidebar */}
+            <aside className="hidden md:flex w-56 border-r border-border shrink-0 flex-col bg-card">
+                <div className="p-4 border-b border-border">
+                    <p className="text-sm font-semibold truncate">{user.name}</p>
+                    <p className="text-sm text-muted-foreground capitalize">
+                        {user.role === "SELLER" ? "Seller account" : "Buyer account"}
+                        {user.isPro && <span className="ml-1 font-bold text-foreground">Pro</span>}
                     </p>
                 </div>
-                <nav className="flex flex-col gap-1 p-2">
+                <nav className="flex flex-col gap-1 p-2 flex-1">
                     {navItems.map((item) => {
                         const isActive = item.exact
                             ? pathname === item.href
@@ -67,20 +67,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 key={item.href}
                                 href={item.href}
                                 className={cn(
-                                    "flex items-center gap-2 px-3 py-2 rounded-sm text-sm",
+                                    "flex items-center gap-2.5 px-3 py-2 rounded-sm text-xs transition-colors",
                                     isActive 
-                                        ? "bg-muted font-medium"
-                                        : "text-muted-foreground hover:bg-muted/50"
+                                        ? "bg-accent text-accent-foreground font-medium"
+                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                 )}
                             >
-                                <Icon className="w-4 h-4" />
+                                <Icon className="w-4 h-4 shrink-0" />
                                 {item.label}
                             </Link>
                         )
                     })}
                 </nav>
             </aside>
-            {children}
+
+            {/* Main Dashboard Content Area */}
+            <main className="flex-1 min-w-0 overlflow-y-auto">
+                {children}
+            </main>
         </div>
     )
 }
