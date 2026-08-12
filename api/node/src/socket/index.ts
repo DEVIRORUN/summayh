@@ -2,6 +2,7 @@ const cookie = require("cookie");
 import { Server, Socket } from "socket.io";
 import jwt from "jsonwebtoken"
 import { PresenceService } from "../services/presence.service";
+import { SocketAddress } from "node:net";
 
 interface AuthedSocket extends Socket {
     data: { userId: string };
@@ -35,6 +36,7 @@ export function initSocket(io: Server) {
 
     io.on("connection", (socket: AuthedSocket) => {
         const { userId } = socket.data;
+        socket.join(`user:${userId}`);
         PresenceService.markUserOnline(userId);
 
         const heartbeat = setInterval(() => PresenceService.markUserOnline(userId), 30_000);

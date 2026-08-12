@@ -1,70 +1,183 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { GigGallery } from "@/components/axiom/GigGallery";
 import { GigTitleBlock } from "@/components/theorems/GigTitleBlock";
 import { GigDescriptionAccordion } from "@/components/axiom/GigDescriptionAccordion";
 import { GigOrderPanel } from "@/components/shared/GigOrderPanel";
 
-async function getGig(id: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/gig/${id}`, {
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
-
-  const body = await res.json();
-  return body.data;
+interface GigPageProps {
+  params: Promise<{ id: string }>;
 }
 
-export default async function GigDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+const BASE_URL = "https://summayh.com";
+
+async function getGig(id: string) {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/gig/${id}`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const body = await res.json();
+    return body?.data ?? null;
+  } catch (error) {
+    console.error(`[SEO Metadata Fetch Failure] Gig ID ${id}:`, error);
+    return null;
+  }
+}
+
+export async function generateMetadata({ params }: GigPageProps): Promise<Metadata> {
   const { id } = await params;
   const gig = await getGig(id);
 
   if (!gig) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-        Gig not found.
-      </div>
-    );
+    return {
+      title: "Gig Not Found | SUMMAYH",
+      description: "The requested marketplace offering could not be located.",
+      robots: { index: false, follow: false },
+    };
   }
 
+  const title = `${gig.title} - Book on SUMMAYH`;
+  const plainTextDescription = (gig.description || "")
+    .replace(/<[^>]*>?/gm, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 155);
+
+  const description =
+    plainTextDescription || `Book ${gig.title} from verified creators on SUMMAYH.`;
+
+  const rawImage = gig.coverImage || gig.images?.[0] || "/og-default.png";
+  const absoluteImageUrl = rawImage.startsWith("http")
+    ? rawImage
+    : `${BASE_URL}${rawImage}`;
+
+  const canonicalUrl = `${BASE_URL}/gigs/${id}`;
+
+  return {
+    title,
+    description,
+    keywords: [
+      gig.category?.name,
+      ...(gig.tags ?? []),
+      "SUMMAYH",
+      "NIGERIA campus market",
+      "student freelancers",
+    ].filter(Boolean),
+    alternates: { canonical: canonicalUrl },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: "SUMMAYH Marketplace",
+      locale: "en_NG",
+      type: "article",
+      images: [{ url: absoluteImageUrl, width: 1200, height: 630, alt: gig.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [absoluteImageUrl],
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
+    },
+  };
+}
+
+export default async function GigDetailPage({ params }: GigPageProps) {
+  const { id } = await params;
+  const gig = await getGig(id);
+
+  if (!gig) notFound();
+
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: gig.title,
+      image: gig.coverImage ? [gig.coverImage] : [],
+      description: gig.description?.replace(/<[^>]*>?/gm, "").slice(0, 500) || "",
+      sku: gig.id,
+      brand: { "@type": "Brand", name: "SUMMAYH" },
+      offers: {
+        "@type": "Offer",
+        url: `${BASE_URL}/gigs/${id}`,
+        priceCurrency: "NGN",
+        price: gig.price || 0,
+        priceValidUntil: new Date(Date.now() + 31536000000).toISOString().split("T")[0],
+        availability: "https://schema.org/InStock",
+        seller: {
+          "@type": "Person",
+          name: gig.seller?.fullName || gig.seller?.username || "SUMMAYH Seller",
+        },
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: BASE_URL },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: gig.category?.name || "Gigs",
+          item: `${BASE_URL}/categories/${gig.category?.slug || ""}`,
+        },
+        { "@type": "ListItem", position: 3, name: gig.title, item: `${BASE_URL}/gigs/${id}` },
+      ],
+    },
+  ];
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-      <div className="md:col-span-2 flex flex-col gap-6">
-        <GigTitleBlock
-          title={gig.title}
-          category={gig.category?.name || "Uncategorized"}
-          seller={{
-            avatar: gig.seller?.avatar,
-            name: gig.seller?.sellerUsername || gig.seller?.name,
-            isOnline: gig.seller?.isOnline ?? false,
-            level: gig.seller?.level,
-          }}
-          rating={{ avgRating: gig.avgRating, reviewCount: gig.totalReviews }}
-        />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <div className="max-w-5xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="md:col-span-2 flex flex-col gap-6">
+          <GigTitleBlock
+            title={gig.title}
+            category={gig.category?.name || "Uncategorized"}
+            seller={{
+              avatar: gig.seller?.avatar,
+              name: gig.seller?.sellerUsername || gig.seller?.name,
+              isOnline: gig.seller?.isOnline ?? false,
+              level: gig.seller?.level,
+            }}
+            rating={{ avgRating: gig.avgRating, reviewCount: gig.totalReviews }}
+          />
 
-        <GigGallery
-          media={
-            gig.coverImage
-              ? [gig.coverImage, ...gig.images.filter((img: any) => img !== gig.coverImage)]
-              : gig.images ?? []
-          }
-        />
+          <GigGallery
+            media={
+              gig.coverImage
+                ? [gig.coverImage, ...gig.images.filter((img: any) => img !== gig.coverImage)]
+                : gig.images ?? []
+            }
+          />
 
-        <GigDescriptionAccordion 
-          description={gig.description} 
-          deliveryMode={gig.deliveryMode}
-          tiers={gig.tiers} 
-        />
+          <GigDescriptionAccordion
+            description={gig.description}
+            deliveryMode={gig.deliveryMode}
+            tiers={gig.tiers}
+          />
+        </div>
+
+        <div className="md:col-span-1">
+          <GigOrderPanel
+            sellerId={gig.seller.id}
+            gigId={gig.id}
+            tiers={gig.tiers}
+            deliveryMode={gig.deliveryMode}
+          />
+        </div>
       </div>
-
-      {/* Right column — pricing tiers + order action, client-interactive */}
-      <div className="md:col-span-1">
-        <GigOrderPanel sellerId={gig.seller.id} gigId={gig.id} tiers={gig.tiers} deliveryMode={gig.deliveryMode}/>
-      </div>
-    </div>
+    </>
   );
 }

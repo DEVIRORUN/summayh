@@ -5,7 +5,8 @@ import { PaystackService } from "./paystack.service";
 import { TermiiService } from "./termii.service";
 import { asyncWrapProviders } from "node:async_hooks";
 import { onOrderCompleted } from "./ranking/triggers";
-
+import { NotificationService } from "./notification.service";
+import { OrderPlacedEmail } from "../email/OrderPlacedEmail";
 
 export class OrderService {
     private static secretKey = process.env.PAYSTACK_SECRET_KEY;
@@ -13,97 +14,236 @@ export class OrderService {
    * Processes a successful payment webhook from Paystack
    * @param data The payload data object sent by Paystack
    */
+    // public static async handleSuccessfulPayment(data: any) {
+    //     const { reference, amount, metadata, customer } = data;
+
+    //     // 1. Extract your application identifiers (e.g., orderId passed during initialization)
+    //     // Paystack allows passing custom fields inside a 'metadata' object
+    //     const orderId = metadata?.orderId;
+    //     const { scheduledStart, scheduledEnd } = metadata || {};
+
+    //     if (!orderId) {
+    //         console.log(`[Webhook Error]: No orderId found in metadata for reference: ${reference}`);
+    //         return { success: false, error: "Missing order identity context" };
+    //     }
+
+    //     try {
+    //         // 2. Wrap this in a transaction to guarantee data integrity
+    //         return await prisma.$transaction(async (tx) => {
+    //             // Find the target order using the orderId from metadata
+    //             const order = await tx.order.findUnique({
+    //                 where: { id: orderId },
+    //                 include: { 
+    //                     gigTier: true, 
+    //                     gig: true,
+    //                     buyer: true,
+    //                     seller: { include: { user: true } }
+    //                 },
+    //             });
+
+    //             if (!order) {
+    //                 throw new Error(`Order not found: ${orderId}`);
+    //             }
+                
+    //             if (order.status === "DISPUTED") {
+    //                 console.error("ORDER IS UNDER DISPUTE AND CANNOT BE MODIFIED UNTIL RESOLVED");
+    //                 throw new Error("This order is under dispute and cannot be modified until resolved.");
+    //             }
+
+    //             // Prevent duplicate if already active not paid
+    //             if (order.status === "ACTIVE") {
+    //                 console.log(`[Webhook Info]: Order ${orderId} is already marked as PAID.`);
+    //                 return { success: true, duplicated: true };
+    //             }
+
+    //             // 3. Update the order status and log the transaction details
+    //             const updatedOrder = await tx.order.update({
+    //                 where: { id: orderId },
+    //                 data: {
+    //                     status: 'ACTIVE',
+    //                     paymentReference: reference,
+    //                     updatedAt: new Date(),
+    //                 },
+    //             });
+
+    //             // LIVE gig: create the session apckgae + lock in the first booking
+    //             if (order.gig.deliveryMode === "LIVE" && scheduledStart && scheduledEnd) {
+    //                 const sessionPackage = await tx.sessionPackage.create({
+    //                     data: {
+    //                         orderId: order.id,
+    //                         gigTierid: order.gigTier.id,
+    //                         sessionLengthMin: order.gigTier.sessionLengthMin ?? 30,
+    //                         breakLengthMin: order.gigTier.breakLengthMin ?? 0,
+    //                         totalSessions: order.gigTier.totalSessions ?? 1,
+    //                     }
+    //                 });
+    //                 // re-check clash at moment of payment [SURE CONFIRMATION]
+    //                 // e got booked btw slot-selection and oayment completing
+    //                 const conflict = await tx.sessionBooking.findFirst({
+    //                     where: {
+    //                         status: "SCHEDULED",
+    //                         scheduledStart: { lt: new Date(scheduledEnd) },
+    //                         scheduledEnd: { gt: new Date(scheduledStart) },
+    //                         package: { gigTier: { gig: { sellerId: order.sellerId } } },
+    //                     },
+    //                 });
+
+    //                 if (conflict) {
+    //                     console.warn (`[Webhook Warning]: Slot conflict on order ${orderId}, booking not auto-created.`)
+    //                 } else {
+    //                     await tx.sessionBooking.create({
+    //                         data: {
+    //                             packageId: sessionPackage.id,
+    //                             scheduledStart: new Date(scheduledStart),
+    //                             scheduledEnd: new Date(scheduledEnd),
+    //                             status: "SCHEDULED",
+    //                         },
+    //                     })
+    //                 }
+    //             }
+    //             console.log(`[Webhook Success]: Order ${orderId} marked as PAID with reference: ${reference} from customer: ${customer}`);
+
+    //             return { success: true, order: updatedOrder, sellerUser: order.gig.seller.user, buyerName: order.buyer.name, gigTitle: order.gig.title };
+    //         }).then(async (result) => {
+    //             if (result.success && !("duplicated" in result)) {
+    //                 NotificationService.notify({
+    //                     userId: result.sellerUser.id,
+    //                     type: "ORDER_PLACED",
+    //                     title: "New order received",
+    //                     body: `${result.buyerName} just placed an order for "${result.gigTitle}`,
+    //                     link: `/dashboard/orders/${orderId}`,
+    //                     email: {
+    //                         to: result.sellerUser.email,
+    //                         subject: "You have a new order on SUMMMAYH",
+    //                         template: OrderPlacedEmail({ sellerName: result.sellerUser.name, gigTitle: result.gigTitle })
+    //                     },
+    //                 }).catch(err => console.error("[notify] failed", err));
+    //             }
+
+    //             return result;
+    //         })
+    //     } catch(error) {
+    //         console.error(`[Webhook Processing Failed]: ${error}`);
+    //         throw error;
+    //     }
+    // }
+
     public static async handleSuccessfulPayment(data: any) {
-        const { reference, amount, metadata, customer } = data;
+    const { reference, amount, metadata, customer } = data;
+    const orderId = metadata?.orderId;
+    const { scheduledStart, scheduledEnd } = metadata || {};
 
-        // 1. Extract your application identifiers (e.g., orderId passed during initialization)
-        // Paystack allows passing custom fields inside a 'metadata' object
-        const orderId = metadata?.orderId;
-        const { scheduledStart, scheduledEnd } = metadata || {};
+    if (!orderId) {
+        console.log(`[Webhook Error]: No orderId found in metadata for reference: ${reference}`);
+        return { success: false, error: "Missing order identity context" };
+    }
 
-        if (!orderId) {
-            console.log(`[Webhook Error]: No orderId found in metadata for reference: ${reference}`);
-            return { success: false, error: "Missing order identity context" };
-        }
+    try {
+        const result = await prisma.$transaction(async (tx) => {
+            const order = await tx.order.findUnique({
+                where: { id: orderId },
+                include: {
+                    gigTier: true,
+                    gig: true,
+                    buyer: true,
+                    seller: { include: { user: true } },
+                },
+            });
 
-        try {
-            // 2. Wrap this in a transaction to guarantee data integrity
-            return await prisma.$transaction(async (tx) => {
-                // Find the target order using the orderId from metadata
-                const order = await tx.order.findUnique({
-                    where: { id: orderId },
-                    include: { gigTier: true, gig: true },
+            if (!order) {
+                throw new Error(`Order not found: ${orderId}`);
+            }
+
+            if (order.status === "DISPUTED") {
+                console.error("ORDER IS UNDER DISPUTE AND CANNOT BE MODIFIED UNTIL RESOLVED");
+                throw new Error("This order is under dispute and cannot be modified until resolved.");
+            }
+
+            if (order.status === "ACTIVE") {
+                console.log(`[Webhook Info]: Order ${orderId} is already marked as PAID.`);
+                return { success: true, duplicated: true as const, order: null };
+            }
+
+            const updatedOrder = await tx.order.update({
+                where: { id: orderId },
+                data: {
+                    status: 'ACTIVE',
+                    paymentReference: reference,
+                    updatedAt: new Date(),
+                },
+            });
+
+            if (order.gig.deliveryMode === "LIVE" && scheduledStart && scheduledEnd) {
+                const sessionPackage = await tx.sessionPackage.create({
+                    data: {
+                        orderId: order.id,
+                        gigTierid: order.gigTier.id,
+                        sessionLengthMin: order.gigTier.sessionLengthMin ?? 30,
+                        breakLengthMin: order.gigTier.breakLengthMin ?? 0,
+                        totalSessions: order.gigTier.totalSessions ?? 1,
+                    }
                 });
 
-                if (!order) {
-                    throw new Error(`Order not found: ${orderId}`);
-                }
-                
-                if (order.status === "DISPUTED") {
-                    console.error("ORDER IS UNDER DISPUTE AND CANNOT BE MODIFIED UNTIL RESOLVED");
-                    throw new Error("This order is under dispute and cannot be modified until resolved.");
-                }
-
-                // Prevent duplicate if already active not paid
-                if (order.status === "ACTIVE") {
-                    console.log(`[Webhook Info]: Order ${orderId} is already marked as PAID.`);
-                    return { success: true, duplicated: true };
-                }
-
-                // 3. Update the order status and log the transaction details
-                const updatedOrder = await tx.order.update({
-                    where: { id: orderId },
-                    data: {
-                        status: 'ACTIVE',
-                        paymentReference: reference,
-                        updatedAt: new Date(),
+                const conflict = await tx.sessionBooking.findFirst({
+                    where: {
+                        status: "SCHEDULED",
+                        scheduledStart: { lt: new Date(scheduledEnd) },
+                        scheduledEnd: { gt: new Date(scheduledStart) },
+                        package: { gigTier: { gig: { sellerId: order.sellerId } } },
                     },
                 });
 
-                // LIVE gig: create the session apckgae + lock in the first booking
-                if (order.gig.deliveryMode === "LIVE" && scheduledStart && scheduledEnd) {
-                    const sessionPackage = await tx.sessionPackage.create({
+                if (conflict) {
+                    console.warn(`[Webhook Warning]: Slot conflict on order ${orderId}, booking not auto-created.`);
+                } else {
+                    await tx.sessionBooking.create({
                         data: {
-                            orderId: order.id,
-                            gigTierid: order.gigTier.id,
-                            sessionLengthMin: order.gigTier.sessionLengthMin ?? 30,
-                            breakLengthMin: order.gigTier.breakLengthMin ?? 0,
-                            totalSessions: order.gigTier.totalSessions ?? 1,
-                        }
-                    });
-                    // re-check clash at moment of payment [SURE CONFIRMATION]
-                    // e got booked btw slot-selection and oayment completing
-                    const conflict = await tx.sessionBooking.findFirst({
-                        where: {
+                            packageId: sessionPackage.id,
+                            scheduledStart: new Date(scheduledStart),
+                            scheduledEnd: new Date(scheduledEnd),
                             status: "SCHEDULED",
-                            scheduledStart: { lt: new Date(scheduledEnd) },
-                            scheduledEnd: { gt: new Date(scheduledStart) },
-                            package: { gigTier: { gig: { sellerId: order.sellerId } } },
                         },
                     });
-
-                    if (conflict) {
-                        console.warn (`[Webhook Warning]: Slot conflict on order ${orderId}, booking not auto-created.`)
-                    } else {
-                        await tx.sessionBooking.create({
-                            data: {
-                                packageId: sessionPackage.id,
-                                scheduledStart: new Date(scheduledStart),
-                                scheduledEnd: new Date(scheduledEnd),
-                                status: "SCHEDULED",
-                            },
-                        })
-                    }
                 }
-                console.log(`[Webhook Success]: Order ${orderId} marked as PAID with reference: ${reference} from customer: ${customer}`);
+            }
 
-                return { success: true, order: updatedOrder };
-            })
-        } catch(error) {
-            console.error(`[Webhook Processing Failed]: ${error}`);
-            throw error;
+            console.log(`[Webhook Success]: Order ${orderId} marked as PAID with reference: ${reference} from customer: ${customer}`);
+
+            return {
+                success: true,
+                duplicated: false as const,
+                order: updatedOrder,
+                sellerUser: order.seller.user,
+                buyerName: order.buyer.name,
+                gigTitle: order.gig.title,
+            };
+        });
+
+        // fire notification AFTER the transaction commits — never inside tx, never blocking the webhook response
+        if (result.success && !result.duplicated) {
+            NotificationService.notify({
+                userId: result.sellerUser.id,
+                type: "ORDER_PLACED",
+                title: "New order received",
+                body: `${result.buyerName} just placed an order for "${result.gigTitle}"`,
+                link: `/dashboard/orders/${orderId}`,
+                email: {
+                    to: result.sellerUser.email,
+                    subject: "You have a new order on SUMMAYH",
+                    template: OrderPlacedEmail({
+                        sellerName: result.sellerUser.name,
+                        gigTitle: result.gigTitle,
+                    }),
+                },
+            }).catch((err: unknown) => console.error("[notify] failed", err));
         }
+
+        return result;
+    } catch (error) {
+        console.error(`[Webhook Processing Failed]: ${error}`);
+        throw error;
     }
+}
 
   /**
      * 1. SELLER SUBMITS WORK

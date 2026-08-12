@@ -215,12 +215,25 @@ enum ProPlanInterval {
   YEARLY
 }
 
+enum NotificationType {
+  ORDER_PLACED
+  ORDER_ACCEPTED
+  SESSION_REMINDER
+  SESSION_STARTING
+  PAYMENT_RECEIVED
+  MILESTONE_RECEIVED
+  DISPUTE_OPENED
+  DISPUTE_RESOLVED
+  MESSAGE_RECEIVED
+  NO_SHOW_FLAGGED
+}
+
 model ProPlan {
   id         String          @id @default(uuid())
   name       String
   priceNaira Float
   interval   ProPlanInterval
-  isActive   Boolean @default(true)
+  isActive   Boolean         @default(true)
   perks      String[] // gon use this for pricing bullet points
   createdAt  DateTime        @default(now())
 
@@ -287,6 +300,7 @@ model User {
   CallerSessions       CallSession[]      @relation("CallerSessions")
   CalleeSessions       CallSession[]      @relation("CalleeSessions")
   courseEnrollments    CourseEnrollment[]
+  notifications        Notification[]
 }
 
 model SellerProfile {
@@ -957,4 +971,20 @@ model SessionMaterial {
   callSession CallSession @relation(fields: [callSessionId], references: [id])
 
   @@index([callSessionId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  link      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
 }

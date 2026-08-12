@@ -11,6 +11,8 @@ import http from "http";
 import { Server } from "socket.io"
 import { initSocket } from "./socket"
 
+
+import notificationRoutes from "./routes/notification.route";
 import authRoutes from "./routes/auth";
 import adminRoutes from "./routes/admin.route";
 import testimonialRoutes from "./routes/testimonial.route";
@@ -242,8 +244,13 @@ app.use("/api/session-disputes", sessionDisputeRoutes);
 app.use("/api/admin/agent-decisions", agentDecisionRoutes);
 app.use("/api/session-material", sessionMaterialRoutes);
 app.use("/api/pro-subscriptions", proSubscriptionRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 initSocket(io);
+
+export function getIO() {
+  return io;
+}
 
 // Start listening
 server.listen(PORT, () => {
