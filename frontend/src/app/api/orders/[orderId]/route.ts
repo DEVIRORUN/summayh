@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 export async function GET(
     request: Request,
@@ -7,7 +7,7 @@ export async function GET(
 ) {
     try {
         const { orderId } = await params;
-        const backendRes = await proxyFetch(request, `/api/orders/${orderId}`, { method: "GET" });
+        const backendRes = await proxyFetchRoute(request, `/api/orders/${orderId}`, { method: "GET" });
 
         if (!backendRes.ok) {
             const errorData = await backendRes.json().catch(() => ({}));

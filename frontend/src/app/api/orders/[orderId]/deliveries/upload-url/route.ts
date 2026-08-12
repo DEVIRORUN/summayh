@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 export async function POST(
     request: Request,
@@ -11,7 +11,7 @@ export async function POST(
 
         console.log("[BFF] calling backend:", `/api/orders/${orderId}/deliveries/upload-url`);
         
-        const backendRes = await proxyFetch(request, `/api/orders/${orderId}/deliveries/upload-url`, {
+        const backendRes = await proxyFetchRoute(request, `/api/orders/${orderId}/deliveries/upload-url`, {
             method: "POST",
             body: JSON.stringify(body),
         });

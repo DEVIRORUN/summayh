@@ -7,8 +7,10 @@ import { handlePrismaError } from "../utils/prismaErrorHandler"
 export class AdminController{
     static async getDashboard(req: Request, res: Response): Promise<any> {
         try {
+            console.error("GETTING DASHBOARD AS ADMIN: HIT!!!");
             const adminId = (req as any).userId
             const data = await AdminService.getDashboardMetrics(adminId);
+            console.error("GETTING DASHBOARD AS ADMIN: SUCCESS!!!");
             return res.status(200).json({
                 message: "Admin dashboard metrics fetched successfully.",
                 data

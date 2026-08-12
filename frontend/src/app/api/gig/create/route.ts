@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 export async function POST(request: Request) {
     try {
         // 1. extract the JSON body typed by the user in page
         const body = await request.json();
 
-        const backendRes = await proxyFetch(request, "/api/gig/create", {
+        const backendRes = await proxyFetchRoute(request, "/api/gig/create", {
             method: "POST",
             body: JSON.stringify(body),
         });

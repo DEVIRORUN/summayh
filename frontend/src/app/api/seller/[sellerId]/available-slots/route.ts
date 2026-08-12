@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 export async function GET(
   request: Request,
@@ -10,7 +10,7 @@ export async function GET(
         const { searchParams } = new URL(request.url);
         const query = searchParams.toString();
 
-        const backendRes  = await proxyFetch(request, `/api/seller/${sellerId}/available-slots?${query}`, {
+        const backendRes  = await proxyFetchRoute(request, `/api/seller/${sellerId}/available-slots?${query}`, {
             method: "GET"
         })
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 export async function PATCH(
     request: Request,
@@ -8,7 +8,7 @@ export async function PATCH(
     try {
         const { conversationId } = await params;
 
-        const backendRes = await proxyFetch(request, `/api/messages/${conversationId}/seen`, {
+        const backendRes = await proxyFetchRoute(request, `/api/messages/${conversationId}/seen`, {
             method: "PATCH",
         });
 

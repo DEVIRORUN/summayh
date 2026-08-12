@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 export async function PATCH(
   request: Request,
@@ -9,7 +9,7 @@ export async function PATCH(
     const { gigId } = await params;
     const body = await request.json();
 
-    const backendRes = await proxyFetch(request, `/api/gig/${gigId}/tiers`, {
+    const backendRes = await proxyFetchRoute(request, `/api/gig/${gigId}/tiers`, {
       method: "PATCH",
       body: JSON.stringify(body)
     });

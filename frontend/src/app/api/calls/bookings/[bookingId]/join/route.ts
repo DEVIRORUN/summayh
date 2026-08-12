@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 export async function POST(
     request: Request,
@@ -9,7 +9,7 @@ export async function POST(
         const { bookingId } = await params;
         console.log("[BFF] bookingId:", bookingId);
 
-        const backendRes = await proxyFetch(request, `/api/calls/bookings/${bookingId}/join`, {
+        const backendRes = await proxyFetchRoute(request, `/api/calls/bookings/${bookingId}/join`, {
             method: "POST",
         });
 

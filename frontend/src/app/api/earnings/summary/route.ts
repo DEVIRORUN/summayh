@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 
 export async function GET(request: Request) {
     try {
-        const backendRes = await proxyFetch(request, '/api/payment/summary', { method: "GET" });
+        const backendRes = await proxyFetchRoute(request, '/api/payment/summary', { method: "GET" });
 
         console.log("[BFF SUMMARY STATUS]:", backendRes.status);
 

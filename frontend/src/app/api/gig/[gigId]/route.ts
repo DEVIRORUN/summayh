@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 export async function GET(
   request: Request,
@@ -8,7 +8,7 @@ export async function GET(
   try {
     const { gigId } = await params;
 
-    const backendRes = await proxyFetch(request, `/api/gig/${gigId}`, {
+    const backendRes = await proxyFetchRoute(request, `/api/gig/${gigId}`, {
       method: "GET",
     });
 

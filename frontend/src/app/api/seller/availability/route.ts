@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 
 export async function PATCH(request: Request) {
     try {
         const body = await request.json();
 
-        const backendRes = await proxyFetch(request, `/api/seller/availability`, {
+        const backendRes = await proxyFetchRoute(request, `/api/seller/availability`, {
             method: "PATCH",
             body: JSON.stringify(body),
         });
@@ -30,7 +30,7 @@ export async function PATCH(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const backendRes = await proxyFetch(request, `/api/seller/availability`, {
+    const backendRes = await proxyFetchRoute(request, `/api/seller/availability`, {
       method: "GET",
     });
 

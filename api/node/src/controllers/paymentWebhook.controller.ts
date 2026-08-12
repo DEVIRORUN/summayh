@@ -4,6 +4,7 @@ import { OrderService } from "../services/order.service";
 import { FoundersPassService } from "../services/foundersPass.service";
 import { InvoiceService } from "../services/invoice.service";
 import { PaymentService } from "../services/payment.service";
+import { ProSubscriptionService } from "../services/proSubscription.service";
 
 export class PaymentWebhookController {
   static async PaystackThread(req: Request, res: Response) {
@@ -40,6 +41,8 @@ export class PaymentWebhookController {
 
         if (metadata?.founderPassPurchaseId) {
           await FoundersPassService.activateFoundersPass(data.reference);
+        } else if (metadata?.proSubscriptionId) {
+          await ProSubscriptionService.activateSubscription(data.reference); // Pro Sub
         } else if (metadata?.invoiceId) {
           await InvoiceService.activateInvoice(data.reference);
         } else if (metadata?.orderId) {

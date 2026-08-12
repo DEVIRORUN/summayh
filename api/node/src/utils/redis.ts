@@ -1,26 +1,30 @@
 import Redis from "ioredis";
 
-export function createBullMQConnection() {
-    const redis = new Redis(process.env.REDIS_URL!, {
-        maxRetriesPerRequest: null,
-        connectTimeout: 10000,
-        keepAlive: 10000, // send TCP keep-alive probe every 10s
-        retryStrategy(times) {
-            if (times > 5) {
-                console.error("Redis: giving up after 5 retries");
-                return null;
-            }
-            return Math.min(times * 200, 2000)
-        }
-    });
-    
-    redis.on("connect", () => console.log("Redis connected"))
-    redis.on("error", (err) => console.error("Redis error:", err));
+// Determine Redis host and port safely
+const DEFAULT_REDIS_URL = process.env.REDIS_URL || "redis://host.docker.internal:6379";
 
-    return redis;
+export function createBullMQConnection() {
+  const redisInstance = new Redis(DEFAULT_REDIS_URL, {
+    maxRetriesPerRequest: null,
+    connectTimeout: 10000,
+    keepAlive: 10000,
+    retryStrategy(times) {
+      if (times > 5) {
+        console.error("Redis: giving up after 5 retries");
+        return null;
+      }
+      return Math.min(times * 200, 2000);
+    },
+  });
+
+  redisInstance.on("connect", () => console.log("BullMQ Redis connected"));
+  redisInstance.on("error", (err) => console.error("BullMQ Redis error:", err.message));
+
+  return redisInstance;
 }
 
+// Ensure standalone client also falls back to host.docker.internal
+export const redis = new Redis(DEFAULT_REDIS_URL);
 
-export const redis = new Redis(process.env.REDIS_URL!);
-redis.on("connect", () => console.log("Redis connected"));
-redis.on("error", (err) => console.error("Redis error:", err));
+redis.on("connect", () => console.log("Global Redis connected"));
+redis.on("error", (err) => console.error("Global Redis error:", err.message));

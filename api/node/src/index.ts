@@ -1,6 +1,7 @@
 // api/node/src/index.ts
 import "dotenv/config";
 import './workers/call.worker'; // just importing starts it listening
+import './workers/proSubscription.worker'; // just importing starts it listening
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 import express from "express";
@@ -26,9 +27,11 @@ import TermiiRoutes from "./routes/termii.route"
 import callRoutes from "./routes/call.route";
 import reviewRoutes from './routes/review.route';
 import disputeRoutes from './routes/dispute.route';
+import sessionDisputeRoutes from './routes/sessionDispute.route';
 import webhookRouter from './routes/webhook.route';
 import agentDecisionRoutes from './routes/agentDesicion.route';
 import sessionMaterialRoutes from './routes/sessionMaterial.route';
+import proSubscriptionRoutes from './routes/proSubscription.route';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -235,8 +238,10 @@ app.use("/api/otp", TermiiRoutes);
 app.use("/api/calls", callRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/disputes", disputeRoutes);
-app.use("/api/agent-decisions", agentDecisionRoutes);
+app.use("/api/session-disputes", sessionDisputeRoutes);
+app.use("/api/admin/agent-decisions", agentDecisionRoutes);
 app.use("/api/session-material", sessionMaterialRoutes);
+app.use("/api/pro-subscriptions", proSubscriptionRoutes);
 
 initSocket(io);
 

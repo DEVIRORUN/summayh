@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 export async function GET(
     request: NextRequest,
@@ -7,7 +7,7 @@ export async function GET(
     try {
         const { searchParams } = new URL(request.url)
         const limit = searchParams.get("limit") || "5";
-        const backendRes = await proxyFetch(request, `/api/orders/seller?limit=${limit}`, { method: "GET" });
+        const backendRes = await proxyFetchRoute(request, `/api/orders/seller?limit=${limit}`, { method: "GET" });
 
         if (!backendRes.ok) {
             const errorData = await backendRes.json().catch(() => ({}));

@@ -13,7 +13,7 @@ export const callWorker = new Worker(
         }
         if (job.name === "flag-no-show") {
             console.log(`[JOB ${job?.id}]: FLAG NO SHOW`);
-            await CallService.flagNoShow(job.data.bookingId);
+            await CallService.resolveSessionOutcome(job.data.bookingId);
         }
         if (job.name === "sweep-overdue-sessions") {
             console.log(`[JOB ${job.id}]: SWEEP OVERDUE SESSIONS`);

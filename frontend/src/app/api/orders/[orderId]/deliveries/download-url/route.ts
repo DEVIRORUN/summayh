@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 export async function GET(
     request: Request
@@ -12,7 +12,7 @@ export async function GET(
             return NextResponse.json({ error: "fileId is required" }, { status: 400 });
         }
 
-        const backendRes = await proxyFetch(request, `/api/orders/deliveries/${fileId}/download-url`, {
+        const backendRes = await proxyFetchRoute(request, `/api/orders/deliveries/${fileId}/download-url`, {
             method: "GET"
         });
 

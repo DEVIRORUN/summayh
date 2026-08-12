@@ -4,6 +4,7 @@ import { AgentDecisionService } from "../services/agentDecision.service";
 export class AgentDecisionController {
   static async list(req: Request, res: Response): Promise<any> {
     try {
+      console.log("[AGENT DECISION]: HIT!!");
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 30;
       const { agentName, entityType, dateForm, dateTo } = req.query;
@@ -15,6 +16,7 @@ export class AgentDecisionController {
         dateTo: dateTo as string,
       });
 
+      console.log("[AGENT DECISION]: SUCCESS!!");
       return res.status(200).json(result);
     } catch (error: any) {
       console.error(

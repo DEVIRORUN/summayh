@@ -38,7 +38,11 @@ export default function DashboardPage() {
     useEffect(() => {
         async function load() {
             try {
-                const requests = [fetch(`/api/orders?limit=5`)];
+                const ordersEndpoint = isSeller
+                    ? `/api/orders?limit=5`
+                    : `/api/orders/buyer?limit=5`;
+
+                const requests = [fetch(ordersEndpoint)];
                 if (isSeller) requests.push(fetch(`/api/earnings/summary`));
 
                 const responses = await Promise.all(requests);

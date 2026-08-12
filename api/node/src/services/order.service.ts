@@ -145,7 +145,7 @@ export class OrderService {
                         seller: true
                     }
                  },
-                user: true // buyer relation — confirm this is the right relation name in my schema
+                buyer: true // buyer relation — confirm this is the right relation name in my schema
             }
         });
         
@@ -274,7 +274,7 @@ export class OrderService {
             });
 
             const total = await prisma.order.count({ where: { buyerId: userId } });
-            console.log("ORDERS BY BUYERS: ", orders)
+            // console.log("ORDERS BY BUYERS: ", orders)
             return { data: orders, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
         } catch(error: any) {
             console.error("ERROR getting all order(s) as a Buyer", error)

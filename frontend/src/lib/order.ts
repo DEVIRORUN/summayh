@@ -33,6 +33,7 @@ interface Order {
     deliveryMode: string;
   };
   sessionPackage?: {
+    id: string;
     bookings: Booking[]
   }
   buyer: { name?: string; avatar?: string; id: string; }
@@ -77,7 +78,7 @@ export async function getOrder(rawOrderId: string): Promise<Order | null> {
     }
 
     const body = await res.json();
-    console.log("RAW ORDER", body.data); // Debugging Order
+    // console.log("RAW ORDER", body.data); // Debugging Order
     return body.data;
   } catch (err) {
     console.error("Fetch error: ", err);

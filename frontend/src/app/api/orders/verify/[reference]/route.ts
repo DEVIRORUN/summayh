@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 export async function GET(request: Request, { params }: { params: Promise<{ reference: string }> }) {
   try {
     const { reference } = await params;
 
-    const backendRes = await proxyFetch(request, `/api/orders/verify/${reference}`, {
+    const backendRes = await proxyFetchRoute(request, `/api/orders/verify/${reference}`, {
       method: "GET",
     });
 

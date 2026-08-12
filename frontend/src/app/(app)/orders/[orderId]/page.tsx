@@ -4,10 +4,11 @@ import { OrderStatusTimeline, type TimelineStep } from "@/components/axiom/Order
 // import { OrderRequirementsForm }
 import { OrderActionBar } from "@/components/axiom/OrderActionBar";
 import { ChatSection } from "@/components/theorems/ChatSection";
-import { getOrder } from "@/lib/order";
+import { getOrder, getBuyerOrders } from "@/lib/order";
 import { getCurrentUser } from "@/lib/auth";
 import { DeliverySection } from "@/components/axiom/DeliverySection";
 import { LiveSessionSection } from "@/components/axiom/LiveSessionSection";
+import { DisputeDialog } from "@/components/axiom/DisputeDialog";
 
 
 function mapOrderStatusToSteps(status: string): TimelineStep[] {
@@ -50,13 +51,39 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
             ?.[0];
     }
 
+    function getPastBookings(bookings: any[] | undefined) {
+        const now = Date.now();
+        return bookings
+            ?.filter((b: any) => 
+                b.status === "COMPLETED" ||
+                b.status === "CANCELLED" ||
+                new Date(b.scheduledEnd).getTime() <= now
+            )
+            ?.sort((a: any, b: any) => new Date(b.scheduledStart).getTime() - new Date(a.scheduledStart).getTime())
+            ?? [];
+    }
+
 
     function handleSendMessage() {
         console.log("Sending message")
     }
 
     const nextBooking = getNextBooking(order.sessionPackage?.bookings);
+    const pastBookings = getPastBookings(order.sessionPackage?.bookings);
 
+    console.log("[ORDER DEBUG] Session Package Overview:", {
+        packageId: order.sessionPackage?.id,
+        totalBookingsCount: order.sessionPackage?.bookings?.length ?? 0,
+        bookingStatuses: order.sessionPackage?.bookings?.map((b: any) => ({
+            id: b.id.slice(0, 8), // short ID
+            status: b.status,
+            start: b.scheduledStart,
+        })),
+        nextBooking: nextBooking
+            ? { id: nextBooking.id, start: nextBooking.scheduledStart, status: nextBooking.status }
+            : null,
+        pastBookingsCount: pastBookings?.length ?? 0,
+    });
     return (
         <div className="w-full max-w-5xl mx-auto px-4 py-8 flex flex-col gap-6 min-w-0">
             <div className="w-full flex items-center justify-between border-b border-border pb-4 gap-4 min-w-0">
@@ -80,7 +107,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
             <div className="w-full min-w-0">
                 <ChatSection messagePage={false} otherUserId={otherUserId} currentUserId={currentUser.id}/>
                 {isLive ? (
-                    <LiveSessionSection order={order} nextBooking={nextBooking} isBuyer={isBuyer} />
+                    <LiveSessionSection order={order} nextBooking={nextBooking} pastBookings={pastBookings} isBuyer={isBuyer} />
                 ) : (
                     <DeliverySection orderId={order.id} deliveries={order.orderDeliveries ?? []} variant={isBuyer ? "buyer" : "seller"} canSubmit={!isBuyer && (order.status === "ACTIVE" || order.status === "REVISION_REQUESTED")} />
                 )}

@@ -32,15 +32,6 @@ export class BookingService {
             }
         );
 
-        await callQueue.upsertJobScheduler(
-            "sweep-overdue-sessions",
-            { every: 5 * 60_000 },
-            { 
-                name: "sweep-overdue-sessions",
-                data: {},
-            }
-        );
-
         return booking;
     }
 }

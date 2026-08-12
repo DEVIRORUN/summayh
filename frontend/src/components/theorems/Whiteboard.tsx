@@ -48,6 +48,10 @@ export default function Whiteboard({
     const containerRef = useRef<HTMLDivElement | null>(null);
     const outerRef = useRef<HTMLDivElement | null>(null);
 
+    const activeTouches = useRef<Map<number, Point>>(new Map());
+    const pinchStartDistance = useRef<number | null>(null);
+    const pinchStartZoom = useRef(1);
+
     const isDrawing = useRef(false);
     const lastPoint = useRef<Point | null>(null);
     const currentStrokeId = useRef<string | null>(null);
@@ -95,6 +99,61 @@ export default function Whiteboard({
 
         return () => ro.disconnect();
     }, []);
+
+    //  for Pinch
+    function handleTouchStart(e: React.TouchEvent<HTMLCanvasElement>) {
+        const rect = canvasRef.current!.getBoundingClientRect();
+        for (const touch of Array.from(e.touches)) {
+            activeTouches.current.set(touch.identifier, {
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top,
+            });
+        }
+
+        if (activeTouches.current.size === 2) {
+            // pinch starting - cancel in-progress darw stroke
+            isDrawing.current = false;
+            lastPoint.current = null;
+            currentStrokeId.current = null;
+            currentStrokePoints.current = [];
+
+            const pts = Array.from(activeTouches.current.values());
+            pinchStartDistance.current = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+            pinchStartZoom.current = cameraRef.current.zoom;
+            e.preventDefault();
+        }
+    }
+
+    function handleTouchMove(e: React.TouchEvent<HTMLCanvasElement>) {
+        if (activeTouches.current.size < 2) return;
+        e.preventDefault();
+
+        const rect = canvasRef.current!.getBoundingClientRect();
+        for (const touch of Array.from(e.touches)) {
+            activeTouches.current.set(touch.identifier, {
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top,
+            });
+        }
+
+        if (e.touches.length === 2 && pinchStartDistance.current) {
+            const pts = Array.from(activeTouches.current.values());
+            const newDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+            const scaleFactor = newDistance / pinchStartDistance.current;
+            const newZoom = Math.min(4, Math.max(0.5, Math.round(pinchStartZoom.current * scaleFactor * 100) / 100));
+
+            setCamera((cam) => ({ ...cam, zoom: newZoom }));
+        }
+    }
+
+    function handleTouchEnd(e: React.TouchEvent<HTMLCanvasElement>) {
+        for (const touch of Array.from(e.changedTouches)) {
+            activeTouches.current.delete(touch.identifier);
+        }
+        if (activeTouches.current.size < 2) {
+            pinchStartDistance.current = null;
+        }
+    }
 
     // Screenn to world
     function screenToWorld(p: Point): Point {
@@ -490,6 +549,10 @@ export default function Whiteboard({
                         onPointerMove={handlePointerMove}
                         onPointerUp={handlePointerUp}
                         onPointerLeave={handlePointerUp}
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                        onTouchCancel={handleTouchEnd}
                     />
                 </div>
                 {!canDraw && !isHost && (

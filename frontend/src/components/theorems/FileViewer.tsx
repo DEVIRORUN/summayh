@@ -115,7 +115,7 @@ export default function FileViewer({
             setMaterials((prev) => [...prev, material]);
             selectMaterial(material.id)
 
-            room?.localParticapant?.publishData(
+            room?.localParticipant?.publishData(
                 new TextEncoder().encode(JSON.stringify({ type: "MATERIAL_UPLOADED", material })),
                 { reliable: true }
             )
@@ -152,13 +152,22 @@ export default function FileViewer({
             </div>
 
             {/* Viewer */}
-            <div className="flex-1 min-h-0 relative">
+            <div className="flex-1 min-h-0 min-w-0 relative overflow-hidden">
                 {!activeMaterial ? (
-                    <p className="text-xs text-muted-foreground">No file seleceted</p>
+                    <p className="text-xs text-muted-foreground p-4">No file seleceted</p>
                 ) : activeMaterial.fileType === "application/pdf" ? (
-                    <iframe src={activeMaterial.fileUrl} className="w-full h-full" title={activeMaterial.fileName}/>
+                    <iframe     
+                        src={activeMaterial.fileUrl} 
+                        className="absolute inset-0 w-full h-full border-0" 
+                        title={activeMaterial.fileName}/>
                 ) : (
-                    <Image src={activeMaterial.fileUrl} alt={activeMaterial.fileName} fill className="max-w-full max-h-full object-contain" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Image 
+                            src={activeMaterial.fileUrl} 
+                            alt={activeMaterial.fileName} 
+                            fill 
+                            className="object-contain" />
+                    </div>
                 )}
             </div>
         </div>

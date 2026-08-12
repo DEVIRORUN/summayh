@@ -65,10 +65,22 @@ enum RequirementInputType {
 enum DisputeStatus {
   OPEN
   AI_REVIEWED
+  UNDER_REVIEW
   MANUAL_REVIEWED // Might wanna add this
   RESOLVED_BUYER
   RESOLVED_SELLER
   CLOSED
+}
+
+enum SessionDisputeStatus {
+  OPEN
+  AI_REVIEWED
+  UNDER_REVIEW
+  MANUAL_REVIEWED // Might wanna add this
+  RESOLVED_BUYER
+  RESOLVED_SELLER
+  DISMISSED
+  ESCALATED // handed off to order-level Dispute
 }
 
 enum DisputeReason {
@@ -173,6 +185,65 @@ enum BookingStatus {
   CANCELLED
 }
 
+enum SessionBookingStatus {
+  SCHEDULED // bookes in future
+  IN_PROGRESS // active
+  COMPLETED
+  CANCELLED // before start
+}
+
+enum SessionOutcome {
+  PENDING
+  DONE
+  BUYER_MISSED
+  SELLER_MISSED
+  BOTH_MISSED
+  DISPUTED // frozen for admin preview
+}
+
+enum PackagePayoutStage {
+  NONE
+  TIER1_RELEASED // 30%
+  TIER2_RELEASED // 40% 
+  FULLY_RELEASED
+
+  // small pkgs skip only 2 steps
+}
+
+enum ProPlanInterval {
+  MONTHLY
+  YEARLY
+}
+
+model ProPlan {
+  id         String          @id @default(uuid())
+  name       String
+  priceNaira Float
+  interval   ProPlanInterval
+  isActive   Boolean @default(true)
+  perks      String[] // gon use this for pricing bullet points
+  createdAt  DateTime        @default(now())
+
+  subscriptions ProSubscription[]
+}
+
+model ProSubscription {
+  id               String        @id @default(uuid())
+  sellerId         String
+  planId           String
+  status           InvoiceStatus @default(PENDING)
+  paymentReference String?       @unique
+  currentPeriodEnd DateTime?
+  createdAt        DateTime      @default(now())
+  paidAt           DateTime?
+  cancelledAt      DateTime?
+
+  seller SellerProfile @relation(fields: [sellerId], references: [id])
+  plan   ProPlan?      @relation(fields: [planId], references: [id])
+
+  @@index([sellerId])
+}
+
 // model TestConnection {
 //   id        String   @id @default(uuid())
 //   createdAt DateTime @default(now())
@@ -262,6 +333,7 @@ model SellerProfile {
   withdrawals           Withdrawal[]
   ledgerEntries         LedgerEntry[]
   sellerAvailabilities  SellerAvailability[]
+  proSubscriptions      ProSubscription[]
 }
 
 model SellerAvailability {
@@ -460,30 +532,61 @@ model CourseEnrollment {
 }
 
 model SessionPackage {
-  id               String        @id @default(uuid())
-  orderId          String        @unique
-  gigTierid        String
-  sessionLengthMin Int
-  breakLengthMin   Int
-  totalSessions    Int
-  sessionused      Int           @default(0)
-  status           PackageStatus @default(ACTIVE)
+  id                String             @id @default(uuid())
+  orderId           String             @unique
+  gigTierid         String
+  sessionLengthMin  Int
+  breakLengthMin    Int
+  totalSessions     Int
+  sessionused       Int                @default(0)
+  status            PackageStatus      @default(ACTIVE)
+  payoutStage       PackagePayoutStage @default(NONE)
+  tierOneReleasedAt DateTime?
+  tierTwoReleasedAt DateTime?
+  finalReleasedAt   DateTime?
+  totalAmount       Float?
 
   order    Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
   gigTier  GigTier          @relation(fields: [gigTierid], references: [id], onDelete: Cascade)
   bookings SessionBooking[]
 }
 
+model SessionDispute {
+  id                 String               @id @default(uuid())
+  bookingId          String               @unique
+  raisedById         String
+  reason             String
+  description        String
+  status             SessionDisputeStatus @default(OPEN)
+  adminNote          String?
+  escalatedDisputeId String?
+  resolvedAt         DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  booking SessionBooking @relation(fields: [bookingId], references: [id])
+}
+
 model SessionBooking {
-  id             String        @id @default(uuid())
-  packageId      String?
-  enrollmentId   String?
-  sessionUnitId  String?
-  callSessionId  String?       @unique // links to CallSession once it happens
-  scheduledStart DateTime
-  scheduledEnd   DateTime
-  status         BookingStatus @default(SCHEDULED)
-  roadmapStepId  String? // which topic this session covers
+  id                String               @id @default(uuid())
+  packageId         String?
+  enrollmentId      String?
+  sessionUnitId     String?
+  callSessionId     String?              @unique // links to CallSession once it happens
+  scheduledStart    DateTime
+  scheduledEnd      DateTime
+  status            SessionBookingStatus @default(SCHEDULED)
+  outcome           SessionOutcome       @default(PENDING)
+  buyerJoinedAt     DateTime?
+  sellerJoinedAt    DateTime?
+  buyerLeftAt       DateTime?
+  sellerLeftAt      DateTime?
+  buyerLeftEarly    Boolean              @default(false)
+  sellerLeftEarly   Boolean              @default(false)
+  outcomeResolvedAt DateTime?
+  outcomeNote       String?
+  dispute           SessionDispute?
+  roadmapStepId     String? // which topic this session covers
 
   package     SessionPackage?   @relation(fields: [packageId], references: [id], onDelete: Cascade)
   enrollment  CourseEnrollment? @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)

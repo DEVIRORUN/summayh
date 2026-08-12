@@ -1,5 +1,5 @@
 // import { NextResponse } from "next/server";
-// import { proxyFetch } from "@/lib/proxy-fetch";
+// import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 
 // export async function GET(request: Request) {
@@ -7,7 +7,7 @@
 //         const { searchParams } = new URL(request.url);
 //         const { query } = searchParams.get("q") || "";
 
-//         const backendRes = await proxyFetch(
+//         const backendRes = await proxyFetchRoute(
 //             request,
 //             `/api/gigs/search?q=${encodeURIComponent(query)}`,
 //             { method: "GET" }
@@ -32,7 +32,7 @@
 
 // src/app/api/gig/search/route.ts
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 export async function POST(request: Request) {
   try {
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     if (location) params.set("location", location);
 
     // Call your Express/Node backend
-    const backendRes = await proxyFetch(
+    const backendRes = await proxyFetchRoute(
       request,
       `/api/gig/search?${params.toString()}`,
       { method: "GET" }

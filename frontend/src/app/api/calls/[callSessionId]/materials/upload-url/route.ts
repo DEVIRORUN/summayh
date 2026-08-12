@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 export async function POST(
     request: Request,
@@ -9,7 +9,7 @@ export async function POST(
         const { callSessionId } = await params;
         const body = await request.text();
 
-        const backendRes = await proxyFetch(request, `/api/session-material/${callSessionId}/generate`, {
+        const backendRes = await proxyFetchRoute(request, `/api/session-material/${callSessionId}/generate`, {
             method: "POST",
             body,
         });

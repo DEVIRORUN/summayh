@@ -1,10 +1,10 @@
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 import { NextResponse } from "next/server";
 
 
 export async function GET(request: Request) {
     try {
-        const backendRes = await proxyFetch(request, "/api/category/tree", {
+        const backendRes = await proxyFetchRoute(request, "/api/category/tree", {
             method: "GET"
         });
 

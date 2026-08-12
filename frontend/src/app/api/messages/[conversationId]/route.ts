@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 export async function GET(
     request: Request,
@@ -11,7 +11,7 @@ export async function GET(
         const query = url.search;
 
 
-        const backendRes = await proxyFetch(request, `/api/messages/${conversationId}${query}`, { method: "GET" });
+        const backendRes = await proxyFetchRoute(request, `/api/messages/${conversationId}${query}`, { method: "GET" });
 
         if (!backendRes.ok) {
             const errorData = await backendRes.json().catch(() => ({}));
@@ -35,7 +35,7 @@ export async function POST(
         const body = await request.json();
 
 
-        const backendRes = await proxyFetch(request, `/api/messages/${conversationId}`, {
+        const backendRes = await proxyFetchRoute(request, `/api/messages/${conversationId}`, {
             method: "POST",
             body: JSON.stringify(body),
         });

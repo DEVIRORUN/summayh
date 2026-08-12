@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 export async function POST(request: Request) {
     try {
-        const backendRes = await proxyFetch(request, `/api/payment/withdraw`, { method: "POST" });
+        const backendRes = await proxyFetchRoute(request, `/api/payment/withdraw`, { method: "POST" });
 
         if (!backendRes.ok) {
             const errorData = await backendRes.json().catch(() => ({}));

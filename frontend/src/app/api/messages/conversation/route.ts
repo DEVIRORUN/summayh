@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { proxyFetch } from "@/lib/proxy-fetch";
+import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const backendRes = await proxyFetch(request, `/api/messages/conversation`, {
+    const backendRes = await proxyFetchRoute(request, `/api/messages/conversation`, {
       method: "POST",
       body: JSON.stringify(body),
     });

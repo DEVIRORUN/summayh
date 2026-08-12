@@ -102,6 +102,13 @@ export class AdminService {
             throw error;
         }
     }
+    static async getAgentDecisions(agentName?: string, limit = 50) {
+        return prisma.agentDecision.findMany({
+            where: agentName ? { agentName: agentName as any } : undefined,
+            orderBy: { createdAt: "desc" },
+            take: limit,
+        })
+    }
     static async getPaginatedUsers(
         page: number = 1, 
         limit: number = 15,
