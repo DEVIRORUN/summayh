@@ -480,8 +480,6 @@ export class GigService {
 
       
       if (!mainGig) throw new Error("Gig not found.");
-
-      console.log(mainGig);
       return mainGig;
     } catch (error) {
       console.error("Error in GigService.readGigData:", error);

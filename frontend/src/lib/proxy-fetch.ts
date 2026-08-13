@@ -46,7 +46,7 @@ export async function proxyFetchServer<T = any>(
     if (!targetHeaders.has("Content-Type")) {
         targetHeaders.set("Content-Type", "application/json");
     }
-    const baseUrl = process.env.NODE_API_URL || "http://host.docker.internal:3001";
+    const baseUrl = process.env.NODE_API_URL || "http://localhost:3001";
 
     const url = `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 

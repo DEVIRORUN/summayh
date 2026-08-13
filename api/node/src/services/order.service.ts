@@ -226,7 +226,7 @@ export class OrderService {
                 type: "ORDER_PLACED",
                 title: "New order received",
                 body: `${result.buyerName} just placed an order for "${result.gigTitle}"`,
-                link: `/dashboard/orders/${orderId}`,
+                link: `/orders/${orderId}`,
                 email: {
                     to: result.sellerUser.email,
                     subject: "You have a new order on SUMMAYH",

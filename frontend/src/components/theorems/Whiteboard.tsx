@@ -38,11 +38,13 @@ export default function Whiteboard({
     onToggleEnlarge,
     isHost,
     isReconnecting,
+    callSessionId,
  }: { room: Room | null; 
     isEnlarged: boolean; 
     onToggleEnlarge: () => void; 
     isHost: boolean
     isReconnecting?: boolean
+    callSessionId: string
 }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
@@ -66,6 +68,7 @@ export default function Whiteboard({
     useEffect(() => { brushSizeRef.current = brushSize; }, [brushSize]);
 
     const strokeHistory = useRef<StoredSegment[]>([]);
+    const storageKey = `whiteboard:${callSessionId}`;
     const [boardSize, setBoardSize] = useState({ width: 0, height: 0 });
     const [canDraw, setCanDraw] = useState(isHost);
 
@@ -75,6 +78,28 @@ export default function Whiteboard({
     useEffect(() => { cameraRef.current = camera; }, [camera]);
 
     const currentStrokePoints = useRef<Point[]>([]);
+    const COLOR_SWATCHES = ["#000000", "#EF4444", "#3B82F6", "#22C55E", "#EAB308", "#A855F7", "#FFFFFF"]
+
+    function persistHistory() {
+        try {
+            localStorage.setItem(storageKey, JSON.stringify(strokeHistory));
+        } catch (err) {
+            console.warn("Failed to persist whiteboard to localStorage: ", err);
+        }
+    }
+
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(storageKey);
+            if (saved) {
+                const parsed: StoredSegment[] = JSON.parse(saved);
+                strokeHistory.current = parsed;
+                redrawAll();
+            }
+        } catch (err) {
+            console.warn("Failed to restore whiteboard from localStorage:", err);
+        }
+    })
 
     // fit outer box to 16:9 (pxs board occupies)
     useEffect(() => {
@@ -489,7 +514,22 @@ export default function Whiteboard({
     return (
         <div className="flex flex-col h-full w-full overflow-hidden">
             <div className="flex items-center gap-2 p-2 border-b shrink-0 bg-slate-900 border-slate-800 flex-wrap">
-                <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} disabled={!canDraw} className="w-28 cursor-pointer disabled:opacity-40" />
+                <div className="flex items-center gap-1.5">
+                    {COLOR_SWATCHES.map((swatch) => (
+                        <button
+                            key={swatch}
+                            type="button"
+                            onClick={() => setColor(swatch)}
+                            disabled={!canDraw}
+                            aria-label={`Select color ${swatch}`}
+                            className={cn(
+                                "w-6 h-6 rounded-full border-2 shrink-0 transition-transform disabled:opacity-40 disabled:cursor-not-allowed",
+                                color === swatch ? "border-foreground scale-110" : "border-slate-600"
+                            )}
+                            style={{ backgroundColor: swatch }}
+                        />
+                    ))}
+                </div>
                 <Input type="range" min={1} max={20} value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} disabled={!canDraw} className="w-28 cursor-pointer disabled:opacity-40" />
                 <Button onClick={clearBoard} disabled={!canDraw} className="text-sm border px-2 py-1 rounded">Clear</Button>
                 <Button onClick={undoLast} disabled={!canDraw} variant="secondary" size="icon" className="w-9 h-9" title="Undo last stroke">

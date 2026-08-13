@@ -39,6 +39,23 @@ export default function CallSessionPage({
     const [cameraState, setCameraState] = useState<"pending" | "granted" | "denied">("pending");
     const [connectionQuality, setConnectionQuality] = useState<ConnectionQuality>(ConnectionQuality.Unknown)
     const [viewMode, setViewMode] = useState<"BOARD" | "FILES">("BOARD");
+    const [joinError, setJoinError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!room) return;
+
+        const localCamPub = room.localParticipant.getTrackPublication(Track.Source.Camera);
+        if (localCamPub?.track && localVideoRef.current) {
+            localCamPub.track.attach(localVideoRef.current);
+        }
+        if (remoteTrack && remoteVideoRef.current) {
+            remoteTrack.attach(remoteVideoRef.current);
+            remoteVideoRef.current.muted = false;
+            remoteVideoRef.current.play().catch((err) => {
+                console.warn("Remote video autoplay blocked, needs user interaction:", err);
+            });
+        }
+    }, [isEnlarged, isDesktop, room, remoteTrack])
 
     useEffect(() => {
         if (!room) return;
@@ -69,7 +86,18 @@ export default function CallSessionPage({
 
         async function connect() {
             const res = await fetch(`/api/calls/bookings/${bookingId}/join`, { method: "POST" });
-            if (!res.ok) return;
+            
+            if (!res.ok) {
+                if (cancelled) return;
+                if (res.status === 410) {
+                    setJoinError("This session's time window has passed and can no longer be joined")
+                } else if (res.status === 403) {
+                    setJoinError("You don't have permission to join this session.");
+                } else {
+                    setJoinError("Couldn't join this session. Please try again.")
+                }
+                return;
+            }
             const { token, url } = await res.json();
 
             if (cancelled) return; // effect was torn down while we were fetching — bail before connecting
@@ -152,18 +180,6 @@ export default function CallSessionPage({
         };
     }, [bookingId]);
 
-    useEffect(() => {
-        if (!room) return;
-
-        const localCamPub = room.localParticipant.getTrackPublication(Track.Source.Camera);
-        if (localCamPub?.track && localVideoRef.current) {
-            localCamPub.track.attach(localVideoRef.current);
-        }
-        if (remoteTrack && remoteVideoRef.current) {
-            remoteTrack.attach(remoteVideoRef.current);
-        }
-    }, [isEnlarged, isDesktop, room, remoteTrack]);
-
     async function toggleEnlarge() {
         const next = !isEnlarged;
         setIsEnlarged(next);
@@ -196,6 +212,17 @@ export default function CallSessionPage({
         }
     }
 
+
+    if (joinError) {
+        return (
+            <div className="h-full w-full flex items-center justify-center text-center p-4">
+                <p className="text-sm text-muted-foreground">
+                    {"This session's time window has passed and can no longer be joined."}
+                </p>
+            </div>
+        )
+    }
+    
     if (isLoading || !booking) {
         return <div className="h-full w-full flex items-center justify-center animate-pulse">Loading session...</div>
     }
@@ -219,7 +246,7 @@ export default function CallSessionPage({
                     <Button onClick={() => setViewMode("FILES")} className={cn("text-xs px-2 py-1 rounded-xs cursor-pointer", viewMode === "FILES" && "bg-muted")}>Files</Button>
                 </div>
                 <div className={cn("h-full", viewMode !== "BOARD" && "hidden")}>
-                    <Whiteboard room={room} isEnlarged={isEnlarged} onToggleEnlarge={toggleEnlarge} isHost={isSellerForThisBooking}/>
+                    <Whiteboard room={room} isEnlarged={isEnlarged} onToggleEnlarge={toggleEnlarge} isHost={isSellerForThisBooking} callSessionId={booking.callSession.id} />
                 </div>
                 <div className={cn("h-full", viewMode !== "FILES" && "hidden")}>
                     <FileViewer room={room} callSessionId={booking.callSession.id} activeMaterialId={activeMaterialId} onSelect={setActiveMaterialId}/>
@@ -240,7 +267,7 @@ export default function CallSessionPage({
                                 <p className="text-xs font-medium text-white">You {status}</p>
                                 <ConnectionQualityBadge quality={connectionQuality} variant="pc"/>
                             </div>
-                        <video ref={remoteVideoRef} autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover bg-blue-800"/>
+                        <video ref={remoteVideoRef} autoPlay playsInline className="absolute inset-0 w-full h-full object-cover bg-blue-800"/>
                     </div>
                 </div>
             </div>
@@ -259,7 +286,7 @@ export default function CallSessionPage({
                 </div>
                 <div className="flex-1 min-h-0 flex flex-col border rounded-lg p-2 relative overflow-hidden bg-slate-900">
                     <p className="text-xs font-medium text-white shrink-0 relative z-10 px-1 py-0.5">Remote</p>
-                    <video ref={remoteVideoRef} autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover"/>
+                    <video ref={remoteVideoRef} autoPlay playsInline className="absolute inset-0 w-full h-full object-cover"/>
                 </div>
                 <Button onClick={toggleEnlarge} className="shrink-0 h-12 rounded-full flex items-center justify-center gap-2">
                     <PenSquare className="w-4 h-4"/> Open Whiteboard
@@ -276,7 +303,7 @@ export default function CallSessionPage({
                     <Button onClick={() => setViewMode("FILES")} className={cn("text-xs px-2 py-1 rounded-xs cursor-pointer", viewMode === "FILES" && "bg-muted")}>Files</Button>
                 </div>
                 <div className={cn("h-full", viewMode !== "BOARD" && "hidden")}>
-                    <Whiteboard room={room} isEnlarged={isEnlarged} onToggleEnlarge={toggleEnlarge} isHost={isSellerForThisBooking}/>
+                    <Whiteboard room={room} isEnlarged={isEnlarged} onToggleEnlarge={toggleEnlarge} isHost={isSellerForThisBooking}  callSessionId={booking.callSession.id} />
                 </div>
                 <div className={cn("h-full", viewMode !== "FILES" && "hidden")}>
                     <FileViewer room={room} callSessionId={booking.callSession.id} activeMaterialId={activeMaterialId} onSelect={setActiveMaterialId}/>
@@ -287,10 +314,10 @@ export default function CallSessionPage({
                       <div className="shrink-0 relative z-10 px-1 py-0.5 flex items-center justify-between">
                         <ConnectionQualityBadge quality={connectionQuality} variant="mobile"/>
                     </div>
-                    <video ref={localVideoRef} autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover" />
+                    <video ref={localVideoRef} muted autoPlay playsInline className="absolute inset-0 w-full h-full object-cover" />
                 </div>
                 <div className="w-full h-20 shrink-0 relative rounded overflow-hidden border border-slate-700">
-                    <video ref={remoteVideoRef} autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover" />
+                    <video ref={remoteVideoRef} autoPlay playsInline className="absolute inset-0 w-full h-full object-cover" />
                 </div>
             </div>
         </div>
