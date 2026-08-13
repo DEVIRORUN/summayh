@@ -7,7 +7,11 @@ from datetime import date
 router = APIRouter(prefix="/api/verification", tags=["verification"])
 
 YOUVERIFY_BASE_URL = "https://api.sandbox.youverify.co"  # switch to live URL when ready
-YOUVERIFY_API_KEY = os.environ["YOUVERIFY_API_KEY"]
+YOUVERIFY_API_KEY = os.environ.get("YOUVERIFY_API_KEY")
+
+if not YOUVERIFY_API_KEY:
+    import logging
+    logging.warning("YOUVERIFY_API_KEY not set - verification endpoints will fail at request time.")
 
 MIN_AGE_YEARS = 18
 
@@ -35,6 +39,8 @@ def calculate_age(dob_str: str) -> int:
 
 @router.post("/liveness/check", response_model=LivenessCheckResult)
 async def check_liveness(payload: LivenessCheckRequest):
+    if not YOUVERIFY_API_KEY:
+        raise HTTPException(status_code=503, detail="Verification service not configured")
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             #  fetch the
@@ -96,7 +102,7 @@ async def check_liveness(payload: LivenessCheckRequest):
 
     failure_reason = None
     if not liveness_passed:
-        faliure_reason = "Selfie does not match NIN photo"
+        failure_reason = "Selfie does not match NIN photo"
     elif not nin_match_passed:
         failure_reason = "NIN could not be verified"
     elif not age_verified_adult:

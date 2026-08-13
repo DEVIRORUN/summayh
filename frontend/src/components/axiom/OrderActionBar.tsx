@@ -16,7 +16,7 @@ export function OrderActionBar({ order }: { order: any }) {
     async function acceptDelivery(orderId: string) {
         setLoading("accept");
         try {
-            const res = await fetch(`/api/orders/${orderId}/accept`, { method: "PATCH" });
+            const res = await fetch(`/api/orders/${orderId}/accept`, { method: "POST" });
             if (!res.ok) throw new Error((await res.json()).error ?? "Failed to accept delivery delivery");
             router.refresh();
         } catch (err) {
@@ -29,7 +29,7 @@ export function OrderActionBar({ order }: { order: any }) {
     async function requestRevision(orderId: string) {
         setLoading("revision");
         try {
-            const res = await fetch(`/api/orders/${orderId}/revision`, { method: "PATCH" });
+            const res = await fetch(`/api/orders/${orderId}/revision`, { method: "POST" });
             if (!res.ok) throw new Error((await res.json()).error ?? "Failed to request revision");
             router.refresh();
         } catch (err) {

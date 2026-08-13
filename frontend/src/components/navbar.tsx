@@ -20,7 +20,7 @@ export function Navbar() {
                     <Menu className="cursor-pointer h-5 w-5"/>
                 </button>
                 <div className="flex flex-row gap-0 items-center">
-                    <Logo width={25} height={25} className="text-blue-500"/>
+                    <Logo width={25} height={25} className="text-foreground"/>
                     <h1 className="font-bold text-xl leading-tighter tracking-tighter">
                         SUMMAYH
                     </h1>

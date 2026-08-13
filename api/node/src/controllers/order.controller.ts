@@ -44,7 +44,7 @@ export class OrderController {
     // POST /api/orders/:id/accept
     static async acceptDelivery(req: Request, res: Response): Promise<any> {
         try {
-            const { id: orderId }: any = req.params;
+            const { orderId }: any = req.params;
             const buyerId = (req as any).userId;
 
             // First, we get the delivery state of the Order
@@ -106,7 +106,7 @@ export class OrderController {
     // POST /api/orders/:id/revision
     static async requestRevision(req: Request, res: Response): Promise<any> {
         try {
-            const { id: orderId }: any = req.params;
+            const { orderId }: any = req.params;
             const buyerId = (req as any).userId;
 
             const revisedOrder = await OrderService.requestOrderRevisison(orderId, buyerId);
