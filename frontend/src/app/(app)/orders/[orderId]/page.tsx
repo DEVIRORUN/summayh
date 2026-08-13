@@ -71,19 +71,19 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
     const nextBooking = getNextBooking(order.sessionPackage?.bookings);
     const pastBookings = getPastBookings(order.sessionPackage?.bookings);
 
-    console.log("[ORDER DEBUG] Session Package Overview:", {
-        packageId: order.sessionPackage?.id,
-        totalBookingsCount: order.sessionPackage?.bookings?.length ?? 0,
-        bookingStatuses: order.sessionPackage?.bookings?.map((b: any) => ({
-            id: b.id.slice(0, 8), // short ID
-            status: b.status,
-            start: b.scheduledStart,
-        })),
-        nextBooking: nextBooking
-            ? { id: nextBooking.id, start: nextBooking.scheduledStart, status: nextBooking.status }
-            : null,
-        pastBookingsCount: pastBookings?.length ?? 0,
-    });
+    // console.log("[ORDER DEBUG] Session Package Overview:", {
+    //     packageId: order.sessionPackage?.id,
+    //     totalBookingsCount: order.sessionPackage?.bookings?.length ?? 0,
+    //     bookingStatuses: order.sessionPackage?.bookings?.map((b: any) => ({
+    //         id: b.id.slice(0, 8), // short ID
+    //         status: b.status,
+    //         start: b.scheduledStart,
+    //     })),
+    //     nextBooking: nextBooking
+    //         ? { id: nextBooking.id, start: nextBooking.scheduledStart, status: nextBooking.status }
+    //         : null,
+    //     pastBookingsCount: pastBookings?.length ?? 0,
+    // });
     return (
         <div className="w-full max-w-5xl mx-auto px-4 py-8 flex flex-col gap-6 min-w-0">
             <div className="w-full flex items-center justify-between border-b border-border pb-4 gap-4 min-w-0">

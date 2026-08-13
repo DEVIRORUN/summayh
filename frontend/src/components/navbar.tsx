@@ -2,11 +2,12 @@
 
 import { useAuth } from "@/contexts/auth-context";
 import { useSidebar } from "@/contexts/sidebar-context";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "./ui/badge";
 import { Menu, Bell } from "lucide-react";
+import Logo from "../../public/logo2.svg";
 import Link from "next/link";
-import { NotificationBell } from "./NotificationBell"; // new
+import { NotificationBell } from "@/components/axiom/NotificationBell";
 
 export function Navbar() {
     const { user, isLoading } = useAuth();
@@ -15,11 +16,16 @@ export function Navbar() {
     return (
         <header className="flex h-14 items-center justify-between border-b px-4">
             <div className="flex items-center gap-3">
-                <button onClick={toggle} className="md:hidden" aria-label="Toggle menu">
+                <button onClick={toggle} className="lg:hidden" aria-label="Toggle menu">
                     <Menu className="cursor-pointer h-5 w-5"/>
                 </button>
-                <h1 className="font-bold text-2xl tracking-tighter">SUMMAYH</h1>
-            </div>
+                <div className="flex flex-row gap-0 items-center">
+                    <Logo width={25} height={25} className="text-blue-500"/>
+                    <h1 className="font-bold text-xl leading-tighter tracking-tighter">
+                        SUMMAYH
+                    </h1>
+                </div>
+            </div> 
 
             <div className="flex items-center gap-3">
                 {isLoading ? (

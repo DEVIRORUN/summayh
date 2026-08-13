@@ -97,7 +97,7 @@ function PastSessionsList({
             <h4 className="text-xs font-medium text-muted-foreground mb-2">Past sessions</h4>
                 <ul className="flex flex-col gap-2">
                     {pastBookings.map((booking: any) => (
-                        <li className="flex items-center justify-between text-sm border-b border-border py-2">
+                        <li key={booking.scheduledStart} className="flex items-center justify-between text-sm border-b border-border py-2">
                             <div className="flex flex-col">
                                 <span>
                                     {new Date(booking.scheduledStart).toLocaleDateString([], { month: "short", day: "numeric" })}
@@ -112,7 +112,7 @@ function PastSessionsList({
                             </div>
                             <Button
                                 onClick={() => onReport(booking.id)}
-                                className="text-xs text-muted-foreground hover:text-destructive underline underline-offset-2 shrink-0"
+                                className="rounded-sm bg-card cursor-pointer text-xs text-muted-foreground hover:text-destructive underline underline-offset-2 shrink-0"
                             >
                                 Report an issue
                             </Button>

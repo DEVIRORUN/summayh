@@ -25,6 +25,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI3MDljNDMwZS1kMzJhLTQ5NjQtYmY
 POST http://localhost:3000/api/auth/login
 Content-Type: application/json
 
+
 {
   "email": "irorun757@lautech.edu.ng",
   "password": "Irorun1608"

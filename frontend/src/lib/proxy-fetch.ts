@@ -1,5 +1,3 @@
-import { cookies, headers } from "next/headers";
-
 export async function proxyFetchRoute(
     request: Request, 
     path: string, 
@@ -32,6 +30,7 @@ export async function proxyFetchServer<T = any>(
     path: string,
     options: RequestInit = {}
 ): Promise<T> {
+    const { cookies, headers } = await import("next/headers");
     const cookieStore = await cookies();
     const headerStore = await headers();
 

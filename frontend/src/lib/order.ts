@@ -102,6 +102,7 @@ export async function getBuyerOrders(page = 1, limit = 20): Promise<OrdersRespon
         }
 
         const body = await res.json();
+        console.log("DATA BUYER ORDERS:", body.data);
         return body.data;
     } catch (err) {
         console.error("Fetch error: ", err);

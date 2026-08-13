@@ -496,7 +496,7 @@ export default function Whiteboard({
                     <Undo2 className="w-4 h-4" />
                 </Button>
 
-                <div className="flex items-center gap-1 border-1 border-slate-700 pl-2 ml-1">
+                <div className="flex items-center gap-1 border border-slate-700 pl-2 ml-1">
                     <Button onClick={zoomIn} variant="secondary" size="icon" className="w-9 h-9" title="Zoom Out"><ZoomIn className="w-4 h-4" /></Button>
                     <span className="text-xs text-slate-300 w-10 text-center">{Math.round(camera.zoom * 100)}%</span>
                     <Button onClick={zoomOut} variant="secondary" size="icon" className="w-9 h-9" title="Zoom in"><ZoomOut className="w-4 h-4" /></Button>

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import dispute, review, health, search, embeddings
+from routers import dispute, review, health, search, embeddings, verification
 import logging
 
 
@@ -24,6 +24,7 @@ app.include_router(search.router)
 app.include_router(review.router)
 app.include_router(dispute.router)
 app.include_router(embeddings.router)
+app.include_router(verification.router)
 
 
 if __name__ == "__main__":

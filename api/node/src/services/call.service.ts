@@ -5,6 +5,7 @@ import { TermiiService } from "./termii.service";
 import { NotificationService } from "./notification.service"
 import { PresenceService } from "./presence.service"
 import { SessionOutcome } from "../../generated/prisma";
+import { callQueue } from "../utils/queue";
 
 
 const roomService  = new RoomServiceClient(
@@ -15,6 +16,8 @@ const roomService  = new RoomServiceClient(
 
 const JOIN_WINDOW_MIN = 5; // room is joinable by N mins before main session starts
 const NO_SHOW_GRACE_MIN = 10; // The flag if nobody joins after N mins when session starts
+const MID_SESSION_SELLER_GRACE_SEC = 90;
+const MID_SESSION_BUYER_GRACE_MIN = 10;
 
 export class CallService {
     static async prepareSessionRoom(bookingId: string) {
@@ -88,7 +91,6 @@ export class CallService {
     }
     static async joinSession(bookingId: string, userId: string) {
         try {
-
             console.log("[JOIN SESSION]: JOINED INTRO");
             const booking = await prisma.sessionBooking.findFirstOrThrow({
                 where: { id: bookingId },
@@ -125,10 +127,6 @@ export class CallService {
             if (!callSession) {
                 callSession = await this.prepareSessionRoom(bookingId);
             }
-    
-            await prisma.callEvent.create({
-                data: { sessionId: callSession.id, type: "JOINED", metadata: { userId } }
-            });
     
             if (callSession.status === "PENDING") {
                 await prisma.callSession.update({
@@ -208,8 +206,6 @@ export class CallService {
 
         const sellerUserId = order!.seller.userId;
         const buyerUserId = order!.buyerId;
-        const sellerJoined = joinedUserIds.has(sellerUserId)
-        const buyerJoined = joinedUserIds.has(buyerUserId)
 
         let outcome: SessionOutcome;
         if (booking.buyerJoinedAt && booking.sellerJoinedAt) {
@@ -222,17 +218,40 @@ export class CallService {
             outcome = "BOTH_MISSED"
         }
 
+        const noteParts: string[] = [];
+        if (booking.sellerLeftEarly) {
+            noteParts.push(
+                `Seller disconnected fo r${MID_SESSION_SELLER_GRACE_SEC}s+ while buyer was present` +
+                (booking.sellerLeftAt ? `(left at ${booking.sellerLeftAt.toISOString()})` : "")
+            );
+        }
+        if (booking.buyerLeftEarly) {
+            noteParts.push(
+                `Buyer was absent for ${MID_SESSION_BUYER_GRACE_MIN}min+ mid-session` +
+                (booking.buyerLeftAt ? `(left at ${booking.buyerLeftAt.toISOString()})` : "")
+            );
+        }
+
+        const outcomeNote = noteParts.length > 0 ? noteParts.join("; ") : null;
+
         await prisma.sessionBooking.update({
             where: { id: bookingId },
             data: {
                 outcome,
                 status: "COMPLETED",
                 outcomeResolvedAt: new Date(),
+                outcomeNote,
             },
         });
 
-        if (!sellerJoined) await NotificationService.notifyNoShowRisk(sellerUserId, bookingId, "SELLER");
-        if (!buyerJoined) await NotificationService.notifyNoShowRisk(buyerUserId, bookingId, "BUYER");
+        if (outcome === "BUYER_MISSED") {
+            await NotificationService.notifyNoShowFlagged(sellerUserId, bookingId, "BUYER"); // seller showed up but no buyer
+        } else if (outcome === "SELLER_MISSED") {
+            await NotificationService.notifyNoShowFlagged(buyerUserId, bookingId, "SELLER")
+        } else if (outcome === "BOTH_MISSED") {
+            await NotificationService.notifyNoShowFlagged(sellerUserId, bookingId, "BUYER");
+            await NotificationService.notifyNoShowFlagged(buyerUserId, bookingId, "SELLER");
+        }
 
         const bookingWithPackage = await prisma.sessionBooking.findUnique({ where: { id: bookingId } });
         if (bookingWithPackage?.packageId) {
@@ -240,6 +259,127 @@ export class CallService {
         }
     }
 
+    static async handleParticipantJoined(event: any) {
+        const bookingId = event?.room?.name.replace("session_", "");
+        const userId = event.participant?.identity;
+        if (!bookingId || !userId) return;
+
+        const booking = await prisma.sessionBooking.findUnique({
+            where: { id: bookingId },
+            include: {
+                callSession: true,
+                package: { include: { order: { include: { seller: true } } } },
+                enrollment: { include: { order: { include: { seller: true } } } },
+            },
+        });
+
+        if (!booking?.callSession) return;
+
+        const order = booking.package?.order ?? booking.enrollment?.order;
+        if(!order) return;
+
+        const isSeller = userId === order.seller.userId;
+        const isBuyer = userId === order.buyerId;
+        if (!isSeller && !isBuyer) return;
+
+        await prisma.callEvent.create({
+            data: { sessionId: booking.callSession.id, type: "JOINED", metadata: { userId } },
+        });
+
+        const data: any = {};
+        if (isBuyer && !booking.buyerJoinedAt) data.buyerJoinedAt = new Date();
+        if (isSeller && !booking.sellerJoinedAt) data.sellerJoinedAt = new Date();
+
+        if (Object.keys(data).length > 0) {
+            await prisma.sessionBooking.update({ where: { id: bookingId }, data });
+        }
+    }
+    static async handleParticipantLeft(event: any) {
+        const bookingId = event?.room?.name.replace("session_", "");
+        const userId = event.participant?.identity;
+        if (!bookingId || !userId) return;
+
+        const booking = await prisma.sessionBooking.findUnique({
+            where: { id: bookingId },
+            include: {
+                callSession: true,
+                package: { include: { order: { include: { seller: true } } } },
+                enrollment: { include: { order: { include: { seller: true } } } },
+            },
+        });
+
+        if (!booking?.callSession) return;
+
+        const order = booking.package?.order ?? booking.enrollment?.order;
+        if(!order) return;
+
+        const isSeller = userId === order.seller.userId;
+        const isBuyer = userId === order.buyerId;
+        if (!isSeller && !isBuyer) return;
+
+        await prisma.callEvent.create({
+            data: { sessionId: booking.callSession.id, type: "LEFT", metadata: { userId } },
+        });
+
+
+        await prisma.sessionBooking.update({
+            where: { id: bookingId },
+            data: isBuyer ? { buyerLeftAt: new Date() } : { sellerLeftAt: new Date() },
+        });
+
+        if (isSeller) {
+            const buyerStillIn = await this.isStillInRoom(bookingId, order.buyerId);
+            if (buyerStillIn) {
+                await callQueue.add(
+                    "seller-reconnect-check",
+                    { bookingId, sellerUserId: order.seller.userId },
+                    { delay: MID_SESSION_SELLER_GRACE_SEC * 1000 }
+                );
+            }
+        }
+
+        if (isBuyer) {
+            const sellerStillIn = await this.isStillInRoom(bookingId, order.seller.userId);
+            if (sellerStillIn) {
+                await callQueue.add(
+                    "buyer-absence-check",
+                    { bookingId, buyerUserId: order.buyerId, sellerUserId: order.seller.userId },
+                    { delay: MID_SESSION_BUYER_GRACE_MIN * 60_000 },
+                )
+            }
+        }
+    }
+
+    static async isStillInRoom(bookingId: string, targetUserId: string): Promise<boolean> {
+        const booking = await prisma.sessionBooking.findUnique({
+            where: { id: bookingId },
+            include: { callSession: { include: { events: { orderBy: { createdAt: "desc" } } } } }
+        });
+        const userEvents = booking?.callSession?.events.filter(
+            (e) => (e.metadata as any)?.userId == targetUserId
+        ) ?? []
+        return userEvents[0]?.type === "JOINED";
+    }
+    static async checkSellerReconnected(bookingId: string, sellerUserId: string) {
+        const stillGone = !(await this.isStillInRoom(bookingId, sellerUserId));
+        if (stillGone) {
+            await prisma.sessionBooking.update({
+                where: { id: bookingId },
+                data: { sellerLeftEarly: true },
+            });
+            await NotificationService.notifySellerReconnectGraceExpired(sellerUserId, bookingId);
+        }
+    }
+    static async checkBuyerReturned(bookingId: string, buyerUserId: string, sellerUserId: string) {
+        const stillGone = !(await this.isStillInRoom(bookingId, buyerUserId));
+        if (stillGone) {
+            await prisma.sessionBooking.update({
+                where: { id: bookingId },
+                data: { buyerLeftEarly: true },
+            });
+            await NotificationService.notifyBuyerAbsenceGraceExpired(sellerUserId, bookingId);
+        }
+    }
     /**
      * 
      * @param packageId 

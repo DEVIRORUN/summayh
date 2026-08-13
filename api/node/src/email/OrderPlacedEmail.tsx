@@ -1,3 +1,4 @@
+import React from "react";
 import { Html, Head, Body, Container, Text, Heading } from "@react-email/components";
 
 interface Props {

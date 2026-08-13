@@ -6,10 +6,9 @@
 
     "module": "commonjs",
     "target": "es2022",
-    "moduleResolution": "node10",
+    "moduleResolution": "node16",
     "ignoreDeprecations": "6.0",
     "types": ["node"],
-
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
@@ -17,6 +16,6 @@
     "strict": false,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist"]
 }

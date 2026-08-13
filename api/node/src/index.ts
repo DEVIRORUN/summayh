@@ -26,6 +26,7 @@ import paymentRoutes from "./routes/payment.route"
 import sellerRoutes from "./routes/seller.route"
 import gigRoutes from "./routes/gig.route"
 import TermiiRoutes from "./routes/termii.route"
+import emailOtpRoutes from "./routes/emailOtp.route";
 import callRoutes from "./routes/call.route";
 import reviewRoutes from './routes/review.route';
 import disputeRoutes from './routes/dispute.route';
@@ -34,9 +35,16 @@ import webhookRouter from './routes/webhook.route';
 import agentDecisionRoutes from './routes/agentDesicion.route';
 import sessionMaterialRoutes from './routes/sessionMaterial.route';
 import proSubscriptionRoutes from './routes/proSubscription.route';
+import livekitWebhookRouter from "./routes/livekitWebhook.route";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+app.use(
+  "/webhooks/livekit",
+  express.raw({ type: "application/webhook+json" }),
+  livekitWebhookRouter
+)
 
 // 1. Configure CORS to explicitly allow credentials
 app.use(cors({
@@ -217,7 +225,7 @@ const swaggerSpec = swaggerJsdoc({
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: process.env.CLIENT_URL, credentials: true }
+  cors: { origin: process.env.FRONTEND_URL, credentials: true }
 });
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -237,6 +245,7 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api/seller", sellerRoutes);
 app.use("/api/gig", gigRoutes);
 app.use("/api/otp", TermiiRoutes);
+app.use("/api/email-otp", emailOtpRoutes);
 app.use("/api/calls", callRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/disputes", disputeRoutes);

@@ -19,6 +19,14 @@ export const callWorker = new Worker(
             console.log(`[JOB ${job.id}]: SWEEP OVERDUE SESSIONS`);
             await CallService.sweepOverdueSessions();
         }
+        if (job.name === "seller-reconnect-check") {
+            console.log(`[JOB ${job.id}]: SELLER RECONNECT CHECK`);
+            await CallService.checkSellerReconnected(job.data.bookingId, job.data.sellerUserId);
+        }
+        if (job.name === "buyer-absence-check") {
+            console.log(`[JOB ${job.id}]: BUYER ABSENCE CHECK`);
+            await CallService.checkBuyerReturned(job.data.bookingId, job.data.buyerUserId, job.data.sellerUserId);
+        }
     },
     { connection: createBullMQConnection() }
 );

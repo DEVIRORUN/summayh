@@ -11,6 +11,18 @@ export class SellerController {
     console.log(new Date(), "-> [Seller Onboard]: Hit!");
     try {
       const userId = (req as any).userId;
+
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+
+      if (!user) {
+        return res.status(400).json({ message: "User not found" });
+      }
+      if (!user.isEmailVerified) {
+        return res.status(403).json({
+          message: "You must verify your email before becoming a seller."
+        })
+      }
+
       const {
         accountName,
         settlementBank,
@@ -33,10 +45,6 @@ export class SellerController {
         accountNumber,
         10, // my cut
       );
-
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-      });
 
       // 2. Update the user record with the generated payout kwy
       const updateProfile = await prisma.sellerProfile.upsert({

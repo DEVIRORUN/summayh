@@ -42,4 +42,124 @@ export class NotificationService {
             throw err;
         }
     } 
+    static async notifyOrderPlaced(sellerUserId: string, orderId: string, gigTitle: string) {
+        return this.notify({
+            userId: sellerUserId,
+            type: "ORDER_PLACED",
+            title: "New order received",
+            body:  `You just got an order for "${gigTitle}".`,
+            link: `/orders/${orderId}`
+        });
+    }
+    static async notifyOrderAccepted(buyerUserId: string, orderId: string, gigTitle: string) {
+        return this.notify({
+            userId: buyerUserId,
+            type: "ORDER_ACCEPTED",
+            title: "Order accepted",
+            body:  `Your order for "${gigTitle}" was accepted.`,
+            link: `/orders/${orderId}`
+        });
+    }
+    static async notifySessionReminder(userId: string, bookingId: string, minutesUntil: string) {
+        return this.notify({
+            userId,
+            type: "SESSION_REMINDER",
+            title: "Upcoming session",
+            body:  `Your session starts in "${minutesUntil}" minutes.`,
+            link: `/sessions/${bookingId}`,
+        });
+    }
+    static async notifySessionStarting(userId: string, bookingId: string) {
+        return this.notify({
+            userId,
+            type: "SESSION_STARTING",
+            title: "Session is starting",
+            body:  `Your session room is now open - join now.`,
+            link: `/sessions/${bookingId}`,
+        });
+    }
+    static async notifyNoShowRisk(userId: string, bookingId: string, role: "SELLER" | "BUYER") {
+        return this.notify({
+            userId,
+            type: "SESSION_NO_SHOW_RISK",
+            title: "Missed session check-in",
+            body: role === "SELLER" 
+                ? "You didn't join your scheduled session in time."
+                : "The seller may have missed your scheduled session.",
+            link: `/sessions/${bookingId}`,
+
+        })
+    }
+    static async notifyNoShowFlagged(userId: string, bookingId: string, missedRole: "SELLER" | "BUYER") {
+        return this.notify({
+            userId,
+            type: "NO_SHOW_FLAGGED",
+            title: "Session marked as no-show",
+            body: `The session was flagged: ${missedRole.toLowerCase()} did not join in time.`,
+            link: `/sessions/${bookingId}`,
+        });
+    }
+    static async notifyPaymentReceived(sellerUserId: string, orderId: string, amount: number) {
+        return this.notify({
+            userId: sellerUserId,
+            type: "PAYMENT_RECEIVED",
+            title: "Session marked as no-show",
+            body: `You received: ${amount.toLocaleString()} for a completed order.`,
+            link: `/dashboard/earnings`,
+        });
+    }
+    static async notifyMilestoneReceived(sellerUserId: string, packageId: string, pct: number) {
+        return this.notify({
+            userId: sellerUserId,
+            type: "MILESTONE_RECEIVED",
+            title: "Milestone payout released",
+            body: `A ${Math.round(pct * 100)}% milestone payout has been released to you.`,
+            link: `/dashboard/earnings`,
+        });
+    }
+    static async notifyDisputeOpened(userId: string, orderId: string) {
+        return this.notify({
+            userId,
+            type: "DISPUTE_OPENED",
+            title: "Dispute opened",
+            body: `A dispute has been opened on one of your orders.`,
+            link: `/orders/${orderId}`,
+        });
+    }
+    static async notifyDisputeResolved(userId: string, orderId: string, outcome: string) {
+        return this.notify({
+            userId,
+            type: "DISPUTE_RESOLVED",
+            title: "Dispute resolved",
+            body: `Your dispute was resolved: ${outcome}`,
+            link: `/orders/${orderId}`,
+        });
+    }
+    static async notifyMessageReceived(userId: string, senderName: string, conversationId: string) {
+        return this.notify({
+            userId,
+            type: "MESSAGE_RECEIVED",
+            title: "New message",
+            body: `${senderName} sent you a message`,
+            link: `/messages/${conversationId}`,
+        });
+    }
+    static async notifySellerReconnectGraceExpired(sellerUserId: string, bookingId: string) {
+        return this.notify({
+            userId: sellerUserId,
+            type: "SESSION_NO_SHOW_RISK",
+            title: "You were disconnected too long",
+            body: "You didn't reconnect within the grace period while the buyer was waiting.",
+            link: `/sessions/${bookingId}`,
+        });
+    }
+    static async notifyBuyerAbsenceGraceExpired(sellerUserId: string, bookingId: string) {
+        return this.notify({
+            userId: sellerUserId,
+            type: "SESSION_NO_SHOW_RISK",
+            title: "Buyer hasn't returned",
+            body: "The buyer left the session and hasn't come back after 10 minutes. You may choose to end the session.",
+            link: `/sessions/${bookingId}`,
+        });
+    }
 }

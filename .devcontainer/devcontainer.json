@@ -11,12 +11,16 @@
       ]
     }
   },
-  "forwardPorts": [3000, 8000],
+  "forwardPorts": [3000, 3001, 8000],
   "portsAttributes": {
     "3000": {
       "label": "Next.js Frontend",
       "onAutoForward": "notify",
       "elevationRequirement": "none"
+    },
+    "3001": {
+      "label": "Node API Backend",
+      "onAutoForward": "notify"
     },
     "8000": {
       "label": "FastAPI Backend",

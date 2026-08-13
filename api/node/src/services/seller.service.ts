@@ -193,6 +193,7 @@ export class SellerService {
         })
 
         const slots: { start: string; end: string }[] = [];
+        const earliestBookable = new Date(Date.now() + 5 * 60_000); // 5-min buffer
 
         for (const block of availability) {
             // Boundary for seller availability
@@ -212,7 +213,7 @@ export class SellerService {
                 (b) => slotStart < b.scheduledEnd && slotEnd > b.scheduledStart,
             );
 
-            if (!overlaps) {
+            if (!overlaps && slotStart > earliestBookable) { // skipping past slots
                 slots.push({ start: slotStart.toISOString(), end: slotEnd.toISOString() })
             }
 

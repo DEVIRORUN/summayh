@@ -36,7 +36,7 @@ export class TermiiService {
   // 2. VERIFY THE OTP bro
   static async verifyOtp(userId: string, otp: string): Promise<any> {
     const record = await prisma.oTPVerification.findUnique({
-      where: { userId },
+      where: { userId_channel: { userId, channel: "PHONE" } },
     });
 
     if (!record) {
@@ -61,7 +61,7 @@ export class TermiiService {
     // Now we mark as verified
     await prisma.$transaction([
       prisma.oTPVerification.update({
-        where: { userId },
+        where: { userId_channel: { userId, channel: "PHONE" } },
         data: { verified: true },
       }),
       prisma.user.update({
@@ -70,7 +70,7 @@ export class TermiiService {
       }),
     ]);
 
-    return { successs: true, message: "Phoen verified successfully." };
+    return { success: true, message: "Phoen verified successfully." };
   }
 
   // 3. SEND SMS NOTIFICATION (for orders, alerts)

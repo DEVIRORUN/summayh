@@ -220,12 +220,26 @@ enum NotificationType {
   ORDER_ACCEPTED
   SESSION_REMINDER
   SESSION_STARTING
+  SESSION_NO_SHOW_RISK
   PAYMENT_RECEIVED
   MILESTONE_RECEIVED
   DISPUTE_OPENED
   DISPUTE_RESOLVED
   MESSAGE_RECEIVED
   NO_SHOW_FLAGGED
+}
+
+enum OtpChannel {
+  PHONE
+  EMAIL
+}
+
+enum VerificationCheckStatus {
+  PENDING
+  IN_REVIEW
+  PASSED
+  FAILED
+  EXPIRED
 }
 
 model ProPlan {
@@ -275,6 +289,8 @@ model User {
   isOnline           Boolean?
   phoneNumber        String?          @unique
   isPhoneVerified    Boolean          @default(false)
+  isEmailVerified    Boolean          @default(false)
+  isAdultVerified    Boolean          @default(false)
   role               Role             @default(BUYER)
   isBanned           Boolean          @default(false)
   tokenVersion       Int              @default(0)
@@ -286,7 +302,7 @@ model User {
   // Relationships
   sellerProfile        SellerProfile?
   orders               Order[]
-  otpVerification      OTPVerification?
+  otpVerification      OTPVerification[]
   reviews              Review[]
   dispute              Dispute[]
   ledgerEntries        LedgerEntry[]
@@ -295,12 +311,13 @@ model User {
   withdrawals          Withdrawal[]
   messages             Message[]
   conversations        Conversation[]
-  conversationsAsUserA Conversation[]     @relation("ConversationsAsUserA")
-  conversationsAsUserB Conversation[]     @relation("ConversationsAsUserB")
-  CallerSessions       CallSession[]      @relation("CallerSessions")
-  CalleeSessions       CallSession[]      @relation("CalleeSessions")
+  conversationsAsUserA Conversation[]        @relation("ConversationsAsUserA")
+  conversationsAsUserB Conversation[]        @relation("ConversationsAsUserB")
+  CallerSessions       CallSession[]         @relation("CallerSessions")
+  CalleeSessions       CallSession[]         @relation("CalleeSessions")
   courseEnrollments    CourseEnrollment[]
   notifications        Notification[]
+  identityVerification IdentityVerification?
 }
 
 model SellerProfile {
@@ -362,6 +379,26 @@ model SellerAvailability {
   seller SellerProfile @relation(fields: [sellerId], references: [id])
 
   @@index([sellerId, dayOfWeek])
+}
+
+model IdentityVerification {
+  id               String                  @id @default(uuid())
+  userId           String                  @unique
+  status           VerificationCheckStatus @default(PENDING)
+  ninHash              String?
+  dateOfBirthOnNin DateTime?
+  fullNameOnNin    String?
+  livenessPassed   Boolean                 @default(false)
+  livenessScore    Float?
+  ninMatchPassed   Boolean                 @default(false)
+  ageVerifiedAdult Boolean                 @default(false)
+  failureReason    String?
+  providerRef      String?
+  verifiedAt       DateTime?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 model FoundersPassPurchase {
@@ -583,6 +620,7 @@ model SessionDispute {
 
 model SessionBooking {
   id                String               @id @default(uuid())
+  createdAt         DateTime             @default(now())
   packageId         String?
   enrollmentId      String?
   sessionUnitId     String?
@@ -766,14 +804,17 @@ model Withdrawal {
 }
 
 model OTPVerification {
-  id        String   @id @default(uuid())
-  userId    String   @unique
+  id        String     @id @default(uuid())
+  userId    String
+  channel   OtpChannel @default(PHONE) // PHONE | EMAIL
   otp       String
   expiresAt DateTime
-  verified  Boolean  @default(false)
-  createdAt DateTime @default(now())
+  verified  Boolean    @default(false)
+  createdAt DateTime   @default(now())
 
   user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, channel])
 }
 
 model Review {

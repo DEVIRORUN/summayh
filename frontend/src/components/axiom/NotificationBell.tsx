@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Bell } from "lucide-react";
 import Link from "next/link";
-import { proxyFetch } from "@/lib/proxyFetch"; // your existing BFF helper
 
 interface Notification {
     id: string;
@@ -22,10 +21,11 @@ export function NotificationBell() {
 
     const fetchNotifications = useCallback(async () => {
         try {
-            const res = await proxyFetch("/notifications");
+            const res = await fetch("/api/notifications", { credentials: "include" })
             if (!res.ok) return;
             const data = await res.json();
             setNotifications(data.notifications ?? []);
+            console.log("Notification: ", data);
             setUnreadCount(data.unreadCount ?? 0);
         } catch (err) {
             console.error("[NotificationBell] fetch failed", err);
@@ -42,7 +42,7 @@ export function NotificationBell() {
         setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
         setUnreadCount((prev) => Math.max(0, prev - 1));
         try {
-            await proxyFetch(`/notifications/${id}/read`, { method: "PATCH" });
+            await fetch(`/api/notifications/${id}`, { method: "PATCH", credentials: "include" });
         } catch (err) {
             console.error("[NotificationBell] mark read failed", err);
         }
@@ -51,8 +51,8 @@ export function NotificationBell() {
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <button className="relative" aria-label="Notifications">
-                    <Bell className="h-5 w-5" />
+                <button className="group relative" aria-label="Notifications">
+                    <Bell className="h-5 w-5 cursor-pointer hover:bg-card" />
                     {unreadCount > 0 && (
                         <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-white">
                             {unreadCount > 9 ? "9+" : unreadCount}

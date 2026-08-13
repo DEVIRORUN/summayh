@@ -20,6 +20,8 @@ export default async function DashboardOrdersPage() {
         isSeller ? getSellerOrders() : Promise.resolve(null)
     ]);
 
+    console.log("[GET BUYER ORDERS]:", buyerOrders);
+
     if (!buyerOrders) {
         return <div className="max-x-4xl mx-auto px-4 py-16 text-center">Order not found.</div>
     }

@@ -67,7 +67,7 @@ class TermiiService {
                 data: { isPhoneVerified: true },
             }),
         ]);
-        return { successs: true, message: "Phoen verified successfully." };
+        return { success: true, message: "Phoen verified successfully." };
     }
     // 3. SEND SMS NOTIFICATION (for orders, alerts)
     static async sendSms(phone, message) {
