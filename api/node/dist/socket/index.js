@@ -27,6 +27,7 @@ function initSocket(io) {
     });
     io.on("connection", (socket) => {
         const { userId } = socket.data;
+        socket.join(`user:${userId}`);
         presence_service_1.PresenceService.markUserOnline(userId);
         const heartbeat = setInterval(() => presence_service_1.PresenceService.markUserOnline(userId), 30_000);
         socket.on("disconnect", () => {

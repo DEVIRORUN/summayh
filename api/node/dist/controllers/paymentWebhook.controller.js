@@ -6,6 +6,7 @@ const order_service_1 = require("../services/order.service");
 const foundersPass_service_1 = require("../services/foundersPass.service");
 const invoice_service_1 = require("../services/invoice.service");
 const payment_service_1 = require("../services/payment.service");
+const proSubscription_service_1 = require("../services/proSubscription.service");
 class PaymentWebhookController {
     static async PaystackThread(req, res) {
         try {
@@ -28,6 +29,9 @@ class PaymentWebhookController {
                 const { metadata } = data;
                 if (metadata?.founderPassPurchaseId) {
                     await foundersPass_service_1.FoundersPassService.activateFoundersPass(data.reference);
+                }
+                else if (metadata?.proSubscriptionId) {
+                    await proSubscription_service_1.ProSubscriptionService.activateSubscription(data.reference); // Pro Sub
                 }
                 else if (metadata?.invoiceId) {
                     await invoice_service_1.InvoiceService.activateInvoice(data.reference);

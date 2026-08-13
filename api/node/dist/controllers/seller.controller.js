@@ -11,6 +11,15 @@ class SellerController {
         console.log(new Date(), "-> [Seller Onboard]: Hit!");
         try {
             const userId = req.userId;
+            const user = await prisma_1.prisma.user.findUnique({ where: { id: userId } });
+            if (!user) {
+                return res.status(400).json({ message: "User not found" });
+            }
+            if (!user.isEmailVerified) {
+                return res.status(403).json({
+                    message: "You must verify your email before becoming a seller."
+                });
+            }
             const { accountName, settlementBank, accountNumber, biography, phoneNumber, } = req.body;
             if (!settlementBank || !accountNumber) {
                 return res
@@ -20,9 +29,6 @@ class SellerController {
             // 1. Fire the Paystack generator method we wrote above
             console.log(`🏦 Registering subaccount for user ${userId}...`);
             const subaccountCode = await paystack_service_1.PaystackService.createSellerSubaccount(accountName || `Summayh Seller ${userId.slice(0, 4)}`, settlementBank, accountNumber, 10);
-            const user = await prisma_1.prisma.user.findUnique({
-                where: { id: userId },
-            });
             // 2. Update the user record with the generated payout kwy
             const updateProfile = await prisma_1.prisma.sellerProfile.upsert({
                 where: { userId },

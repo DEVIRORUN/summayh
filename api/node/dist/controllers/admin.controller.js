@@ -6,8 +6,10 @@ const prismaErrorHandler_1 = require("../utils/prismaErrorHandler");
 class AdminController {
     static async getDashboard(req, res) {
         try {
+            console.error("GETTING DASHBOARD AS ADMIN: HIT!!!");
             const adminId = req.userId;
             const data = await admin_service_1.AdminService.getDashboardMetrics(adminId);
+            console.error("GETTING DASHBOARD AS ADMIN: SUCCESS!!!");
             return res.status(200).json({
                 message: "Admin dashboard metrics fetched successfully.",
                 data

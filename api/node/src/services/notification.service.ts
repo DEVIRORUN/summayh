@@ -66,7 +66,7 @@ export class NotificationService {
             type: "SESSION_REMINDER",
             title: "Upcoming session",
             body:  `Your session starts in "${minutesUntil}" minutes.`,
-            link: `/sessions/${bookingId}`,
+            link: `/session/${bookingId}`,
         });
     }
     static async notifySessionStarting(userId: string, bookingId: string) {
@@ -75,7 +75,7 @@ export class NotificationService {
             type: "SESSION_STARTING",
             title: "Session is starting",
             body:  `Your session room is now open - join now.`,
-            link: `/sessions/${bookingId}`,
+            link: `/session/${bookingId}`,
         });
     }
     static async notifyNoShowRisk(userId: string, bookingId: string, role: "SELLER" | "BUYER") {
@@ -86,7 +86,7 @@ export class NotificationService {
             body: role === "SELLER" 
                 ? "You didn't join your scheduled session in time."
                 : "The seller may have missed your scheduled session.",
-            link: `/sessions/${bookingId}`,
+            link: `/session/${bookingId}`,
 
         })
     }
@@ -96,7 +96,7 @@ export class NotificationService {
             type: "NO_SHOW_FLAGGED",
             title: "Session marked as no-show",
             body: `The session was flagged: ${missedRole.toLowerCase()} did not join in time.`,
-            link: `/sessions/${bookingId}`,
+            link: `/session/${bookingId}`,
         });
     }
     static async notifyPaymentReceived(sellerUserId: string, orderId: string, amount: number) {
@@ -150,7 +150,7 @@ export class NotificationService {
             type: "SESSION_NO_SHOW_RISK",
             title: "You were disconnected too long",
             body: "You didn't reconnect within the grace period while the buyer was waiting.",
-            link: `/sessions/${bookingId}`,
+            link: `/session/${bookingId}`,
         });
     }
     static async notifyBuyerAbsenceGraceExpired(sellerUserId: string, bookingId: string) {
@@ -159,7 +159,7 @@ export class NotificationService {
             type: "SESSION_NO_SHOW_RISK",
             title: "Buyer hasn't returned",
             body: "The buyer left the session and hasn't come back after 10 minutes. You may choose to end the session.",
-            link: `/sessions/${bookingId}`,
+            link: `/session/${bookingId}`,
         });
     }
 }

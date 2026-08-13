@@ -3,9 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getIO = getIO;
 // api/node/src/index.ts
-require("./workers/call.worker"); // just importing starts it listening
 require("dotenv/config");
+require("./workers/call.worker"); // just importing starts it listening
+require("./workers/proSubscription.worker"); // just importing starts it listening
 const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
 const swagger_jsdoc_1 = __importDefault(require("swagger-jsdoc"));
 const express_1 = __importDefault(require("express"));
@@ -14,6 +16,7 @@ const cors_1 = __importDefault(require("cors"));
 const http_1 = __importDefault(require("http"));
 const socket_io_1 = require("socket.io");
 const socket_1 = require("./socket");
+const notification_route_1 = __importDefault(require("./routes/notification.route"));
 const auth_1 = __importDefault(require("./routes/auth"));
 const admin_route_1 = __importDefault(require("./routes/admin.route"));
 const testimonial_route_1 = __importDefault(require("./routes/testimonial.route"));
@@ -27,14 +30,19 @@ const payment_route_1 = __importDefault(require("./routes/payment.route"));
 const seller_route_1 = __importDefault(require("./routes/seller.route"));
 const gig_route_1 = __importDefault(require("./routes/gig.route"));
 const termii_route_1 = __importDefault(require("./routes/termii.route"));
+const emailOtp_route_1 = __importDefault(require("./routes/emailOtp.route"));
 const call_route_1 = __importDefault(require("./routes/call.route"));
 const review_route_1 = __importDefault(require("./routes/review.route"));
 const dispute_route_1 = __importDefault(require("./routes/dispute.route"));
+const sessionDispute_route_1 = __importDefault(require("./routes/sessionDispute.route"));
 const webhook_route_1 = __importDefault(require("./routes/webhook.route"));
 const agentDesicion_route_1 = __importDefault(require("./routes/agentDesicion.route"));
 const sessionMaterial_route_1 = __importDefault(require("./routes/sessionMaterial.route"));
+const proSubscription_route_1 = __importDefault(require("./routes/proSubscription.route"));
+const livekitWebhook_route_1 = __importDefault(require("./routes/livekitWebhook.route"));
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
+app.use("/webhooks/livekit", express_1.default.raw({ type: "application/webhook+json" }), livekitWebhook_route_1.default);
 // 1. Configure CORS to explicitly allow credentials
 app.use((0, cors_1.default)({
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
@@ -209,7 +217,7 @@ const swaggerSpec = (0, swagger_jsdoc_1.default)({
 });
 const server = http_1.default.createServer(app);
 const io = new socket_io_1.Server(server, {
-    cors: { origin: process.env.CLIENT_URL, credentials: true }
+    cors: { origin: process.env.FRONTEND_URL, credentials: true }
 });
 app.use("/api-docs", swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swaggerSpec));
 // Mount our routes
@@ -227,13 +235,20 @@ app.use("/api/payment", payment_route_1.default);
 app.use("/api/seller", seller_route_1.default);
 app.use("/api/gig", gig_route_1.default);
 app.use("/api/otp", termii_route_1.default);
+app.use("/api/email-otp", emailOtp_route_1.default);
 app.use("/api/calls", call_route_1.default);
 app.use("/api/reviews", review_route_1.default);
 app.use("/api/disputes", dispute_route_1.default);
-app.use("/api/agent-decisions", agentDesicion_route_1.default);
+app.use("/api/session-disputes", sessionDispute_route_1.default);
+app.use("/api/admin/agent-decisions", agentDesicion_route_1.default);
 app.use("/api/session-material", sessionMaterial_route_1.default);
+app.use("/api/pro-subscriptions", proSubscription_route_1.default);
+app.use("/api/notifications", notification_route_1.default);
 (0, socket_1.initSocket)(io);
+function getIO() {
+    return io;
+}
 // Start listening
-app.listen(PORT, () => {
-    console.log(`🚀 Summayh 1.0.0 Engine running on http://localhost:${PORT}`);
+server.listen(PORT, () => {
+    console.log(`🚀 Summayh 1.0.0 Engine running on ${PORT}`);
 });

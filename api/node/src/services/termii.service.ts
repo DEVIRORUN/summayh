@@ -15,9 +15,9 @@ export class TermiiService {
 
     // Upsert so re-sends overwrite instead of creating a duplicate
     await prisma.oTPVerification.upsert({
-      where: { userId },
+      where: { userId_channel: { userId, channel: "PHONE" } },
       update: { otp, expiresAt, verified: false },
-      create: { userId, otp, expiresAt, verified: false },
+      create: { userId, channel: "PHONE", otp, expiresAt, verified: false },
     });
 
     const message = `Your SUMMAYH verification code is ${otp}. Valid for ${OTP_EXPIRY_MINUTES} minutes. Do not share this with anyone.`;

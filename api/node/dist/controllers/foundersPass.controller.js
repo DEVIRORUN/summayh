@@ -23,7 +23,9 @@ class FoundersPassController {
     }
     static async availability(req, res) {
         try {
+            console.log("[FOUNDERS PASS]: HIT!!!");
             const result = await foundersPass_service_1.FoundersPassService.getFoundersPassAvailability();
+            console.log("[FOUNDERS PASS]: SUCCESFULL!!!");
             return res.status(200).json({
                 message: new Date() + "-> [FoundersPass Availability  Success]: Check Successful",
                 data: result

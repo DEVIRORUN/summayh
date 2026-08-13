@@ -167,6 +167,7 @@ class SellerService {
                 select: { scheduledStart: true, scheduledEnd: true }
             });
             const slots = [];
+            const earliestBookable = new Date(Date.now() + 5 * 60_000); // 5-min buffer
             for (const block of availability) {
                 // Boundary for seller availability
                 const [startH, startM] = block.startTime.split(":").map(Number);
@@ -179,7 +180,7 @@ class SellerService {
                     const slotStart = new Date(cursor);
                     const slotEnd = new Date(cursor.getTime() + sessionLengthMin * 60000);
                     const overlaps = existingBookings.some((b) => slotStart < b.scheduledEnd && slotEnd > b.scheduledStart);
-                    if (!overlaps) {
+                    if (!overlaps && slotStart > earliestBookable) { // skipping past slots
                         slots.push({ start: slotStart.toISOString(), end: slotEnd.toISOString() });
                     }
                     cursor = new Date(cursor.getTime() + sessionLengthMin * 60000);

@@ -18,9 +18,9 @@ class TermiiService {
         const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
         // Upsert so re-sends overwrite instead of creating a duplicate
         await prisma_1.prisma.oTPVerification.upsert({
-            where: { userId },
+            where: { userId_channel: { userId, channel: "PHONE" } },
             update: { otp, expiresAt, verified: false },
-            create: { userId, otp, expiresAt, verified: false },
+            create: { userId, channel: "PHONE", otp, expiresAt, verified: false },
         });
         const message = `Your SUMMAYH verification code is ${otp}. Valid for ${OTP_EXPIRY_MINUTES} minutes. Do not share this with anyone.`;
         await axios_1.default.post(`${TERMII_BASE_URL}/api/sms/send`, {
@@ -36,7 +36,7 @@ class TermiiService {
     // 2. VERIFY THE OTP bro
     static async verifyOtp(userId, otp) {
         const record = await prisma_1.prisma.oTPVerification.findUnique({
-            where: { userId },
+            where: { userId_channel: { userId, channel: "PHONE" } },
         });
         if (!record) {
             return {
@@ -59,7 +59,7 @@ class TermiiService {
         // Now we mark as verified
         await prisma_1.prisma.$transaction([
             prisma_1.prisma.oTPVerification.update({
-                where: { userId },
+                where: { userId_channel: { userId, channel: "PHONE" } },
                 data: { verified: true },
             }),
             prisma_1.prisma.user.update({

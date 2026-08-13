@@ -5,6 +5,7 @@ const agentDecision_service_1 = require("../services/agentDecision.service");
 class AgentDecisionController {
     static async list(req, res) {
         try {
+            console.log("[AGENT DECISION]: HIT!!");
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 30;
             const { agentName, entityType, dateForm, dateTo } = req.query;
@@ -14,6 +15,7 @@ class AgentDecisionController {
                 dateForm: dateForm,
                 dateTo: dateTo,
             });
+            console.log("[AGENT DECISION]: SUCCESS!!");
             return res.status(200).json(result);
         }
         catch (error) {

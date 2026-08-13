@@ -31,7 +31,7 @@ class FoundersPassService {
             remaining: Math.max(config.maxPasses - soldCount, 0),
             maxPasses: config.maxPasses,
             priceNaira: config.priceNaira,
-            soldout: soldCount >= config.maxPasses,
+            soldOut: soldCount >= config.maxPasses,
         };
     }
     /**
@@ -42,7 +42,7 @@ class FoundersPassService {
         try {
             const config = await this.getActiveConfig();
             const availability = await this.getFoundersPassAvailability();
-            if (availability.soldout) {
+            if (availability.soldOut) {
                 throw new Error("Founders Pass is sold out");
             }
             // Enforce one pass per seller at he application level

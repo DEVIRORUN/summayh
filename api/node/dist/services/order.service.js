@@ -5,16 +5,118 @@ const prisma_1 = require("../utils/prisma");
 const paystack_service_1 = require("./paystack.service");
 const termii_service_1 = require("./termii.service");
 const triggers_1 = require("./ranking/triggers");
+const notification_service_1 = require("./notification.service");
+const OrderPlacedEmail_1 = require("../email/OrderPlacedEmail");
 class OrderService {
     static secretKey = process.env.PAYSTACK_SECRET_KEY;
     /**
    * Processes a successful payment webhook from Paystack
    * @param data The payload data object sent by Paystack
    */
+    // public static async handleSuccessfulPayment(data: any) {
+    //     const { reference, amount, metadata, customer } = data;
+    //     // 1. Extract your application identifiers (e.g., orderId passed during initialization)
+    //     // Paystack allows passing custom fields inside a 'metadata' object
+    //     const orderId = metadata?.orderId;
+    //     const { scheduledStart, scheduledEnd } = metadata || {};
+    //     if (!orderId) {
+    //         console.log(`[Webhook Error]: No orderId found in metadata for reference: ${reference}`);
+    //         return { success: false, error: "Missing order identity context" };
+    //     }
+    //     try {
+    //         // 2. Wrap this in a transaction to guarantee data integrity
+    //         return await prisma.$transaction(async (tx) => {
+    //             // Find the target order using the orderId from metadata
+    //             const order = await tx.order.findUnique({
+    //                 where: { id: orderId },
+    //                 include: { 
+    //                     gigTier: true, 
+    //                     gig: true,
+    //                     buyer: true,
+    //                     seller: { include: { user: true } }
+    //                 },
+    //             });
+    //             if (!order) {
+    //                 throw new Error(`Order not found: ${orderId}`);
+    //             }
+    //             if (order.status === "DISPUTED") {
+    //                 console.error("ORDER IS UNDER DISPUTE AND CANNOT BE MODIFIED UNTIL RESOLVED");
+    //                 throw new Error("This order is under dispute and cannot be modified until resolved.");
+    //             }
+    //             // Prevent duplicate if already active not paid
+    //             if (order.status === "ACTIVE") {
+    //                 console.log(`[Webhook Info]: Order ${orderId} is already marked as PAID.`);
+    //                 return { success: true, duplicated: true };
+    //             }
+    //             // 3. Update the order status and log the transaction details
+    //             const updatedOrder = await tx.order.update({
+    //                 where: { id: orderId },
+    //                 data: {
+    //                     status: 'ACTIVE',
+    //                     paymentReference: reference,
+    //                     updatedAt: new Date(),
+    //                 },
+    //             });
+    //             // LIVE gig: create the session apckgae + lock in the first booking
+    //             if (order.gig.deliveryMode === "LIVE" && scheduledStart && scheduledEnd) {
+    //                 const sessionPackage = await tx.sessionPackage.create({
+    //                     data: {
+    //                         orderId: order.id,
+    //                         gigTierid: order.gigTier.id,
+    //                         sessionLengthMin: order.gigTier.sessionLengthMin ?? 30,
+    //                         breakLengthMin: order.gigTier.breakLengthMin ?? 0,
+    //                         totalSessions: order.gigTier.totalSessions ?? 1,
+    //                     }
+    //                 });
+    //                 // re-check clash at moment of payment [SURE CONFIRMATION]
+    //                 // e got booked btw slot-selection and oayment completing
+    //                 const conflict = await tx.sessionBooking.findFirst({
+    //                     where: {
+    //                         status: "SCHEDULED",
+    //                         scheduledStart: { lt: new Date(scheduledEnd) },
+    //                         scheduledEnd: { gt: new Date(scheduledStart) },
+    //                         package: { gigTier: { gig: { sellerId: order.sellerId } } },
+    //                     },
+    //                 });
+    //                 if (conflict) {
+    //                     console.warn (`[Webhook Warning]: Slot conflict on order ${orderId}, booking not auto-created.`)
+    //                 } else {
+    //                     await tx.sessionBooking.create({
+    //                         data: {
+    //                             packageId: sessionPackage.id,
+    //                             scheduledStart: new Date(scheduledStart),
+    //                             scheduledEnd: new Date(scheduledEnd),
+    //                             status: "SCHEDULED",
+    //                         },
+    //                     })
+    //                 }
+    //             }
+    //             console.log(`[Webhook Success]: Order ${orderId} marked as PAID with reference: ${reference} from customer: ${customer}`);
+    //             return { success: true, order: updatedOrder, sellerUser: order.gig.seller.user, buyerName: order.buyer.name, gigTitle: order.gig.title };
+    //         }).then(async (result) => {
+    //             if (result.success && !("duplicated" in result)) {
+    //                 NotificationService.notify({
+    //                     userId: result.sellerUser.id,
+    //                     type: "ORDER_PLACED",
+    //                     title: "New order received",
+    //                     body: `${result.buyerName} just placed an order for "${result.gigTitle}`,
+    //                     link: `/dashboard/orders/${orderId}`,
+    //                     email: {
+    //                         to: result.sellerUser.email,
+    //                         subject: "You have a new order on SUMMMAYH",
+    //                         template: OrderPlacedEmail({ sellerName: result.sellerUser.name, gigTitle: result.gigTitle })
+    //                     },
+    //                 }).catch(err => console.error("[notify] failed", err));
+    //             }
+    //             return result;
+    //         })
+    //     } catch(error) {
+    //         console.error(`[Webhook Processing Failed]: ${error}`);
+    //         throw error;
+    //     }
+    // }
     static async handleSuccessfulPayment(data) {
         const { reference, amount, metadata, customer } = data;
-        // 1. Extract your application identifiers (e.g., orderId passed during initialization)
-        // Paystack allows passing custom fields inside a 'metadata' object
         const orderId = metadata?.orderId;
         const { scheduledStart, scheduledEnd } = metadata || {};
         if (!orderId) {
@@ -22,12 +124,15 @@ class OrderService {
             return { success: false, error: "Missing order identity context" };
         }
         try {
-            // 2. Wrap this in a transaction to guarantee data integrity
-            return await prisma_1.prisma.$transaction(async (tx) => {
-                // Find the target order using the orderId from metadata
+            const result = await prisma_1.prisma.$transaction(async (tx) => {
                 const order = await tx.order.findUnique({
                     where: { id: orderId },
-                    include: { gigTier: true, gig: true },
+                    include: {
+                        gigTier: true,
+                        gig: true,
+                        buyer: true,
+                        seller: { include: { user: true } },
+                    },
                 });
                 if (!order) {
                     throw new Error(`Order not found: ${orderId}`);
@@ -36,12 +141,10 @@ class OrderService {
                     console.error("ORDER IS UNDER DISPUTE AND CANNOT BE MODIFIED UNTIL RESOLVED");
                     throw new Error("This order is under dispute and cannot be modified until resolved.");
                 }
-                // Prevent duplicate if already active not paid
                 if (order.status === "ACTIVE") {
                     console.log(`[Webhook Info]: Order ${orderId} is already marked as PAID.`);
-                    return { success: true, duplicated: true };
+                    return { success: true, duplicated: true, order: null };
                 }
-                // 3. Update the order status and log the transaction details
                 const updatedOrder = await tx.order.update({
                     where: { id: orderId },
                     data: {
@@ -50,7 +153,6 @@ class OrderService {
                         updatedAt: new Date(),
                     },
                 });
-                // LIVE gig: create the session apckgae + lock in the first booking
                 if (order.gig.deliveryMode === "LIVE" && scheduledStart && scheduledEnd) {
                     const sessionPackage = await tx.sessionPackage.create({
                         data: {
@@ -61,8 +163,6 @@ class OrderService {
                             totalSessions: order.gigTier.totalSessions ?? 1,
                         }
                     });
-                    // re-check clash at moment of payment [SURE CONFIRMATION]
-                    // e got booked btw slot-selection and oayment completing
                     const conflict = await tx.sessionBooking.findFirst({
                         where: {
                             status: "SCHEDULED",
@@ -86,8 +186,34 @@ class OrderService {
                     }
                 }
                 console.log(`[Webhook Success]: Order ${orderId} marked as PAID with reference: ${reference} from customer: ${customer}`);
-                return { success: true, order: updatedOrder };
+                return {
+                    success: true,
+                    duplicated: false,
+                    order: updatedOrder,
+                    sellerUser: order.seller.user,
+                    buyerName: order.buyer.name,
+                    gigTitle: order.gig.title,
+                };
             });
+            // fire notification AFTER the transaction commits — never inside tx, never blocking the webhook response
+            if (result.success && !result.duplicated) {
+                notification_service_1.NotificationService.notify({
+                    userId: result.sellerUser.id,
+                    type: "ORDER_PLACED",
+                    title: "New order received",
+                    body: `${result.buyerName} just placed an order for "${result.gigTitle}"`,
+                    link: `/dashboard/orders/${orderId}`,
+                    email: {
+                        to: result.sellerUser.email,
+                        subject: "You have a new order on SUMMAYH",
+                        template: (0, OrderPlacedEmail_1.OrderPlacedEmail)({
+                            sellerName: result.sellerUser.name,
+                            gigTitle: result.gigTitle,
+                        }),
+                    },
+                }).catch((err) => console.error("[notify] failed", err));
+            }
+            return result;
         }
         catch (error) {
             console.error(`[Webhook Processing Failed]: ${error}`);
@@ -131,7 +257,7 @@ class OrderService {
                             seller: true
                         }
                     },
-                    user: true // buyer relation — confirm this is the right relation name in my schema
+                    buyer: true // buyer relation — confirm this is the right relation name in my schema
                 }
             });
             if (!order)
@@ -242,7 +368,7 @@ class OrderService {
                 }
             });
             const total = await prisma_1.prisma.order.count({ where: { buyerId: userId } });
-            console.log("ORDERS BY BUYERS: ", orders);
+            // console.log("ORDERS BY BUYERS: ", orders)
             return { data: orders, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
         }
         catch (error) {

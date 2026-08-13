@@ -103,7 +103,7 @@ class GigController {
                 if (isLive) {
                     if (typeof tier.sessionLengthMin != "number" || tier.sessionLengthMin <= 0)
                         tierError.push("SESSION LENGTH: must be positive");
-                    if (typeof tier.totalSessions != "number" || tier.tierSessions <= 0)
+                    if (typeof tier.totalSessions != "number" || tier.totalSessions <= 0)
                         tierError.push("TOTAL SESSION: must be positive");
                     if (typeof tier.breakLengthMin != "number" || tier.breakLengthMin < 0)
                         tierError.push("BREAK LENGTH: must be 0 or more");

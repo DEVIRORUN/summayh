@@ -13,11 +13,19 @@ exports.callWorker = new bullmq_1.Worker("call-sessions", async (job) => {
     }
     if (job.name === "flag-no-show") {
         console.log(`[JOB ${job?.id}]: FLAG NO SHOW`);
-        await call_service_1.CallService.flagNoShow(job.data.bookingId);
+        await call_service_1.CallService.resolveSessionOutcome(job.data.bookingId);
     }
     if (job.name === "sweep-overdue-sessions") {
         console.log(`[JOB ${job.id}]: SWEEP OVERDUE SESSIONS`);
         await call_service_1.CallService.sweepOverdueSessions();
+    }
+    if (job.name === "seller-reconnect-check") {
+        console.log(`[JOB ${job.id}]: SELLER RECONNECT CHECK`);
+        await call_service_1.CallService.checkSellerReconnected(job.data.bookingId, job.data.sellerUserId);
+    }
+    if (job.name === "buyer-absence-check") {
+        console.log(`[JOB ${job.id}]: BUYER ABSENCE CHECK`);
+        await call_service_1.CallService.checkBuyerReturned(job.data.bookingId, job.data.buyerUserId, job.data.sellerUserId);
     }
 }, { connection: (0, redis_1.createBullMQConnection)() });
 exports.callWorker.on("failed", (job, err) => {
