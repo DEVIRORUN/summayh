@@ -4,15 +4,18 @@ import React, { useEffect, useRef, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MdFormatSize } from "react-icons/md";
 import { cn } from "@/lib/utils";
-import { Download, Loader2, UploadCloud, XCircle } from "lucide-react";
-
+import { Download, Loader2, UploadCloud, XCircle, Eye, X, CheckCircle } from "lucide-react";
+import Zoom from "react-medium-image-zoom";
+import Image from "next/image";
+import "react-medium-image-zoom/dist/styles.css";
 
 interface DeliveryFile {
     id: string;
     fileName: string;
     fileSize: string | number;
+    fileUrl?: string;
+    fileType?: string;
 }
 
 interface Delivery {
@@ -27,6 +30,7 @@ interface DeliverySectionProps {
     deliveries: Delivery[];
     variant: "seller" | "buyer";
     canSubmit: boolean;
+    orderStatus: string;
 }
 
 type FileStatus = "pending" | "uploading" | "done" | "error";
@@ -37,6 +41,16 @@ interface TrackedFile {
     fileKey?: string;
 }
 
+function getPreviewKind(fileType?: string, fileName?: string): "image" | "video" | "audio" | null {
+    const type = fileType?.toLowerCase() ?? "";
+    const name = fileName?.toLowerCase() ?? "";
+
+    if (type.startsWith("image/") || /\.(png|jpe?g|gif|webp)$/.test(name)) return "image";
+    if (type.startsWith("video/") || /\.(mp4|webm|mov)$/.test(name)) return "video";
+    if (type.startsWith("audio/") || /\.(mp3|wav|m4a)$/.test(name)) return "audio";
+    return null;
+}
+
 export function DeliverySection({ orderId, deliveries, variant, canSubmit }: DeliverySectionProps) {
     const [trackedFiles, setTrackedFiles] = useState<TrackedFile[]>([]);
     const [message, setMessage] = useState("");
@@ -45,12 +59,40 @@ export function DeliverySection({ orderId, deliveries, variant, canSubmit }: Del
     const [error, setError] = useState<string | null>(null);
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
+    const [previewFile, setPreviewFile] = useState<DeliveryFile | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewLoading, setPreviewLoading] = useState(false);
 
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    async function openPreview(file: DeliveryFile) {
+        console.log("[PREVIEW FILE]:", file);
+        setPreviewFile(file);
+        setPreviewUrl(null);
+        setPreviewLoading(true);
+        try {
+            const res = await fetch(`/api/orders/${orderId}/deliveries/download-url?fileId=${file.id}&disposition=inline`);
+            if (!res.ok) throw new Error("Failed to load preview");
+            const resData = await res.json();
+            const data = resData.data ? resData.data : resData;
+            setPreviewUrl(data.downloadUrl);
+            console.log("[PREVIEW URL SET]:", data.downloadUrl, "kind:", getPreviewKind(file.fileType, file.fileName));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to load preview");
+            setPreviewFile(null);
+        } finally {
+            setPreviewLoading(false);
+        }
+    }
+    function closePreview() {
+        setPreviewFile(null);
+        setPreviewUrl(null);
+    }
+
     
     function formatSize(bytes: number | string) {
         const numericBytes = typeof bytes === "string" ? Number(bytes) : bytes;
@@ -239,10 +281,10 @@ export function DeliverySection({ orderId, deliveries, variant, canSubmit }: Del
                                                 <span className="text-muted-foreground">Waiting</span>
                                             )}
                                             {tf.status === "uploading" && (
-                                                <span className="w-4 h-4 animate-spin text-muted-foreground">Waiting</span>
+                                                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                                             )}
                                             {tf.status === "done" && (
-                                                <span className="w-4 h-4 text-green-500">Waiting</span>
+                                                <CheckCircle className="w-4 h-4 text-green-500" />
                                             )}
                                             {tf.status === "error" && (
                                                 <XCircle className="w-4 h-4 text-red-500"/>
@@ -283,41 +325,101 @@ export function DeliverySection({ orderId, deliveries, variant, canSubmit }: Del
                             <p className="text-xs text-muted-foreground">
                                 {new Date(delivery.createdAt).toLocaleString("en-NG", { timeZone: "Africa/Lagos" })}
                             </p>
-                            {delivery.files.map((file) => (
-                                <div
-                                    key={file.id}
-                                    className="flex justify-between items-center text-sm border rounded-sm px-2 py-1"
-                                >
-                                    <span className="truncate">{file.fileName}</span>
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        <span className="text-xs text-muted-foreground">
-                                            {formatSize(file.fileSize)}
-                                        </span>
-                                        <Button
-                                            variant="outline"
-                                            className="w-fit cursor-pointer"
-                                            size="sm"
-                                            onClick={() => handleDownload(file.id, file.fileName)}
-                                            disabled={mounted && Boolean(downloadingId === file.id)}
-                                        >
-                                            {downloadingId === file.id ? (
-                                                <Loader2 className="w-3.5 h-3.5 animate-spin"/>
-                                            ) : (
-                                                <span className="flex items-center gap-1">
-                                                    <Download className="w-3.5 h-3.5"/>
-                                                    Download
-                                                </span>
+                            {delivery.files.map((file) => {
+                                const previewKind = getPreviewKind(file.fileType, file.fileName);
+                                return (
+                                    <div
+                                        key={file.id}
+                                        className="flex justify-between items-center text-sm border rounded-sm px-2 py-1"
+                                    >
+                                        <span className="truncate">{file.fileName}</span>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <span className="text-xs text-muted-foreground">
+                                                {formatSize(file.fileSize)}
+                                            </span>
+                                            {previewKind && (
+                                                <Button
+                                                    variant="outline"
+                                                    className="w-fit cursor-pointer"
+                                                    size="sm"
+                                                    onClick={() => openPreview(file)}
+                                                >
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                </Button>
                                             )}
-                                        </Button>
+                                            <Button
+                                                variant="outline"
+                                                className="w-fit cursor-pointer"
+                                                size="sm"
+                                                onClick={() => handleDownload(file.id, file.fileName)}
+                                                disabled={mounted && Boolean(downloadingId === file.id)}
+                                            >
+                                                {downloadingId === file.id ? (
+                                                    <Loader2 className="w-3.5 h-3.5 animate-spin"/>
+                                                ) : (
+                                                    <span className="flex items-center gap-1">
+                                                        <Download className="w-3.5 h-3.5"/>
+                                                        Download
+                                                    </span>
+                                                )}
+                                            </Button>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                )}
+                            )}
                             {delivery.message && (
                                 <p className="text-sm text-muted-foreground">{delivery.message}</p>
                             )}
                         </li>
                     ))}
                 </ul>
+            )}
+
+            {previewFile && (
+                <div 
+                    className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+                    onClick={closePreview}
+                >
+                    <button
+                        onClick={closePreview}
+                        className="absolute top-4 right-4 text-white hover:text-slate-300"
+                        aria-label="Close preview"
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+                    <div onClick={(e) => e.stopPropagation()} className="max-w-3xl w-full max-h-[85vh] flex items-center justify-center">
+                        {previewLoading && (
+                            <Loader2 className="w-8 h-8 text-white animate-spin" />
+                        )}
+
+                        {!previewLoading && previewUrl && (
+                            <>
+                                {getPreviewKind(previewFile.fileType, previewFile.fileName) === "image" && (
+                                    <Zoom>
+                                        <div className="relative w-full max-h-[80vh] aspect-video">
+                                            <Image
+                                                src={previewUrl}
+                                                alt={previewFile.fileName}
+                                                fill
+                                                className="object-contain rounded"
+                                                unoptimized
+                                            />
+                                        </div>
+                                    </Zoom>
+                                )}
+                                {getPreviewKind(previewFile.fileType, previewFile.fileName) === "video" && (
+                                    <video src={previewUrl} controls autoPlay className="max-w-full max-h-[80vh] rounded" />
+                                )}
+                                {getPreviewKind(previewFile.fileType, previewFile.fileName) === "audio" && (
+                                    <div className="bg-slate-900 rounded-lg p-6 w-full max-w-md">
+                                        <p className="text-white text-sm mb-3 truncate">{previewFile.fileName}</p>
+                                        <audio src={previewUrl} controls autoPlay className="w-full" />
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
             )}
         </div>
     )

@@ -5,28 +5,32 @@ export async function GET(
     request: Request
 ) {
     try {
-        const { searchParams } = new URL(request.url) 
+        const { searchParams } = new URL(request.url);
         const fileId = searchParams.get("fileId");
+        const disposition = searchParams.get("disposition");
 
         if (!fileId) {
             return NextResponse.json({ error: "fileId is required" }, { status: 400 });
         }
 
-        const backendRes = await proxyFetchRoute(request, `/api/orders/deliveries/${fileId}/download-url`, {
+        const qs = disposition ? `?disposition=${disposition}` : "";
+
+        const backendRes = await proxyFetchRoute(request, `/api/orders/deliveries/${fileId}/download-url${qs}`, {
             method: "GET"
         });
 
         if (!backendRes.ok) {
-            const errorData = await backendRes.json().catch(() => ({}))
+            const errorData = await backendRes.json().catch(() => ({}));
             return NextResponse.json(
-                {  error: errorData.message || "Failed to get download URL" }, 
-                { status: backendRes.status })
+                { error: errorData.message || "Failed to get download URL" },
+                { status: backendRes.status }
+            );
         }
 
         const data = await backendRes.json();
         return NextResponse.json(data);
     } catch (err) {
         console.log("[BFF DOWNLOAD URL]:", err);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }

@@ -42,6 +42,7 @@ export default function BasicsGigPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [selectedSubCategoryId, SetSelectedSubCategoryId] = useState<string>("");
   const [deliveryMode, SetDeliveryMode] = useState<"DIGITAL" | "LIVE">("DIGITAL");
+  const [showAvailabilityPrompt, setShowAvailabilityPrompt] = useState(false);
 
   const [mounted, setMounted] = useState(false);
 
@@ -72,12 +73,23 @@ export default function BasicsGigPage() {
   const handleSubmit = async () => {
     setError(null);
 
-
     if(!title.trim()) return setError("Title is required.");
     if(!selectedSubCategoryId) return setError("Please select a category and subcategory.");
 
     setIsSubmitting(true);
     try {
+      if (isTutoringCategory && deliveryMode === "LIVE") {
+        const availRes = await fetch("/api/seller/availability");
+        if (availRes.ok) {
+            const { data } = await availRes.json();
+            const hasAvailability = Array.isArray(data) && data.length > 0;
+            if (!hasAvailability) {
+                setShowAvailabilityPrompt(true);
+                setIsSubmitting(false);
+                return;
+            }
+        }
+      }
       const res = await fetch("/api/gig/draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -280,6 +292,31 @@ export default function BasicsGigPage() {
             <p className="text-[11px] text-muted-foreground/70 mt-1.6">5 tags maximum. Use letters and numbers only.</p>
           </div>
         </div>
+        {showAvailabilityPrompt && (
+          <div className="border border-amber-300 bg-amber-50 text-amber-900 rounded-xs p-4 flex flex-col gap-2 text-xs">
+            <p className="font-medium">Set your availability first</p>
+            <p className="text-amber-800">
+                Live tutoring gigs need your availability configured so buyers can book real time slots.
+            </p>
+            <div className="flex gap-2 mt-1">
+                <Button
+                    size="sm"
+                    className="rounded-xs text-xs cursor-pointer"
+                    onClick={() => router.push("/settings?tab=availability")}
+                >
+                    Go to Settings
+                </Button>
+                <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-xs text-xs cursor-pointer"
+                    onClick={() => setShowAvailabilityPrompt(false)}
+                >
+                    Dismiss
+                </Button>
+            </div>
+        </div>
+        )}
         {error && <p className="text-xs text-destructive px-5 font-medium pt-2">{error}</p>}
         <div className="flex justify-end pr-4 border-t border-border/40">
           <Button onClick={handleSubmit} disabled={isSubmitting} className="rounded-xs mt-2.5 font-medium text-xs px-5 cursor-pointer">

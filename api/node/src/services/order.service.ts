@@ -335,13 +335,22 @@ export class OrderService {
         console.error(`[OnOrderCompletion]: Failed to trigger ranking recalculation for gig ${result.order.gigId}:`, err)
     );
 
-    return result;
+    // Notify seller
+    const payoutAmountInNaira = Math.round(result.order.totalPrice * (1 - 0.10) * 100) / 100;
+    NotificationService.notifyPaymentReceived(
+        result.order.gig.seller.userId,
+        result.order.id,
+        payoutAmountInNaira
+    ).catch(err => console.error("[notify] payment received failed", err));
 
+
+    return result;
     }
 
     static async requestOrderRevisison(orderId: string, buyerId: string) {
         const order = await prisma.order.findUnique({
-            where: { id: orderId }
+            where: { id: orderId },
+            include: { gig: { include: { seller: true } } }
         });
 
         if(!order) throw new Error("Order not found");
@@ -352,14 +361,19 @@ export class OrderService {
         if(order.status !== "DELIVERED") throw new Error("Only Delivered can be review be requested on.");
         if (order.buyerId !== buyerId) throw new Error("Unauthorized. Only the buyer can request for revision.");
         
-        return await prisma.order.update({
+        const updated = await prisma.order.update({
             where: { id: orderId },
             data: { 
                 status: "ACTIVE",
                 updatedAt: new Date()
             }
         });
-        
+
+        NotificationService.notifyRevisionRequested(order.gig.seller.userId, orderId).catch(err =>
+            console.error("[notify] revision requested failed", err)
+        );
+
+        return updated;
     }
 
     static async getOrder(orderId: string, userId: string): Promise<any> {

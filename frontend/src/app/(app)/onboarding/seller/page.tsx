@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,16 +30,15 @@ export default function SellerOnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setIsSubmitting(true);
+  async function handleSubmit() {
     setError(undefined);
-
+    
     if (!accountBank) {
       setBankError("Please select a valid bank from the suggestions dropdown.");
       return;
     }
-
+    
+    setIsSubmitting(true);
     try {
       const res = await fetch("/api/seller/onboard", {
         method: "POST",
@@ -79,113 +78,166 @@ export default function SellerOnboardingPage() {
   const isFormInvalid =
     !name.trim() ||
     !bio.trim() ||
-    accountNumber.length < 10 || // NUBAN accounts are exactly 10 digits
+    accountNumber.length !== 10|| // NUBAN accounts are exactly 10 digits
     !accountBank ||
     !skills.trim() ||
+    !isChecked ||
     isSubmitting;
 
   return (
-    <div className="h-full flex flex-row sm:flex-col gap-7.5 max-w-md mx-auto py-16 px-4">
-      <div className="flex flex-col">
-        <h1 className="text-3xl font-bold mb-1 text-center">Become a seller</h1>
-        <p className="text-xs font-normal mb-1 text-center">
-          Tell us a bit about what you do.
+    <div className="flex flex-col w-full max-w-5xl mx-auto pb-12">
+      {/* Page Header */}
+      <div className="p-4 sm:p-5 min-w-0">
+        <h1 className="text-2xl font-bold text-foreground">Become a seller</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Tell us a bit about what you do so buyers can get to know you.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="h-full flex flex-col gap-4">
-        <div className="group flex flex-col rounded-xl border border-muted-foreground/20 bg-background/50 p-3 shadow-sm transition-all duration-200 focus-within:border-foreground focus-within:ring-1 focus-within:ring-foreground">
-          <Label className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase transition-colors group-focus-within:text-foreground">
-            Display Name
-          </Label>
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="h-auto border-0 p-0 pt-1 text-sm bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-            placeholder="e.g. Alex Rivera"
-          />
+      <div className="text-muted-foreground bg-card border border-border rounded-xs flex flex-col gap-6 m-4 sm:m-5 p-4 sm:p-6 shadow-xs min-w-0">
+        
+        {/* DISPLAY NAME SECTION */}
+        <div className="flex flex-col md:flex-row gap-3 md:gap-6 min-w-0 w-full">
+          <div className="flex flex-col w-full md:w-[280px] shrink-0">
+            <span className="font-semibold text-foreground text-sm">Display Name</span>
+            <div className="text-xs text-muted-foreground mt-1">
+              Your public seller name.{" "}
+              <span className="font-medium text-foreground/80">
+                This is how you will appear to buyers across the marketplace.
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="rounded-xs text-xs w-full bg-background"
+              placeholder="e.g. Alex Rivera"
+            />
+          </div>
         </div>
 
-        <div className="group flex flex-col rounded-xl border border-muted-foreground/20 bg-background/50 p-3 shadow-sm transition-all duration-200 focus-within:border-foreground focus-within:ring-1 focus-within:ring-foreground">
-          <Label className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase transition-colors group-focus-within:text-foreground">
-            Bio
-          </Label>
-          <Textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            required
-            className="h-auto border-0 p-0 pt-1 text-sm bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-            placeholder="e.g. I focus on..."
-          />
+        <hr className="border-border/60" />
+
+        {/* BIO SECTION */}
+        <div className="flex flex-col md:flex-row gap-3 md:gap-6 min-w-0 w-full">
+          <div className="flex flex-col w-full md:w-[280px] shrink-0">
+            <span className="font-semibold text-foreground text-sm">Biography</span>
+            <div className="text-xs text-muted-foreground mt-1">
+              Share your experience and expertise. Keep it professional and punchy.
+            </div>
+          </div>
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
+            <Textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              required
+              className="rounded-xs text-xs h-24 min-h-24 max-h-24 resize-none w-full bg-background"
+              placeholder="e.g. I offer professional DaVinci Resolve editing and custom full-stack web development..."
+            />
+          </div>
         </div>
 
-        <div className="group flex flex-col rounded-xl border border-muted-foreground/20 bg-background/50 p-3 shadow-sm transition-all duration-200 focus-within:border-foreground focus-within:ring-1 focus-within:ring-foreground">
-          <Label className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase transition-colors group-focus-within:text-foreground">
-            Account Number
-          </Label>
-          <Input
-            type="text"
-            inputMode="numeric"
-            maxLength={10}
-            pattern="[0-9]*"
-            value={accountNumber}
-            onChange={(e) => {
-              const cleanValue = e.target.value.replace(/\D/g, "");
-              setAccountNumber(cleanValue);
-            }}
-            required
-            placeholder="0123456789"
-            className="h-auto border-0 p-0 pt-1 text-sm bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/30 font-medium"
-          />
+        <hr className="border-border/60" />
+
+        {/* FINANCIALS SECTION */}
+        <div className="flex flex-col md:flex-row gap-3 md:gap-6 min-w-0 w-full">
+          <div className="flex flex-col w-full md:w-[280px] shrink-0">
+            <span className="font-semibold text-foreground text-sm">Payout Details</span>
+            <div className="text-xs text-muted-foreground mt-1">
+              Where should we send your earnings? These details remain private.
+            </div>
+          </div>
+          <div className="flex flex-col gap-4 flex-1 min-w-0">
+            <div className="flex flex-col gap-1">
+              <span className="font-semibold text-xs text-foreground block mb-1">Account Number</span>
+              <Input
+                type="text"
+                inputMode="numeric"
+                maxLength={10}
+                pattern="[0-9]*"
+                value={accountNumber}
+                onChange={(e) => {
+                  const cleanValue = e.target.value.replace(/\D/g, "");
+                  setAccountNumber(cleanValue);
+                }}
+                required
+                placeholder="0123456789"
+                className="rounded-xs text-xs w-full bg-background font-medium"
+              />
+            </div>
+            
+            <div className="flex flex-col gap-1">
+              <span className="font-semibold text-xs text-foreground block mb-1">Bank Name</span>
+              <BankInput
+                inputValue={bankName}
+                onInputChange={setBankName}
+                onBankSelect={setAccountBank}
+                error={bankError}
+                onErrorChange={setBankError}
+              />
+            </div>
+          </div>
         </div>
 
-        <BankInput
-          inputValue={bankName}
-          onInputChange={setBankName}
-          onBankSelect={setAccountBank}
-          error={bankError}
-          onErrorChange={setBankError}
-        />
+        <hr className="border-border/60" />
 
-        <div className="group flex flex-col rounded-xl border border-muted-foreground/20 bg-background/50 p-3 shadow-sm transition-all duration-200 focus-within:border-foreground focus-within:ring-1 focus-within:ring-foreground">
-          <Label className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase transition-colors group-focus-within:text-foreground">
-            Skills (comma separated)
-          </Label>
-          <Input
-            type="text"
-            value={skills}
-            onChange={(e) => setSkills(e.target.value)}
-            placeholder="e.g. video editing, coding, voice acting"
-            required
-            /* 💡 Clean visual styling to match the premium container token */
-            className="h-auto border-0 p-0 pt-1 text-sm bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/30 font-medium"
-          />
+        {/* SKILLS SECTION */}
+        <div className="flex flex-col md:flex-row gap-3 md:gap-6 min-w-0 w-full">
+          <div className="flex flex-col w-full md:w-[280px] shrink-0">
+            <span className="font-semibold text-foreground text-sm">Top Skills</span>
+            <div className="text-xs text-muted-foreground mt-1">
+              List your strongest disciplines so we can match you with the right opportunities.
+            </div>
+          </div>
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
+            <span className="font-semibold text-xs text-foreground block mb-1">Skills (comma separated)</span>
+            <Input
+              type="text"
+              value={skills}
+              onChange={(e) => setSkills(e.target.value)}
+              placeholder="e.g. video editing, Next.js, 3D modeling"
+              required
+              className="rounded-xs text-xs w-full bg-background"
+            />
+          </div>
         </div>
 
-        {error && <span className="text-xs text-red-500">{error}</span>}
+        {/* ERROR STATE */}
+        {error && (
+          <p className="text-xs text-destructive px-5 font-medium pt-2">
+            {error}
+          </p>
+        )}
 
-        <section className="flex items-center gap-4">
-          <Input
-            required
-            className="h-4 w-4"
-            type="checkbox" 
-            value="" 
-            checked={isChecked}
-            onChange={(e) => setIsChecked(e.target.checked)}
-          />
-          <p>I agree to the Terms & Conditions and Privacy Policy</p>
-        </section>
+        {/* SUBMISSION FOOTER */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pr-4 pt-4 border-t border-border/40 gap-4">
+          <div className="flex items-center gap-2 pl-2">
+            <input
+              id="terms"
+              type="checkbox"
+              required
+              checked={isChecked}
+              onChange={(e) => setIsChecked(e.target.checked)}
+              className="h-4 w-4 rounded border-border text-foreground focus:ring-ring cursor-pointer accent-foreground"
+            />
+            <label htmlFor="terms" className="text-xs text-foreground cursor-pointer select-none">
+              I agree to the Terms & Conditions and Privacy Policy
+            </label>
+          </div>
+          
+          <Button
+            onClick={() => handleSubmit()}
+            disabled={isFormInvalid}
+            className="rounded-xs font-medium text-xs px-5 cursor-pointer w-full sm:w-auto"
+            suppressHydrationWarning
+          >
+            {isSubmitting ? "Saving..." : "Save & Continue"}
+          </Button>
+        </div>
 
-        <Button
-          type="submit"
-          className="cursor-pointer bg-foreground hover:bg-muted-foreground"
-          disabled={isFormInvalid}
-          suppressHydrationWarning
-        >
-          {isSubmitting ? "Setting up..." : "Continue to create your first gig"}
-        </Button>
-      </form>
+      </div>
     </div>
   );
 }

@@ -56,7 +56,7 @@ export class DeliveryService {
             throw err
         }
     }
-    static async getDownloadUrl(fileId: string, userId: string): Promise<any> {
+    static async getDownloadUrl(fileId: string, userId: string, disposition: "inline" | "attachment" = "attachment"): Promise<any> {
         try {
             const file = await prisma.deliveryFile.findUnique({
                 where: { id: fileId },
@@ -68,10 +68,17 @@ export class DeliveryService {
             const isParty = order?.buyerId === userId || order?.seller.userId === userId;
             if(!isParty) throw new Error("Not authorized");
 
+            function buildContentDisposition(disposition: "inline" | "attachment", fileName: string): string {
+                const asciiFallback = fileName.replace(/[^\x20-\x7E]/g, "_");
+                const encoded = encodeURIComponent(fileName);
+
+                return `${disposition}; filename="${asciiFallback}"; filename*=UTF-8''${encoded}`;
+            }
+            
             const command = new GetObjectCommand({
                 Bucket: process.env.R2_BUCKET_NAME,
                 Key: file.fileKey,
-                ResponseContentDisposition: `attachment; filename=${file.fileName}`,
+                ResponseContentDisposition: buildContentDisposition(disposition, file.fileName),
             })
             
             const url = await getSignedUrl(r2Client, command, { expiresIn: 300 });

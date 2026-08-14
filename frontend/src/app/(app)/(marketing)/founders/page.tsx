@@ -27,7 +27,7 @@ export default async function FoundersPage() {
                 }
             </p>
             {!soldOut && (
-                <Button>
+                <Button className="rounded-sm">
                     Get Founders Badge
                 </Button>
             )}

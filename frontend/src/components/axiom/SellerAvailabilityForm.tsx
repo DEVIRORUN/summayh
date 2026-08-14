@@ -96,7 +96,7 @@ export default function SellerAvailabilityForm() {
         try {
             const res = await fetch("/api/seller/availability", {
                 method: "PATCH",
-                headers: { "ContentType": "application/json" },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ availability: payload }),
             });
             if (!res.ok) {

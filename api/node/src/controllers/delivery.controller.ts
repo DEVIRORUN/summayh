@@ -64,13 +64,14 @@ export class DeliveryController {
         try {
             console.log("[DOWNLOAD-URL]: Hit!!!");
             const userId = (req as any).userId;
+            const disposition = req.query.disposition === "inline" ? "inline" : "attachment";
             const { fileId } = req.params;
 
             if (!fileId) {
                 return res.status(400).json({ message: "fileId is required." })
             }
 
-            const result = await DeliveryService.getDownloadUrl(fileId as string, userId);
+            const result = await DeliveryService.getDownloadUrl(fileId as string, userId, disposition);
 
             console.log("[DOWNLOAD-URL]: Succesful!!!");
             return res.status(200).json({

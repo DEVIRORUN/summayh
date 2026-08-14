@@ -17,7 +17,7 @@ export async function proxyFetchRoute(
     }
 
     const url = `${process.env.NODE_API_URL}${path.startsWith("/") ? path : `/${path}`}`;
-
+    console.log("[PROXY FETCH URL]:", url);
     return fetch(url, {
         cache: "no-store",
         ...options,

@@ -162,4 +162,13 @@ export class NotificationService {
             link: `/session/${bookingId}`,
         });
     }
+    static async notifyRevisionRequested(sellerUserId: string, orderId: string) {
+        return this.notify({
+            userId: sellerUserId,
+            type: "MESSAGE_RECEIVED", // reuse closest existing type, or add REVISION_REQUESTED to your enum if you prefer a distinct one
+            title: "Revision requested",
+            body: "The buyer requested changes to your delivery. Log in to review their feedback and resubmit.",
+            link: `/orders/${orderId}`,
+        });
+    }
 }
