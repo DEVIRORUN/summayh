@@ -107,7 +107,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
                 {isLive ? (
                     <LiveSessionSection order={order} nextBooking={nextBooking} pastBookings={pastBookings} isBuyer={isBuyer} />
                 ) : (
-                    <DeliverySection orderId={order.id} deliveries={order.orderDeliveries ?? []} variant={isBuyer ? "buyer" : "seller"} canSubmit={!isBuyer && (order.status === "ACTIVE" || order.status === "REVISION_REQUESTED")} />
+                    <DeliverySection 
+                        orderId={order.id} 
+                        deliveries={order.orderDeliveries ?? []} 
+                        variant={isBuyer ? "buyer" : "seller"} 
+                        canSubmit={!isBuyer && (order.status === "ACTIVE" || order.status === "REVISION_REQUESTED")} 
+                        orderStatus={order.status}/>
                 )}
             </div>
             

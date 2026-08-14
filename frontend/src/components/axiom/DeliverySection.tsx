@@ -51,7 +51,7 @@ function getPreviewKind(fileType?: string, fileName?: string): "image" | "video"
     return null;
 }
 
-export function DeliverySection({ orderId, deliveries, variant, canSubmit }: DeliverySectionProps) {
+export function DeliverySection({ orderId, deliveries, variant, canSubmit, orderStatus  }: DeliverySectionProps) {
     const [trackedFiles, setTrackedFiles] = useState<TrackedFile[]>([]);
     const [message, setMessage] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -227,6 +227,8 @@ export function DeliverySection({ orderId, deliveries, variant, canSubmit }: Del
         }
     }
 
+    const downloadsDisabled = variant === "buyer" && orderStatus === "REVISION_REQUESTED";
+
     return (
         <div className="w-full border rounded-md p-4 flex flex-col gap-4">
             <h3 className="text-sm font-medium">Deliveries</h3>
@@ -349,10 +351,11 @@ export function DeliverySection({ orderId, deliveries, variant, canSubmit }: Del
                                             )}
                                             <Button
                                                 variant="outline"
-                                                className="w-fit cursor-pointer"
+                                                className="w-fit cursor-pointer disabled:cursor-not-allowed"
                                                 size="sm"
                                                 onClick={() => handleDownload(file.id, file.fileName)}
-                                                disabled={mounted && Boolean(downloadingId === file.id)}
+                                                disabled={mounted && Boolean(downloadingId === file.id || downloadsDisabled)}
+                                                title={downloadsDisabled ? "Downloads are paused while a revision is requested" : undefined}
                                             >
                                                 {downloadingId === file.id ? (
                                                     <Loader2 className="w-3.5 h-3.5 animate-spin"/>

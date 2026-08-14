@@ -1,5 +1,7 @@
 import { MetadataRoute } from "next";
 
+export const dynamic = "force-dynamic";
+
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://summayh.com";
 
 // Adjust these fetches to match your actual backend endpoints.

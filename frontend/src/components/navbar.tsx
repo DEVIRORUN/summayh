@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 export function Navbar() {
     const { user, isLoading, logout } = useAuth();
     const { toggle } = useSidebar();
-    const router = useRouter
+    const router = useRouter();
 
     async function handleLogout() {
         await logout();
