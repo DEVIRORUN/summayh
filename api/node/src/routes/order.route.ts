@@ -4,6 +4,7 @@ import { protectRoute } from "../middleware/auth";
 import { requireSeller } from "../middleware/isSeller";
 import { DeliveryController } from "../controllers/delivery.controller"; 
 import { OrderService } from "../services/order.service";
+import { requireEmailVerified } from "../middleware/requireEmailVerified";
 
 const router = Router();
 
@@ -48,7 +49,7 @@ const router = Router();
  *       500:
  *         description: Internal server error
  */
-router.post("/create", protectRoute, OrderController.createOrder);
+router.post("/create", protectRoute, requireEmailVerified, OrderController.createOrder);
 
 /**
  * @openapi

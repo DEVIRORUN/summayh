@@ -13,6 +13,7 @@ interface User {
     isPro: boolean;
     founderBadge: boolean;
     proSource: ProSource | null;
+    isEmailVerified: boolean
 }
 
 interface AuthContextValue {

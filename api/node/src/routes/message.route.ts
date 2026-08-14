@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { MessageController } from "../controllers/message.controller";
 import { protectRoute } from "../middleware/auth";
+import { requireEmailVerified } from "../middleware/requireEmailVerified";
 
 const router = Router();
 

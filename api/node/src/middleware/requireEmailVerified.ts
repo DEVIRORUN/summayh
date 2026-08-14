@@ -23,10 +23,6 @@ export async function requireEmailVerified(
     res: Response,
     next: NextFunction
 ): Promise<any> {
-    if (EXEMPT_PREFIXES.some((prefix) => req.path.startsWith(prefix))) {
-        return next();
-    }
-
     const token = req.cookies?.token;
     if (!token) {
         return next();

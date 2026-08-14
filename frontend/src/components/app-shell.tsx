@@ -1,11 +1,15 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
 import { BottomNavbar } from "@/components/bottom-navbar";
 import type { CategoryNode } from "@/types/category"
-import React from "react";
+import React, { useEffect } from "react";
+import { useAuth } from "@/contexts/auth-context";
+
+
+const EXEMPT_PATHS = ["/verify-email", "login", "singup"]
 
 export function AppShell({
     categories,
@@ -15,7 +19,19 @@ export function AppShell({
     children: React.ReactNode
 }) {
     const pathname  = usePathname();
+    const router = useRouter();
+    const { user, isLoading } = useAuth();
     const hideCategorySidebar = pathname.startsWith("/dashboard");
+
+    // useEffect(() => {
+    //     if (isLoading) return;
+    //     if (!user) return;
+    //     if (EXEMPT_PATHS.some((p) => pathname.startsWith(p))) return;
+
+    //     if (!user.isEmailVerified) {
+    //         router.push("verify-email")
+    //     }
+    // }, [isLoading, user, pathname, router])
 
     return (
         <div className="flex flex-col h-dvh w-full bg-background">

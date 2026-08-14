@@ -6,7 +6,8 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 import { CircleCheck, CircleX, Eye, EyeOff } from "lucide-react";
-import { isSchoolDomainValid, SchoolEmailInput } from "./SchoolEmalInput";
+import { EmailInput } from "./EmalInput";
+import { isValidEmail } from "@/lib/email";
 
 type AuthMode = "login" | "signup";
 
@@ -16,6 +17,8 @@ interface AuthFormProps {
     name?: string;
     email: string;
     password: string;
+    dateOfBirth?: string;
+    phoneNumber?: string;
   }) => void;
   isSubmitting?: boolean;
   error?: string; // SS errors bruh
@@ -30,6 +33,8 @@ export function AuthForm({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [emailValidationError, setEmailValidationError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -52,14 +57,14 @@ export function AuthForm({
     e.preventDefault();
     setEmailValidationError(null)
     
-    if (isSignup && !isSchoolDomainValid(email)) {
+    if (!isValidEmail(email)) {
         setEmailValidationError(
-            "Please use your school email address (e.g. yourname@unilag.edu.ng). If your school isn't listed, contact support."
+            "Please enter a valid email address."
         );
         return;    
     }
 
-    onSubmit(isSignup ? { name, email, password } : { email, password });
+    onSubmit(isSignup ? { name, email, password, dateOfBirth, phoneNumber } : { email, password });
   }
 
   return (
@@ -78,14 +83,41 @@ export function AuthForm({
       )}
 
       <div className="flex flex-col gap-1.5 w-full min-w-0">
-        <SchoolEmailInput
+        <EmailInput
             value={email}
             onChange={setEmail}
             error={emailValidationError}
             onErrorChange={setEmailValidationError}
-            onSchoolSelected={() => passwordRef.current?.focus()}
+            // onSchoolSelected={() => passwordRef.current?.focus()}
         />
       </div>
+
+      {isSignup && (
+        <>
+          <div className="flex flex-col gap-1.5 w-full">
+            <Label className="text-xs font-medium text-foreground">Date of birth</Label>
+            <Input
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+              required
+              className="text-sm bg-background border-input text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5 w-full">
+            <Label className="text-xs font-medium text-foreground">Phone number</Label>
+            <Input
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+2348012345678"
+              required
+              className="text-sm bg-background border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0"
+            />
+          </div>
+        </>
+      )}
 
       <div className="flex flex-col gap-1.5  w-full">
         <Label htmlFor="password" className="text-xs font-medium text-foreground">

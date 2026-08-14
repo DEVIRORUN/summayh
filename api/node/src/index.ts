@@ -237,7 +237,7 @@ const io = new Server(server, {
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Covers it all to check emial first
-app.use(requireEmailVerified);
+// app.use(requireEmailVerified);
 
 // Mount our routes
 app.use("/api/auth", authRoutes);

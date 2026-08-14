@@ -2,6 +2,7 @@ import { Router } from "express"
 import { SellerController } from "../controllers/seller.controller"
 import { protectRoute } from "../middleware/auth"
 import { requireSeller } from "../middleware/isSeller";
+import { requireEmailVerified } from "../middleware/requireEmailVerified";
 
 const router = Router();
 
@@ -55,7 +56,7 @@ router.get("/banks", SellerController.listBanks);
  *       404:
  *         description: Seller profile not found
  */
-router.post("/onboard", protectRoute, SellerController.onboardSeller);
+router.post("/onboard", protectRoute, requireEmailVerified, SellerController.onboardSeller);
 
 /**
  * @openapi
