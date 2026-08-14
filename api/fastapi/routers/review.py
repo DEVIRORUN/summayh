@@ -19,7 +19,7 @@ class SpamCheckRequest(BaseModel):
 @router.post("/spam-check")
 async def spam_check(payload: SpamCheckRequest, background_tasks: BackgroundTasks): #bgtasks runs process_spam_check() separately in bg / a way to run a function after a response is sent
     background_tasks.add_task(process_spam_check, payload.reviewId) # same as fire and forget .catch() for process_spam_check(payload.reviewId) to run afer this func returns
-    return { "message": "Spam check queued", "reviewId": payload.reviewId } # This is teh ine that returns the 200 immidiately that it went through
+    return { "message": "Spam check queued", "reviewId": payload.reviewId } # This is the ine that returns the 200 immidiately that it went through
 
 async def process_spam_check(review_id: str):
     conn = None
@@ -47,7 +47,7 @@ async def process_spam_check(review_id: str):
         now = datetime.now(timezone.utc)
         if user_created_at.tzinfo is None:
             user_created_at = user_created_at.replace(tzinfo=timezone.utc)
-        account_age_days = (now - user_created_at).days # we wanna get teh account's age in days
+        account_age_days = (now - user_created_at).days # we wanna get the account's age in days
 
         logger.info(f"[Review] Fetched reviewer context: account_age={account_age_days}d, recent_reviews={int(recent_reviews)}")
 

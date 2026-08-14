@@ -1,5 +1,8 @@
 // api/node/src/index.ts
 import "dotenv/config";
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET is not set");
+}
 import './workers/call.worker'; // just importing starts it listening
 import './workers/proSubscription.worker'; // just importing starts it listening
 import swaggerUi from "swagger-ui-express";
@@ -8,8 +11,10 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import http from "http";
+import helmet from "helmet";
 import { Server } from "socket.io"
 import { initSocket } from "./socket"
+import { requireEmailVerified } from "./middleware/requireEmailVerified";
 
 
 import notificationRoutes from "./routes/notification.route";
@@ -38,6 +43,7 @@ import proSubscriptionRoutes from './routes/proSubscription.route';
 import livekitWebhookRouter from "./routes/livekitWebhook.route";
 
 const app = express();
+app.use(helmet());
 const PORT = process.env.PORT || 3001;
 
 app.use(
@@ -225,10 +231,13 @@ const swaggerSpec = swaggerJsdoc({
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: process.env.FRONTEND_URL, credentials: true }
+  cors: { origin: process.env.FRONTEND_URL || "http://localhost:3000", credentials: true }
 });
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Covers it all to check emial first
+app.use(requireEmailVerified);
 
 // Mount our routes
 app.use("/api/auth", authRoutes);

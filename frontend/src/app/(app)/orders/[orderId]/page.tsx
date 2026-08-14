@@ -26,6 +26,25 @@ function mapOrderStatusToSteps(status: string): TimelineStep[] {
     }))
 }
 
+function getNextBooking(bookings: any[] | undefined) {
+    const now = Date.now();
+    return bookings
+        ?.filter((b: any) => b.status === "SCHEDULED" && new Date(b.scheduledEnd).getTime() > now)
+        ?.sort((a: any, b: any) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime())
+        ?.[0];
+}
+
+function getPastBookings(bookings: any[] | undefined) {
+    const now = Date.now();
+    return bookings
+        ?.filter((b: any) => 
+            b.status === "COMPLETED" ||
+            b.status === "CANCELLED" ||
+            new Date(b.scheduledEnd).getTime() <= now
+        )
+        ?.sort((a: any, b: any) => new Date(b.scheduledStart).getTime() - new Date(a.scheduledStart).getTime())
+        ?? [];
+}
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ orderId: string }> }) {
     const { orderId } =  await params;
@@ -42,28 +61,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
     const isBuyer = order?.buyer.id === currentUser?.id;
     const otherUserId = isBuyer ? order?.seller.user.id : order?.buyer.id;
     const isLive = order.gig.deliveryMode === "LIVE";
-
-    function getNextBooking(bookings: any[] | undefined) {
-        const now = Date.now();
-        return bookings
-            ?.filter((b: any) => b.status === "SCHEDULED" && new Date(b.scheduledEnd).getTime() > now)
-            ?.sort((a: any, b: any) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime())
-            ?.[0];
-    }
-
-    function getPastBookings(bookings: any[] | undefined) {
-        const now = Date.now();
-        return bookings
-            ?.filter((b: any) => 
-                b.status === "COMPLETED" ||
-                b.status === "CANCELLED" ||
-                new Date(b.scheduledEnd).getTime() <= now
-            )
-            ?.sort((a: any, b: any) => new Date(b.scheduledStart).getTime() - new Date(a.scheduledStart).getTime())
-            ?? [];
-    }
-
-
+    
     function handleSendMessage() {
         console.log("Sending message")
     }

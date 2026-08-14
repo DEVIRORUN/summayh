@@ -50,7 +50,7 @@ export class OrderController {
             // First, we get the delivery state of the Order
             const { completedOrder } = await OrderService.acceptOrderDelivery(orderId, buyerId);
 
-            // Then, query teh db for notification params to ensure relatiosn exist
+            // Then, query the db for notification params to ensure relatiosn exist
             const detailedOrder = await prisma.order.findUnique({
                 where: { id: orderId },
                 include: {

@@ -69,7 +69,7 @@ export function ChatSection({ messagePage, otherUserId, conversationId: initialC
                 return;
             }
 
-            if (!otherUserId) {
+            if (!otherUserId || otherUserId === currentUserId) {
                 setIsLoading(false);
                 return;
             };

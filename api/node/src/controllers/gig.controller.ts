@@ -14,7 +14,7 @@ export class GigController {
       if (!title || !categoryId) {
         return res.status(400).json({
           message:
-            "Please type in title and select category form teh options above.",
+            "Please type in title and select category form the options above.",
         });
       }
 
@@ -568,7 +568,7 @@ console.log("[GET UPLAOD URL]: SUCCESSFUL!!!");
       if (!gigId) {
         return res.status(400).json({
           message:
-            "Bro input teh gigId plaese, let's test this stuff real quick now",
+            "Bro input the gigId plaese, let's test this stuff real quick now",
         });
       }
 

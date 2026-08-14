@@ -43,7 +43,16 @@ export class EmailOtpService {
         if (new Date() > record.expiresAt) {
             return { success: false, message: "This OTP has expired, request a new one." };
         }
+
+        if (record.failedAttempts >= 5) {
+            return { success: false, message: "Too many failed attempts. Request a new OTP" }
+        }
+
         if (record.otp !== otp) {
+            await prisma.oTPVerification.update({
+                where: { userId_channel: { userId, channel: "EMAIL" } },
+                data: { failedAttempts: { increment: 1 } },
+            });
             return { success: false, message: "Incorrect OTP." };
         }
 

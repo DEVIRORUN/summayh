@@ -36,7 +36,7 @@ async def search_gigs(payload: SearchRequest):
     extraction = await run_agentic_search(payload.query, filters)
     logger.info(f"[Search] Gemini extracted: skill='{extraction.get('extractedSkill')}', gigType={extraction.get('gigType')}, terms={extraction.get('searchTerms')}")
 
-    # Log teh agentic query-extraction decision - this is a live AI call on every search
+    # Log the agentic query-extraction decision - this is a live AI call on every search
     search_log_id = str(uuid.uuid4()) # search queries have no DB row of their own, so generate a synthetic entityId
     await log_agent_decision(
         agent_name="AGENTIC_SEARCH",
@@ -48,7 +48,7 @@ async def search_gigs(payload: SearchRequest):
         input_summary=payload.query[:150]
     )
 
-    # Generate teh query's own embedding once, reused for every Pro gig comparison
+    # Generate the query's own embedding once, reused for every Pro gig comparison
     try:
         query_embedding = await generate_embedding(payload.query)
     except Exception as e:

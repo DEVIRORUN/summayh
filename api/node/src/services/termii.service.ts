@@ -7,8 +7,7 @@ const SENDER_ID = process.env.TERMII_SENDER_ID!; // SUMMAYH (once approved, use 
 const OTP_EXPIRY_MINUTES = 10;
 
 export class TermiiService {
-  private static secretKey = process.env.PAYSTACK_SECRET_KEY;
-  // 1. SEND OTP
+  // SEND OTP
   static async sendOtp(phone: string, userId: string): Promise<any> {
     const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit
     const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
@@ -55,6 +54,10 @@ export class TermiiService {
       };
     }
     if (record.otp !== otp) {
+      await prisma.oTPVerification.update({
+        where: { userId_channel: { userId, channel: "PHONE" } },
+        data: { failedAttempts: { increment: 1 } }
+      })
       return { success: false, message: "Incorrect OTP." };
     }
 
@@ -70,7 +73,7 @@ export class TermiiService {
       }),
     ]);
 
-    return { success: true, message: "Phoen verified successfully." };
+    return { success: true, message: "Phone verified successfully." };
   }
 
   // 3. SEND SMS NOTIFICATION (for orders, alerts)
@@ -93,7 +96,7 @@ export class TermiiService {
   ): Promise<any> {
     await TermiiService.sendSms(
       phone,
-      `SUMMAYH: Your order for "${gigTitle}" has been placed. You'll be notified once teh seller confirms.`,
+      `SUMMAYH: Your order for "${gigTitle}" has been placed. You'll be notified once the seller confirms.`,
     );
   }
 
@@ -121,7 +124,7 @@ export class TermiiService {
     orderId: string,
   ): Promise<any> {
     try {
-      // 1. We fecth teh seller's number
+      // 1. We fecth the seller's number
       const seller = await prisma.sellerProfile.findUnique({
         where: { id: sellerId },
       });

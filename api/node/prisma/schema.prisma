@@ -283,7 +283,7 @@ model User {
   password           String
   name               String
   username           String?
-  university         String           @default("Unkown University")
+  university         String?           @default("Unkown University")
   dateOfBirth        DateTime?
   avatar             String?
   isOnline           Boolean?
@@ -811,6 +811,7 @@ model OTPVerification {
   expiresAt DateTime
   verified  Boolean    @default(false)
   createdAt DateTime   @default(now())
+  failedAttempts Int @default(0)
 
   user User @relation(fields: [userId], references: [id])
 

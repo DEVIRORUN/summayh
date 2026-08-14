@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { protectRoute } from "../middleware/auth";
+import { otpLimiter } from "../middleware/rateLimit";
 import { TermiiController } from "../controllers/termii.controller";
 
 const router = Router();
@@ -32,7 +33,7 @@ const router = Router();
  *       500:
  *         description: Failed to send OTP
  */
-router.post("/send", protectRoute, TermiiController.sendOtp);
+router.post("/send", protectRoute, otpLimiter, TermiiController.sendOtp);
 
 /**
  * @openapi
@@ -62,7 +63,7 @@ router.post("/send", protectRoute, TermiiController.sendOtp);
  *       500:
  *         description: Failed to verify OTP
  */
-router.post("/verify", protectRoute, TermiiController.verifyOtp);
+router.post("/verify", protectRoute, otpLimiter, TermiiController.verifyOtp);
 
 /**
  * @openapi

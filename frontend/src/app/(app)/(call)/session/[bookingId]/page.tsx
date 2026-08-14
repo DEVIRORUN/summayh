@@ -30,8 +30,10 @@ export default function CallSessionPage({
 
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
+    const remoteAudioRef = useRef<HTMLVideoElement>(null);
     const [status, setStatus] = useState("connecting");
     const [remoteTrack, setRemoteTrack] = useState<RemoteTrack | null>(null);
+    const [remoteAudioTrack, setRemoteAudioTrack] = useState<RemoteTrack | null>(null);
     const [room, setRoom] = useState<Room | null>(null);
     const [isEnlarged, setIsEnlarged] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
@@ -40,6 +42,8 @@ export default function CallSessionPage({
     const [connectionQuality, setConnectionQuality] = useState<ConnectionQuality>(ConnectionQuality.Unknown)
     const [viewMode, setViewMode] = useState<"BOARD" | "FILES">("BOARD");
     const [joinError, setJoinError] = useState<string | null>(null);
+    const [remoteSpeaking, setRemoteSpeaking] = useState(false);
+    const [isReconnecting, setIsReconnecting] = useState(false);
 
     useEffect(() => {
         if (!room) return;
@@ -50,24 +54,38 @@ export default function CallSessionPage({
         }
         if (remoteTrack && remoteVideoRef.current) {
             remoteTrack.attach(remoteVideoRef.current);
-            remoteVideoRef.current.muted = false;
-            remoteVideoRef.current.play().catch((err) => {
-                console.warn("Remote video autoplay blocked, needs user interaction:", err);
-            });
         }
-    }, [isEnlarged, isDesktop, room, remoteTrack])
+        if (remoteAudioTrack && remoteAudioRef.current) {
+            remoteAudioTrack.attach(remoteAudioRef.current);
+        }
+    }, [isEnlarged, isDesktop, room, remoteTrack, remoteAudioTrack])
 
     useEffect(() => {
         if (!room) return;
+        const onReconnecting = () => setIsReconnecting(true);
+        const onReconnected = () => setIsReconnecting(false);
+
+        function handleActiveSpeakers(speakers: Participant[]) {
+            const remoteIsSpeaking = speakers.some(p => p.identity !== room?.localParticipant.identity);
+            setRemoteSpeaking(remoteIsSpeaking);
+        }
 
         function handleQualityChanged(quality: ConnectionQuality, participant: Participant) {
             if (participant.identity === room!.localParticipant.identity) {
                 setConnectionQuality(quality);
             }
         }
-
+        
+        room.on(RoomEvent.Reconnecting, onReconnecting);
+        room.on(RoomEvent.Reconnected, onReconnected);
         room.on(RoomEvent.ConnectionQualityChanged, handleQualityChanged);
-        return () => { room.off(RoomEvent.ConnectionQualityChanged, handleQualityChanged); };
+        room.on(RoomEvent.ActiveSpeakersChanged, handleActiveSpeakers);
+        return () => { 
+            room.off(RoomEvent.ConnectionQualityChanged, handleQualityChanged); 
+            room.off(RoomEvent.ActiveSpeakersChanged, handleActiveSpeakers); 
+            room.off(RoomEvent.Reconnecting, onReconnecting);
+            room.off(RoomEvent.Reconnected, onReconnected);
+        };
     }, [room]);
 
     const isSellerForThisBooking = !!user && !!booking && user.id === booking?.callSession?.calleeId;
@@ -142,6 +160,7 @@ export default function CallSessionPage({
 
             newRoom.on(RoomEvent.TrackSubscribed, (track: RemoteTrack) => {
                 if (track.kind === Track.Kind.Video) setRemoteTrack(track);
+                if (track.kind === Track.Kind.Audio) setRemoteAudioTrack(track);
             })
 
             newRoom.on(RoomEvent.DataReceived, (payload) => {
@@ -240,6 +259,7 @@ export default function CallSessionPage({
     if (isDesktop) {
         return (
             <div className="flex h-full w-full min-h-0 min-w-0 p-4 gap-4 bg-slate-50">
+                <audio ref={remoteAudioRef} autoPlay />
                 <div className="flex flex-col min-h-0 min-w-0 border rounded-md relative flex-1">
                 <div className="flex gap-1 p-1 border-b border-border">
                     <Button onClick={() => setViewMode("BOARD")} className={cn("text-xs px-2 py-1 rounded-xs cursor-pointer", viewMode === "BOARD" && "bg-muted")}>Board</Button>
@@ -262,7 +282,7 @@ export default function CallSessionPage({
                         )}
                         <video ref={localVideoRef} autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover bg-black"/>
                     </div>
-                    <div className="flex-1 min-h-0 flex flex-col border rounded p-2 relative overflow-hidden">
+                    <div className={cn("flex-1 min-h-0 flex flex-col border rounded p-2 relative overflow-hidden", remoteSpeaking && "ring-2 ring-green-500")}>
                             <div className="shrink-0 relative z-10 px-1 py-0.5 flex items-center justify-between">
                                 <p className="text-xs font-medium text-white">You {status}</p>
                                 <ConnectionQualityBadge quality={connectionQuality} variant="pc"/>
@@ -275,8 +295,9 @@ export default function CallSessionPage({
     }
 
     if (!isEnlarged) {
-        return ( // FIXED: was missing this return entirely
+        return ( 
             <div className="flex flex-col bg-slate-50 h-full w-full min-h-0 p-3 gap-3">
+                <audio ref={remoteAudioRef} autoPlay />
                 <div className="flex-1 min-h-0 flex flex-col border rounded-lg p-2 relative overflow-hidden bg-slate-900">
                     <div className="shrink-0 relative z-10 px-1 py-0.5 flex items-center justify-between">
                         <p className="text-xs font-medium text-white">You {status}</p>
@@ -284,7 +305,7 @@ export default function CallSessionPage({
                     </div>
                     <video ref={localVideoRef} autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover"/>
                 </div>
-                <div className="flex-1 min-h-0 flex flex-col border rounded-lg p-2 relative overflow-hidden bg-slate-900">
+                <div className={cn("flex-1 min-h-0 flex flex-col border rounded p-2 relative overflow-hidden", remoteSpeaking && "ring-2 ring-green-500")}>
                     <p className="text-xs font-medium text-white shrink-0 relative z-10 px-1 py-0.5">Remote</p>
                     <video ref={remoteVideoRef} autoPlay playsInline className="absolute inset-0 w-full h-full object-cover"/>
                 </div>
@@ -297,6 +318,7 @@ export default function CallSessionPage({
 
     return (
         <div className="h-full w-full min-h-0 min-w-0 bg-slate-50 flex flex-row relative">
+            <audio ref={remoteAudioRef} autoPlay />
             <div className="flex-1 min-w-0 h-full w-full min-h-0 relative">
                 <div className="flex gap-1 p-1 border-b border-border">
                     <Button onClick={() => setViewMode("BOARD")} className={cn("text-xs px-2 py-1 rounded-xs cursor-pointer", viewMode === "BOARD" && "bg-muted")}>Board</Button>
@@ -316,7 +338,7 @@ export default function CallSessionPage({
                     </div>
                     <video ref={localVideoRef} muted autoPlay playsInline className="absolute inset-0 w-full h-full object-cover" />
                 </div>
-                <div className="w-full h-20 shrink-0 relative rounded overflow-hidden border border-slate-700">
+                <div className={cn("flex-1 min-h-0 flex flex-col border rounded p-2 relative overflow-hidden", remoteSpeaking && "ring-2 ring-green-500")}>
                     <video ref={remoteVideoRef} autoPlay playsInline className="absolute inset-0 w-full h-full object-cover" />
                 </div>
             </div>

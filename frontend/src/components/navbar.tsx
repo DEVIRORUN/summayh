@@ -4,14 +4,21 @@ import { useAuth } from "@/contexts/auth-context";
 import { useSidebar } from "@/contexts/sidebar-context";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "./ui/badge";
-import { Menu, Bell } from "lucide-react";
+import { Menu } from "lucide-react";
 import Logo from "../../public/logo2.svg";
 import Link from "next/link";
 import { NotificationBell } from "@/components/axiom/NotificationBell";
+import { useRouter } from "next/navigation";
 
 export function Navbar() {
-    const { user, isLoading } = useAuth();
+    const { user, isLoading, logout } = useAuth();
     const { toggle } = useSidebar();
+    const router = useRouter
+
+    async function handleLogout() {
+        await logout();
+        router.push("/login");
+    }
 
     return (
         <header className="flex h-14 items-center justify-between border-b px-4">
@@ -49,7 +56,7 @@ export function Navbar() {
                                 <Link href="/settings" className="block rounded px-2 py-1.5 text-sm hover:bg-muted">
                                     Settings
                                 </Link>
-                                <button className="block w-full text-left rounded px-2 py-1.5 text-sm hover:bg-muted text-destructive">
+                                <button onClick={handleLogout} className="block w-full text-left rounded px-2 py-1.5 text-sm hover:bg-muted text-destructive">
                                     Log out
                                 </button>
                             </PopoverContent>

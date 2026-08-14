@@ -1,11 +1,9 @@
 import { Request, Response } from "express";
 import { AuthRequest } from "../middleware/AuthRequest";
 import { prisma } from "../utils/prisma";
-import { isValidEduEmail } from "../validators";
+import { isValidEmail } from "../validators";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-
-// console.log("🔍 [TOP-LEVEL] Is prisma imported? ->", prisma);
 
 export const checkEduEmail = async (
   req: Request,
@@ -14,18 +12,10 @@ export const checkEduEmail = async (
   try {
     const { email } = req.body;
 
-    if (!email || !email.includes("@")) {
-      return res.status(400).json({
-        message: "Email is required.",
-      });
-    }
-
-    // Use validator here
-    if (!isValidEduEmail(email)) {
+    if (!email || !isValidEmail(email)) {
       return res.status(400).json({
         isValid: false,
-        message:
-          "Email is not a valid .edu.ng email. Not from an approved Nigerian university.",
+        message: "Please enter a valid email address.",
       });
     }
 
@@ -46,7 +36,8 @@ export const checkEduEmail = async (
       message: "Approved student email.",
     });
   } catch (error) {
-    //
+    console.error("checkEduEmail error:", error);
+    return res.status(500).json({ message: "Internal server error." });
   }
 };
 
@@ -66,13 +57,13 @@ export const registerUser = async (
     } = req.body;
 
     // 1. Validate the .edu.ng domain in email
-    if (!isValidEduEmail(email)) {
+    if (!isValidEmail(email)) {
       return res.status(400).json({
-        error: "Invalid university email. Must the a supported .edu.ng domain.",
+        error: "Please enter a valid email address.",
       });
     }
 
-    // 2. Now we check if user exist in teh database
+    // 2. Now we check if user exist in the database
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [{ email }, { phoneNumber }],
@@ -95,14 +86,14 @@ export const registerUser = async (
         email,
         password,
         name,
-        university: email.split("@")[1].split(".")[0].toUpperCase(),
         // dateOfBirth: new Date(dateOfBirth),
         phoneNumber,
         isPhoneVerified: false, // This would be verified later through an OTP process if they choose to buy/sell
+        isEmailVerified: false, // This would be verified later through an OTP process if they choose to buy/sell
       },
     });
 
-    // 5. Fake Termii OTP trigger (I'll wire teh real API later)
+    // 5. Fake Termii OTP trigger (I'll wire the real API later)
     console.log(
       `[TERMII MOCK] Sending OTP to ${phoneNumber} for user ${email}... (This is a mock, no real OTP sent): ${newUser.id}`,
     );
@@ -114,7 +105,7 @@ export const registerUser = async (
         role: newUser.role,
         tokenVersion: newUser.tokenVersion,
       },
-      process.env.JWT_SECRET || "summayh_dev_secret_key_0627",
+      process.env.JWT_SECRET,
       { expiresIn: "7d" },
     );
 

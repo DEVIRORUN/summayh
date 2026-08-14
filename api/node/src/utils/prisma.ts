@@ -26,11 +26,3 @@ export const prisma = globalForPrisma.prisma || new PrismaClient({
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
-
-/*
-rgb(31, 31, 30)
-rgb(37, 37, 36)
-rgb(87,150,218)
-rgb(244, 243, 238)
-rgb(255, 255, 255)
-*/

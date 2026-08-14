@@ -153,7 +153,7 @@ class GigService {
                     video,
                     coverImage: images?.[0] // Next tiem this coverImage alwways gets its pic
                 },
-            }); // so with these from teh types from schema no stress needed, the work is done
+            }); // so with these from the types from schema no stress needed, the work is done
             console.log(new Date(), "-> [SAVE GALLERY TO GIG]: SUccesfully Saved to Gallery!!!");
             return gig;
         }
@@ -407,7 +407,7 @@ class GigService {
                 where: { userId: userId },
             });
             if (!sellerProfile) {
-                // how do i add teh not here as in if sellerId is not equals to gig.sellerId, here??
+                // how do i add the not here as in if sellerId is not equals to gig.sellerId, here??
                 throw new Error("Seller profile not found. Only registered sellers can modify gigs.");
             }
             const gig = await prisma_1.prisma.gig.findUnique({

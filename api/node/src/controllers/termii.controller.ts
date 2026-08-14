@@ -36,7 +36,7 @@ export class TermiiController {
                 return res.status(400).json({ message: "OTP is required." })
             }
 
-            const result = await TermiiService.sendOtp(userId, otp);
+            const result = await TermiiService.verifyOtp(userId, otp);
 
             return res.status(200).json({ message: result.message });
         } catch(error: any) {
@@ -106,7 +106,7 @@ export class TermiiController {
                 return res.status(400).json({ message: "User does not Exist" })
             }
 
-            await TermiiService.notifyOrderCompleted(user.phoneNumber, amount);
+            await TermiiService.notifyPayoutSent(user.phoneNumber, amount);
        } catch(error: any) {
             console.error(" ERROR notifying buyer for Order Completion", error);
             const handled = handlePrismaError(error, res);

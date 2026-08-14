@@ -493,7 +493,7 @@ export class OrderService {
                 console.error("ORDER IS UNDER DISPUTE AND CANNOT BE MODIFIED UNTIL RESOLVED");
                 throw new Error("This order is under dispute and cannot be modified until resolved.");
             }
-            if(order.buyerId !== buyerId) throw new Error("Only teh buyer can submit requirements for this order.");
+            if(order.buyerId !== buyerId) throw new Error("Only the buyer can submit requirements for this order.");
             if (order.status !== "ACTIVE") throw new Error("Requirements can only be submitted for ACTIVE orders.");
             if (order.requirementsSubmittedAt) throw new Error("Requirements have already been submitted for this order.");
 

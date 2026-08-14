@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../utils/prisma";
+import { AuthedRequest } from "./requireEmailVerified";
 
 // 1. This tells Typescript we might have a userId attached.
 export interface AuthRequest extends Request {
@@ -10,10 +11,10 @@ export interface AuthRequest extends Request {
 
 
 // 2. the actual bouncer function
-export const protectRoute = async (req: AuthRequest, res: Response, next: NextFunction): Promise<any> => {
+export const protectRoute = async (req: AuthRequest & AuthedRequest, res: Response, next: NextFunction): Promise<any> => {
 
     // 1. Grab the token from cookies
-    const token = req.cookies.token;
+    const token = req.cookies?.token;
 
     if (!token) {
         return res.status(401).json({
@@ -27,19 +28,17 @@ export const protectRoute = async (req: AuthRequest, res: Response, next: NextFu
             process.env.JWT_SECRET as string
         ) as { userId: string, tokenVersion: number };
 
-        // 1. Fetch only the tokenVersion
+        let userCheck = req.authUser;
+        if (!userCheck) {
         const user = await prisma.user.findUnique({
             where: { id: decoded.userId },
-            select: { tokenVersion: true, isBanned: true }
+            select: { tokenVersion: true, isBanned: true, isEmailVerified: true },
         });
-
-        // 2. Check if user was deleted, banned or an admin bumped their token version before
-        if (!user || user.isBanned || user.tokenVersion !== decoded.tokenVersion) {
-            return res.status(403).json({
-                message: "Access denied. Your session has expired or this account has been suspended."
-            })
+        if (!user) {
+            return res.status(403).json({ message: "Access denied. Your session has expired or this account has been suspended." });
         }
-
+        userCheck = { userId: decoded.userId, ...user };
+        }
        // Attach the decoded userId to the request object
         req.userId = decoded.userId;
         req.tokenVersion = decoded.tokenVersion;

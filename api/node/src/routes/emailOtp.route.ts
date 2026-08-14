@@ -1,6 +1,7 @@
 // routes/emailOtp.route.ts
 import { Router } from "express";
 import { protectRoute } from "../middleware/auth";
+import { otpLimiter } from "../middleware/rateLimit";
 import { EmailOtpController } from "../controllers/emailOtp.controller";
 
 const router = Router();
@@ -19,7 +20,7 @@ const router = Router();
  *       500:
  *         description: Failed to send OTP
  */
-router.post("/send", protectRoute, EmailOtpController.sendOtp);
+router.post("/send", protectRoute, otpLimiter, EmailOtpController.sendOtp);
 
 /**
  * @openapi
@@ -49,6 +50,6 @@ router.post("/send", protectRoute, EmailOtpController.sendOtp);
  *       500:
  *         description: Failed to verify OTP
  */
-router.post("/verify", protectRoute, EmailOtpController.verifyOtp);
+router.post("/verify", protectRoute, otpLimiter, EmailOtpController.verifyOtp);
 
 export default router;

@@ -67,7 +67,7 @@ class TermiiService {
                 data: { isPhoneVerified: true },
             }),
         ]);
-        return { success: true, message: "Phoen verified successfully." };
+        return { success: true, message: "Phone verified successfully." };
     }
     // 3. SEND SMS NOTIFICATION (for orders, alerts)
     static async sendSms(phone, message) {
@@ -83,7 +83,7 @@ class TermiiService {
     // 4. DEFINE REUSABLE NOTIFICATION TEMPLATES
     // notify Order for buyer(s)
     static async notifyOrderPlaced(phone, gigTitle) {
-        await TermiiService.sendSms(phone, `SUMMAYH: Your order for "${gigTitle}" has been placed. You'll be notified once teh seller confirms.`);
+        await TermiiService.sendSms(phone, `SUMMAYH: Your order for "${gigTitle}" has been placed. You'll be notified once the seller confirms.`);
     }
     // notify Order for buyer(s)
     static async notifyOrderCompleted(phone, gigTitle) {
@@ -95,7 +95,7 @@ class TermiiService {
     }
     static async notifySellerRequirementsSubmitted(sellerId, orderId) {
         try {
-            // 1. We fecth teh seller's number
+            // 1. We fecth the seller's number
             const seller = await prisma_1.prisma.sellerProfile.findUnique({
                 where: { id: sellerId },
             });

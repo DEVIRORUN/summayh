@@ -142,7 +142,7 @@ export function DeliverySection({ orderId, deliveries, variant, canSubmit }: Del
             const uploadedFiles = results.filter((r): r is NonNullable<typeof r> => r !== null); // if this el is true trust me r is not null | undefined
 
             if (uploadedFiles.length === 0) throw new Error("All uploads failed.")
-            // 3. Submti teh delivery record
+            // 3. Submti the delivery record
             const submitRes = await fetch(`/api/orders/${orderId}/deliveries`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

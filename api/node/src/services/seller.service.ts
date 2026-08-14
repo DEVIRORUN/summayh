@@ -171,7 +171,7 @@ export class SellerService {
         const targetDate = new Date(date + "T00:00:00");
         const dayOfWeek = targetDate.getDay();
 
-        // Now we get teh avaialable the seller's Got // Queried with dayOfWeek
+        // Now we get the avaialable the seller's Got // Queried with dayOfWeek
         const availability = await prisma.sellerAvailability.findMany({
             where: { sellerId, dayOfWeek },
         })

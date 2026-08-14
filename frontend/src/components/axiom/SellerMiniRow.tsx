@@ -17,7 +17,7 @@ export type SellerLevel =
   | "cataclysm"    // Rank 3:  Disasters in human form, alters local climate up to 3000/imposiible to create  a Guild.
   | "sovereign"    // Rank 2:  Nation-level. Requires 50 to legally charter a Guild.
   | "apex";        // Rank 1:  S-Rank anomaly. Instantly qualified to found a Guild alone.
-  // My Neq idea a guild is like a buyer can submit a request to a guild for  a oyutbe short on something and then with many ppl in specified areas from voice, to clipping to ediitng to colour grading, to hook script-writing balancg everything out for customer. also a new plug liek system where buyer plugs sellers liek node, and we automatically sequence teh works so befor fnial product this one does not need  aguild
+  // My Neq idea a guild is like a buyer can submit a request to a guild for  a oyutbe short on something and then with many ppl in specified areas from voice, to clipping to ediitng to colour grading, to hook script-writing balancg everything out for customer. also a new plug liek system where buyer plugs sellers liek node, and we automatically sequence the works so befor fnial product this one does not need  aguild
   // I might chnage some of the name later those, also in db
 
 

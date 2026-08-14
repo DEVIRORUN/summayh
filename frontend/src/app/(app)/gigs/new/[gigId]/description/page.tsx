@@ -50,7 +50,7 @@ export default function DescriptionPage() {
       <div className="contain border rounded-xs border-border">
         <div className="flex flex-row justify-start gap-1 items-center py-0.5 px-2">
           {/* <span
-                        // onClick={} {/** Don't know how to make teh next text tyoed after sekecting this or when highlighting a oarticular Text and sleect this 
+                        // onClick={} {/** Don't know how to make the next text tyoed after sekecting this or when highlighting a oarticular Text and sleect this 
                         className="font-bold text-xs cursor-pointer hover:text-background hover:bg-muted-foreground px-1 rounded-xs"
                     >B</span> */}
           <span className="text-xs text-muted-foreground/40">Coming soon</span>

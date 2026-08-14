@@ -12,7 +12,7 @@ class GigController {
             const { title, tags, categoryId, deliveryMode } = req.body;
             if (!title || !categoryId) {
                 return res.status(400).json({
-                    message: "Please type in title and select category form teh options above.",
+                    message: "Please type in title and select category form the options above.",
                 });
             }
             if (!Array.isArray(tags) || tags.length > 5) {
@@ -467,7 +467,7 @@ class GigController {
             const userId = req.userId;
             if (!gigId) {
                 return res.status(400).json({
-                    message: "Bro input teh gigId plaese, let's test this stuff real quick now",
+                    message: "Bro input the gigId plaese, let's test this stuff real quick now",
                 });
             }
             const gigData = await gig_service_1.GigService.readGigData(userId, gigId);

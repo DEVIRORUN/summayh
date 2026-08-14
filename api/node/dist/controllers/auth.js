@@ -55,7 +55,7 @@ const registerUser = async (req, res) => {
                 error: "Invalid university email. Must the a supported .edu.ng domain.",
             });
         }
-        // 2. Now we check if user exist in teh database
+        // 2. Now we check if user exist in the database
         const existingUser = await prisma_1.prisma.user.findFirst({
             where: {
                 OR: [{ email }, { phoneNumber }],
@@ -81,7 +81,7 @@ const registerUser = async (req, res) => {
                 isPhoneVerified: false, // This would be verified later through an OTP process if they choose to buy/sell
             },
         });
-        // 5. Fake Termii OTP trigger (I'll wire teh real API later)
+        // 5. Fake Termii OTP trigger (I'll wire the real API later)
         console.log(`[TERMII MOCK] Sending OTP to ${phoneNumber} for user ${email}... (This is a mock, no real OTP sent): ${newUser.id}`);
         const token = jsonwebtoken_1.default.sign({
             userId: newUser.id,

@@ -64,7 +64,7 @@ export default function BasicsGigPage() {
     return <div className="p-5 animate-pulse font-semibold">Loading...</div>
   }
 
-  // Get teh actual category from selected id
+  // Get the actual category from selected id
   const selectedCategoryData = categories.find(c => c.id === selectedCategoryId)
 
   const isTutoringCategory = selectedCategoryData?.slug === "tutoring-lessons";
@@ -214,7 +214,7 @@ export default function BasicsGigPage() {
               className="flex flex-col sm:flex-row gap-4 flex-1 min-w-0 pt-1"
             >
               <div className="flex items-center gap-2">
-                <RadioGroupItem value="DIGITAL" id="digital" className="cursor-pointer text-muted-foreground data-checked:bg-muted-foreground data-[state=checked]:border-muted-foreground"/> {/*Tried to change teh blue default color*/}
+                <RadioGroupItem value="DIGITAL" id="digital" className="cursor-pointer text-muted-foreground data-checked:bg-muted-foreground data-[state=checked]:border-muted-foreground"/> {/*Tried to change the blue default color*/}
                 <label htmlFor="digital" className="text-xs text-foreground cursor-pointer">Recorded / Async Delivery</label>
               </div>
               <div className="flex items-center gap-2">

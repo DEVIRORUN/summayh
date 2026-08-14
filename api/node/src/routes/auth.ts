@@ -1,6 +1,7 @@
 // api/node/src/routes/auth.ts
 import { Router } from "express";
 import { protectRoute } from "../middleware/auth";
+import { loginLimiter } from "../middleware/rateLimit";
 import { 
     registerUser, 
     loginUser, 
@@ -60,7 +61,7 @@ router.post("/register", registerUser);
  *       401:
  *         description: Invalid credentials
  */
-router.post("/login", loginUser);
+router.post("/login", loginLimiter, loginUser);
 
 /**
  * @openapi
