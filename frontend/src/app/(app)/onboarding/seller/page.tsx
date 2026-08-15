@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
+import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ interface BankInputProps {
 export default function SellerOnboardingPage() {
   const router = useRouter();
   const [name, setName] = useState(""); //accountName
+  const [username, setUsername] = useState(""); //accountName
   const [bio, setBio] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [bankName, setBankName] = useState("");
@@ -29,6 +31,28 @@ export default function SellerOnboardingPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  const [status, setStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+
+
+  const checkUsername = useCallback(async (username: string) => {
+    if (username.trim().length < 3) {
+      setStatus("idle");
+      return;
+    }
+    setStatus("checking");
+    try {
+      const res = await fetch(`/api/seller/check-username?username=${encodeURIComponent(username)}`);
+      const data = await res.json();
+      setStatus(data.available ? "available" : "taken");
+    } catch {
+      setStatus("idle");
+    }
+  }, []);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => checkUsername(username), 400); // debounce
+    return () => clearTimeout(timeout);
+  }, [username, checkUsername]);
 
   async function handleSubmit() {
     setError(undefined);
@@ -45,6 +69,7 @@ export default function SellerOnboardingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           accountName: name,
+          sellerUsername: username,
           biography: bio,
           accountNumber,
           settlementBank: accountBank,
@@ -78,6 +103,8 @@ export default function SellerOnboardingPage() {
   const isFormInvalid =
     !name.trim() ||
     !bio.trim() ||
+    !username.trim() ||
+    status !== "available" ||
     accountNumber.length !== 10|| // NUBAN accounts are exactly 10 digits
     !accountBank ||
     !skills.trim() ||
@@ -103,7 +130,7 @@ export default function SellerOnboardingPage() {
             <div className="text-xs text-muted-foreground mt-1">
               Your public seller name.{" "}
               <span className="font-medium text-foreground/80">
-                This is how you will appear to buyers across the marketplace.
+                Make sure this is your real name, matching your banks details.
               </span>
             </div>
           </div>
@@ -113,8 +140,37 @@ export default function SellerOnboardingPage() {
               onChange={(e) => setName(e.target.value)}
               required
               className="rounded-xs text-xs w-full bg-background"
-              placeholder="e.g. Alex Rivera"
+              placeholder="e.g. Abdulmalik Ahmed"
             />
+          </div>
+        </div>
+        <div className="flex flex-col md:flex-row gap-3 md:gap-6 min-w-0 w-full">
+          <div className="flex flex-col w-full md:w-[280px] shrink-0">
+            <span className="font-semibold text-foreground text-sm">Username</span>
+            <div className="text-xs text-muted-foreground mt-1">
+              The name for you alone .{" "}
+              <span className="font-medium text-foreground/80">
+                This is how you will appear to buyers across the marketplace.
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
+            <div className="relative max-w-50">
+              <Input
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                required
+                className="max-w-50 rounded-xs text-xs w-full bg-background pr-8"
+                placeholder="e.g. Idan"
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                  {status === "checking" && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                  {status === "available" && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                  {status === "taken" && <XCircle className="h-4 w-4 text-destructive" />}
+              </div>
+            </div>
+            {status === "taken" && <p className="text-xs text-destructive">Username already taken.</p>}
+            {status === "available" && <p className="text-xs text-green-600">Username available.</p>}
           </div>
         </div>
 

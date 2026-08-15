@@ -340,7 +340,8 @@ export class OrderService {
     NotificationService.notifyPaymentReceived(
         result.order.gig.seller.userId,
         result.order.id,
-        payoutAmountInNaira
+        payoutAmountInNaira,
+        result.order.gig.title
     ).catch(err => console.error("[notify] payment received failed", err));
 
 

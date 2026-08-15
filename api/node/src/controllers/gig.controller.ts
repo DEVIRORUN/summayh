@@ -766,57 +766,39 @@ console.log("[GET UPLAOD URL]: SUCCESSFUL!!!");
       });
     }
   }
-  // static async searchGigs(req: Request, res: Response): Promise<any> {
-  //   try {
-  //     console.log(new Date(), "-> [Gig Controller]: GIG SEARCH Hit");
-  //     const { query, budgetMax, location, gigType } = req.body;
-  //     if (!query || query.trim().length < 3) {
-  //       return res
-  //         .status(400)
-  //         .json({ message: "Search query must be at least 3 characters." });
-  //     }
+  static async getZeroResultQueries(req: Request, res: Response): Promise<any> {
+    try {
+      console.log(new Date(), "-> [Gig Controller]: ZERO QUERY Hit");
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+      const skip = (page - 1) * limit;
 
-  //     // Send to FastAPI agentic search
-  //     console.log(
-  //       `[Gig Controller]: Sent to fast api`,
-  //       query,
-  //       budgetMax,
-  //       location,
-  //       gigType,
-  //     );
-  //     const fastApiResponse = await fetch(
-  //       `${process.env.FASTAPI_URL}/api/search/gigs`,
-  //       {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({ query, budgetMax, location, gigType }),
-  //       },
-  //     );
+      const [results, total] = await Promise.all([
+        prisma.zeroResultQuery.findMany({
+          orderBy: { searchCount: "desc" },
+          skip,
+          take: limit,
+        }),
+        prisma.zeroResultQuery.count(),
+      ]);
 
-  //     const data = await fastApiResponse.json();
-
-  //     // Fire-and-forget impression tracking for every gig returned in this page
-  //     const gigIds = data?.results?.map((g: any) => g.id) ?? [];
-  //     if (gigIds.length) {
-  //       GigStatsService.recordImpressions(gigIds).catch((err) =>
-  //         console.error("Failed to record gig impression: ", err),
-  //       );
-  //     }
-
-  //     console.error("FOUND GIGS, agentic searcg");
-  //     return res.status(200).json({
-  //       message: "Search Complete",
-  //       ...data,
-  //     });
-  //   } catch (error: any) {
-  //     console.error("ERROR SEARCHING FOR GIGS, agentic searcg", error);
-  //     const handled = handlePrismaError(error, res);
-  //     if (handled) return;
-  //     return res.status(500).json({
-  //       message: "Umm, Can't find gigs bro, Please try again.",
-  //     });
-  //   }
-  // }
+      console.log("FOUND GIGS, agentic search");
+      return res.status(200).json({
+        message: "Zero result queries fetched",
+        results,
+        total,
+        page,
+        limit
+      });
+    } catch (error: any) {
+      console.error("ERROR FETCHING ZERO QUERY, agentic search", error);
+      const handled = handlePrismaError(error, res);
+      if (handled) return;
+      return res.status(500).json({
+        message: "Couldn't fetch zero-result queries.",
+      });
+    }
+  }
   static async addBulkPricing(req: Request, res: Response): Promise<any> {
     try {
       const userId = (req as any).userId;

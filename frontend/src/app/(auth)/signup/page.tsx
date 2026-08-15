@@ -7,6 +7,7 @@ import { AuthCard } from "@/components/axiom/AuthCard";
 import { AuthForm } from "@/components/axiom/AuthForm";
 import { SocialAuthButtons } from "@/components/axiom/SocialAuthButtonProps";
 import { useAuth } from "@/contexts/auth-context";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function SignUpPage() {
       }
 
       await refetch();
-      router.push("/"); // redirect to homepage
+      router.push("/verify-email"); // can still decide to go back hem and eveything is normal?? bypassed OTP
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -40,8 +41,12 @@ export default function SignUpPage() {
   }
 
   function handleGoogleAuth() {
-    // any strategy??
-    window.location.href = "api/auth/google";
+    supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/callback`,
+      }
+    });
   }
 
   return (

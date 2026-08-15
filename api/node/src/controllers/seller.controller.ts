@@ -236,4 +236,43 @@ export class SellerController {
         .json({ message: "Failed to get availability on seller!!!" });
     }
   }
+  static async getPublicSellerProfile(req: Request, res: Response): Promise<any> {
+    try {
+        const { sellerUsername } = req.params;
+        const sellerProfile = await SellerService.getPublicSellerProfile(sellerUsername as string);
+        return res.status(200).json({ sellerProfile });
+    } catch (error: any) {
+        console.error("ERROR in Getting Public Seller Profile: ", error);
+        const handled = handlePrismaError(error, res);
+        if (handled) return;
+        return res.status(404).json({ message: "Seller not found." });
+    }
+  }
+  static async checkUsernameAvailability(req: Request, res: Response): Promise<any> {
+    try {
+      console.log("[USERNAME CHECK]: HIT!!!");
+        const { username } = req.query;
+
+        if (!username || typeof username !== "string") {
+            return res.status(400).json({ available: false, message: "Username is required." });
+        }
+        const trimmed = username.trim().toLowerCase();
+
+        if (trimmed.length < 3) {
+            return res.status(200).json({ available: false, message: "Username must be at least 3 characters." });
+        }
+        if (!/^[a-z0-9_]+$/.test(trimmed)) {
+          return res.status(200).json({ available: false, message: "Only lowercase letters, numbers, and underscores allowed." })
+        }
+
+        const existing = await prisma.sellerProfile.findFirst({
+          where: { sellerUsername: { equals: trimmed, mode: "insensitive" } },
+          select: { id: true },
+        });
+        return res.status(200).json({ available: !existing });
+    } catch (error: any) {
+        console.error("ERROR checking username availability: ", error);
+        return res.status(500).json({ available: false, message: "Failed to check username." });
+    }
+  }
 }

@@ -242,6 +242,11 @@ enum VerificationCheckStatus {
   EXPIRED
 }
 
+enum AuthProvider {
+  GOOGLE
+  LOCAL
+}
+
 model ProPlan {
   id         String          @id @default(uuid())
   name       String
@@ -283,7 +288,7 @@ model User {
   password           String
   name               String
   username           String?
-  university         String?           @default("Unkown University")
+  university         String?          @default("Unkown University")
   dateOfBirth        DateTime?
   avatar             String?
   isOnline           Boolean?
@@ -296,6 +301,7 @@ model User {
   tokenVersion       Int              @default(0)
   banReason          String?
   verificationStatus VerificationStat @default(NOTVERIFIED)
+  authProvider       AuthProvider     @default(GOOGLE)
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
@@ -385,7 +391,7 @@ model IdentityVerification {
   id               String                  @id @default(uuid())
   userId           String                  @unique
   status           VerificationCheckStatus @default(PENDING)
-  ninHash              String?
+  ninHash          String?
   dateOfBirthOnNin DateTime?
   fullNameOnNin    String?
   livenessPassed   Boolean                 @default(false)
@@ -804,14 +810,14 @@ model Withdrawal {
 }
 
 model OTPVerification {
-  id        String     @id @default(uuid())
-  userId    String
-  channel   OtpChannel @default(PHONE) // PHONE | EMAIL
-  otp       String
-  expiresAt DateTime
-  verified  Boolean    @default(false)
-  createdAt DateTime   @default(now())
-  failedAttempts Int @default(0)
+  id             String     @id @default(uuid())
+  userId         String
+  channel        OtpChannel @default(PHONE) // PHONE | EMAIL
+  otp            String
+  expiresAt      DateTime
+  verified       Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  failedAttempts Int        @default(0)
 
   user User @relation(fields: [userId], references: [id])
 
@@ -1029,4 +1035,18 @@ model Notification {
 
   @@index([userId, read])
   @@index([userId, createdAt])
+}
+
+model ZeroResultQuery {
+  id              String   @id @default(uuid())
+  query           String
+  normalizedQuery String   @unique
+  gigType         String?
+  location        String?
+  budgetMax       Float?
+  searchCount     Int      @default(1)
+  lastSearchedAt  DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@index([searchCount])
 }

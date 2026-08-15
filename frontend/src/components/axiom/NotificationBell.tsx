@@ -60,7 +60,7 @@ export function NotificationBell() {
                     )}
                 </button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-80 p-0 max-h-96 overflow-y-auto">
+            <PopoverContent align="end" className="w-80 p-0 gap-0 max-h-96 overflow-y-auto">
                 {notifications.length === 0 ? (
                     <p className="p-4 text-sm text-muted-foreground text-center">
                         No notifications yet
@@ -71,12 +71,15 @@ export function NotificationBell() {
                             key={n.id}
                             href={n.link ?? "#"}
                             onClick={() => !n.read && markAsRead(n.id)}
-                            className={`block border-b px-3 py-2.5 text-sm hover:bg-muted last:border-b-0 ${
-                                !n.read ? "bg-muted/50" : ""
+                            className={`flex items-start gap-2 border-b px-3 py-2.5 text-sm hover:bg-muted last:border-b-0 ${
+                                !n.read ? "bg-muted/85" : ""
                             }`}
                         >
-                            <p className="font-medium">{n.title}</p>
-                            <p className="text-muted-foreground text-xs mt-0.5">{n.body}</p>
+                            {!n.read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-500" />}
+                            <div>
+                                <p className="font-medium">{n.title}</p>
+                                <p className="text-muted-foreground text-xs mt-0.5">{n.body}</p>
+                            </div>
                         </Link>
                     ))
                 )}

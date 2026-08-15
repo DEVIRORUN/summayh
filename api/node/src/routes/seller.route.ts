@@ -19,6 +19,23 @@ const router = Router();
  *         description: Failed to fetch banks from Paystack
  */
 router.get("/banks", SellerController.listBanks);
+/**
+ * @openapi
+ * /api/seller/check-username:
+ *  get:
+ *     summary: Check if a seller username is available (real-time onboarding check)
+ *     tags: [Seller]
+ *     parameters:
+ *       - in: query
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Availability result
+ */
+router.get("/check-username", SellerController.checkUsernameAvailability);
 
 /**
  * @openapi
@@ -159,4 +176,18 @@ router.get("/availability", protectRoute, requireSeller, SellerController.getAva
  *         description: Invalid input data
  */
 router.put("/update", protectRoute, SellerController.updateSellerProfile)
+
+/**
+ * @openapi
+ * /api/seller/username/{sellerUsername}:
+ *  get:
+ *     summary: Get a seller's public profile (buyer-facing)
+ *     tags: [Seller]
+ *     responses:
+ *       200:
+ *         description: Public seller profile with gigs
+ *       404:
+ *         description: Seller not found
+ */
+router.get("/username/:sellerUsername", SellerController.getPublicSellerProfile);
 export default router;

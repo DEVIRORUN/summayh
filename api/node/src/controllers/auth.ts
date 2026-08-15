@@ -4,6 +4,88 @@ import { prisma } from "../utils/prisma";
 import { isValidEmail } from "../validators";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { createClient } from "@supabase/supabase-js";
+import { EmailOtpService } from "../services/emailOtp.service";
+
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export const googleAuthCallback = async (
+  req: Request,
+  res: Response,
+): Promise<any> => {
+  try {
+    const { access_token } = req.body;
+
+    if (!access_token) {
+      return res.status(400).json({ message: "Missing Supabase access token" })
+    }
+
+    const { data: { user: supaUser }, error } = await supabaseAdmin.auth.getUser(access_token);
+
+    if (error || !supaUser || !supaUser.email) {
+      return res.status(401).json({ message: "Invalid or expired Google session." })
+    }
+
+    const email = supaUser.email;
+    const name = supaUser.user_metadata?.full_name || supaUser.user_metadata?.name || email.split("@")[0];
+
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      const randomPassword = await bcrypt.hash(
+        require("crypto").randomBytes(32).toString("hex"),
+        12,
+      );
+
+      user = await prisma.user.create({
+        data: {
+          email,
+          password: randomPassword,
+          name,
+          isPhoneVerified: false,
+          isEmailVerified: true,
+          authProvider: "GOOGLE",
+        },
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        tokenVersion: user.tokenVersion,
+      },
+      process.env.JWT_SECRET!,
+      { expiresIn: "7d" },
+    );
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      message: "Google login succesful.",
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        university: user.university,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("googleAuthCallback error:", error);
+    return res.status(500).json({ message: "internal server error during Google login." })
+  }
+}
 
 export const checkEduEmail = async (
   req: Request,
@@ -88,8 +170,9 @@ export const registerUser = async (
         name,
         // dateOfBirth: new Date(dateOfBirth),
         phoneNumber,
-        isPhoneVerified: false, // This would be verified later through an OTP process if they choose to buy/sell
-        isEmailVerified: false, // This would be verified later through an OTP process if they choose to buy/sell
+        isPhoneVerified: false,
+        isEmailVerified: false,
+        authProvider: "LOCAL", // This would be verified later through an OTP process if they choose to buy/sell
       },
     });
 
@@ -97,6 +180,8 @@ export const registerUser = async (
     console.log(
       `[TERMII MOCK] Sending OTP to ${phoneNumber} for user ${email}... (This is a mock, no real OTP sent): ${newUser.id}`,
     );
+
+    await EmailOtpService.sendOtp(newUser.id);
 
     const token = jwt.sign(
       {
@@ -183,7 +268,7 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
         role: user.role,
         tokenVersion: user.tokenVersion,
       },
-      process.env.JWT_SECRET || "summayh_dev_secret_key_0627",
+      process.env.JWT_SECRET,
       { expiresIn: "7d" },
     );
 
@@ -294,7 +379,7 @@ export const refreshAccessToken = async (
     // Verify the current token
     const decoded = jwt.verify(
       token,
-      (process.env.JWT_SECRET as string) || "summayh_dev_secret_key_0627",
+      (process.env.JWT_SECRET as string),
     ) as { userId: string; email: string };
 
     // Make sure user stil exists in database
@@ -311,7 +396,7 @@ export const refreshAccessToken = async (
     // Issue a brand new token
     const newToken = jwt.sign(
       { userId: user.id, email: user.email },
-      (process.env.JWT_SECRET as string) || "summayh_dev_secret_key_0627",
+      (process.env.JWT_SECRET as string),
       { expiresIn: "7d" },
     );
 

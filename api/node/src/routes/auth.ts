@@ -8,7 +8,8 @@ import {
     checkEduEmail, 
     getMe,
     refreshAccessToken,
-    logoutUser
+    logoutUser,
+    googleAuthCallback,
 } from "../controllers/auth";
 
 const router = Router();
@@ -137,6 +138,29 @@ router.post("/refresh", refreshAccessToken);
  *         description: Unauthorized
  */
 router.post("/logout", protectRoute, logoutUser);
+
+/**
+ * @openapi
+* /api/auth/google:
+ *   post:
+ *     summary: Login or register via Google OAuth (Supabase-verified)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [access_token]
+ *             properties:
+ *               access_token: { type: string }
+ *     responses:
+ *       200:
+ *         description: Login successful, returns JWT
+ *       401:
+ *         description: Invalid Supabase session
+ */
+router.post("/google", googleAuthCallback);
 
 
 export default router;

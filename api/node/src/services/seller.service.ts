@@ -226,4 +226,44 @@ export class SellerService {
         throw error;
         }
     } 
+    static async getPublicSellerProfile(sellerUsername: string): Promise<any> {
+        const seller = await prisma.sellerProfile.findUnique({
+            where: { sellerUsername },
+            select: {
+                id: true,
+                sellerUsername: true,
+                bio: true,
+                aiBio: true,
+                skills: true,
+                avatar: true,
+                avgRating: true,
+                totalReviews: true,
+                isPro: true,
+                founderBadge: true,
+                isOnline: true,
+                lastActiveAt: true,
+                createdAt: true,
+                user: {
+                    select: { name: true, university: true } 
+                },
+            }
+        });
+
+        if (!seller) throw new Error("Seller not found");
+
+        const gigs = await prisma.gig.findMany({
+            where: { sellerId: seller.id, state: "ACTIVE" }, // only show live gigs publicly
+            select: {
+                id: true,
+                title: true,
+                description: true,
+                coverImage: true,
+                avgRating: true,
+                totalReviews: true,
+                tiers: { select: { price: true }, orderBy: { price: "asc" }, take: 1 }, // cheapest tier for "starting at"
+            },
+        });
+
+        return { ...seller, gigs };
+    }
 }

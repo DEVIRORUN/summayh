@@ -7,6 +7,7 @@ import { AuthCard } from "@/components/axiom/AuthCard";
 import { AuthForm } from "@/components/axiom/AuthForm";
 import { SocialAuthButtons } from "@/components/axiom/SocialAuthButtonProps";
 import { useAuth } from "@/contexts/auth-context";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,8 +41,12 @@ export default function LoginPage() {
   }
 
   function handleGoogleAuth() {
-    // any strategy??
-    window.location.href = "api/auth/google";
+    supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/callback`,
+      }
+    });
   }
 
   return (

@@ -5,6 +5,7 @@ from database import get_db_connection
 from services.gemini_service import run_agentic_search
 from services.embedding_service import generate_embedding
 from services.agent_logger import log_agent_decision
+from services.zero_query_logger import log_zero_result_query
 import logging
 import uuid
 
@@ -149,6 +150,14 @@ async def search_gigs(payload: SearchRequest):
 
         # 2. Track total count BEFORE cutting the list
         total_found = len(all_rows)
+        if total_found == 0:
+            await log_zero_result_query(
+                query=payload.query,
+                gig_type=gig_type_filter,
+                location=payload.location,
+                budget_max=payload.budgetMax,
+                embedding=query_embedding,
+            )
 
         # Ensure payload defaults are handled safely if fields are optional
         current_page = payload.page if (hasattr(payload, 'page') and payload.page is not None) else 1

@@ -60,12 +60,12 @@ export class NotificationService {
             link: `/orders/${orderId}`
         });
     }
-    static async notifySessionReminder(userId: string, bookingId: string, minutesUntil: string) {
+    static async notifySessionReminder(userId: string, bookingId: string, minutesUntil: string, counterpartyName: string, gigTitle: string) {
         return this.notify({
             userId,
             type: "SESSION_REMINDER",
             title: "Upcoming session",
-            body:  `Your session starts in "${minutesUntil}" minutes.`,
+            body:  `Your session for "${gigTitle}" with ${counterpartyName} starts in "${minutesUntil}" minutes.`,
             link: `/session/${bookingId}`,
         });
     }
@@ -78,42 +78,42 @@ export class NotificationService {
             link: `/session/${bookingId}`,
         });
     }
-    static async notifyNoShowRisk(userId: string, bookingId: string, role: "SELLER" | "BUYER") {
+    static async notifyNoShowRisk(userId: string, bookingId: string, role: "SELLER" | "BUYER", counterpartyName: string) {
         return this.notify({
             userId,
             type: "SESSION_NO_SHOW_RISK",
             title: "Missed session check-in",
             body: role === "SELLER" 
-                ? "You didn't join your scheduled session in time."
-                : "The seller may have missed your scheduled session.",
+                ? `You didn't join your scheduled session with ${counterpartyName} in time.`
+                : `${counterpartyName} may have missed your scheduled session.`,
             link: `/session/${bookingId}`,
 
         })
     }
-    static async notifyNoShowFlagged(userId: string, bookingId: string, missedRole: "SELLER" | "BUYER") {
+    static async notifyNoShowFlagged(userId: string, bookingId: string, missedRole: "SELLER" | "BUYER", missedName: string, gigTitle: string) {
         return this.notify({
             userId,
             type: "NO_SHOW_FLAGGED",
             title: "Session marked as no-show",
-            body: `The session was flagged: ${missedRole.toLowerCase()} did not join in time.`,
+            body: `The session for "${gigTitle}" was flagged: ${missedName} ${missedRole.toLowerCase()} did not join in time.`,
             link: `/session/${bookingId}`,
         });
     }
-    static async notifyPaymentReceived(sellerUserId: string, orderId: string, amount: number) {
+    static async notifyPaymentReceived(sellerUserId: string, orderId: string, amount: number, gigTitle: string) {
         return this.notify({
             userId: sellerUserId,
             type: "PAYMENT_RECEIVED",
-            title: "Session marked as no-show",
-            body: `You received: ${amount.toLocaleString()} for a completed order.`,
+            title: "Payment received",
+            body: `You received: ${amount.toLocaleString()} for "${gigTitle}".`,
             link: `/dashboard/earnings`,
         });
     }
-    static async notifyMilestoneReceived(sellerUserId: string, packageId: string, pct: number) {
+    static async notifyMilestoneReceived(sellerUserId: string, packageId: string, pct: number, buyerName: string) {
         return this.notify({
             userId: sellerUserId,
             type: "MILESTONE_RECEIVED",
             title: "Milestone payout released",
-            body: `A ${Math.round(pct * 100)}% milestone payout has been released to you.`,
+            body: `A ${Math.round(pct * 100)}% milestone payout for your package with ${buyerName} has been released to you.`,
             link: `/dashboard/earnings`,
         });
     }

@@ -8,6 +8,7 @@ import { SellerMiniRow, type SellerLevel } from "@/components/axiom/SellerMiniRo
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export interface GigTier {
   id?: string;
@@ -59,6 +60,7 @@ export function GigCard({
     const isCompact = variant === "compact";
     const isList = variant === "list";
     const isGrid = variant === "grid";
+    const router = useRouter();
 
     const reviewCount = rating?.reviewCount ?? 0;
 
@@ -88,10 +90,13 @@ export function GigCard({
     const sellerName = seller?.name || seller.sellerUsername || "Seller"
     const sellerAvatar = seller?.avatar || "";
 
+    function handleCardClick() {
+        router.push(`/gigs/${id}`)
+    }
 
     return (
-        <Link href={`/gigs/${id}`}>
             <Card
+                onClick={handleCardClick}
                 className={cn(
                     "overflow-hidden p-0",
                     isList ? "flex flex-row" : "flex flex-col"
@@ -123,13 +128,19 @@ export function GigCard({
 
                 {/* Content */}
                 <div className={cn("flex flex-col gap-2 p-3", isList && "flex-1" )}>
-                    <SellerMiniRow 
-                        avatar={sellerAvatar}
-                        name={sellerName}
-                        isOnline={seller.isOnline}
-                        level={seller.level}
-                        compact={isCompact}
-                    />
+                    <Link
+                        href={`/sellers/${seller.sellerUsername}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-fit"
+                    >
+                        <SellerMiniRow 
+                            avatar={sellerAvatar}
+                            name={sellerName}
+                            isOnline={seller.isOnline}
+                            level={seller.level}
+                            compact={isCompact}
+                        />
+                    </Link>
 
                     <p className={cn("font-medium line-clamp-2", isCompact ? "text-xs" : "text-sm")}>
                         {title}
@@ -151,6 +162,5 @@ export function GigCard({
                     </div>
                 </div>
             </Card>
-        </Link>
     )
 }

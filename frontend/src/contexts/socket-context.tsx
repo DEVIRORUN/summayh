@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, ReactNode } from "react";
+import { createContext, useState, useContext, useEffect, useRef, ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "./auth-context";
 import { toast } from "sonner";
@@ -28,20 +28,22 @@ export function useSocket() {
 export function SocketProvider({ children }: { children: ReactNode }) {
     const { user  } = useAuth();
     const socketRef = useRef<Socket | null>(null);
+    const [socket, setSocket] = useState<Socket | null>(null);
 
     useEffect(() => {
         if (!user) {
             socketRef.current?.disconnect();
             socketRef.current = null;
+            setSocket(null);
             return;
         }
 
-        const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001", {
+        const s = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001", {
             withCredentials: true, // sends token along with handshale
         });
 
-        socket.on("notification:new", (notification: NotificationPayload) => {
-            const id = toast.custom((toastId) => (
+        s.on("notification:new", (notification: NotificationPayload) => {
+            toast.custom((toastId) => (
                 <div
                     onClick={() => {
                         markAsRead(notification.id)
@@ -75,17 +77,19 @@ export function SocketProvider({ children }: { children: ReactNode }) {
             });
         });
 
-        socket.connect();
-        socketRef.current = socket;
+        s.connect();
+        socketRef.current = s;
+        setSocket(s);
 
         return () => {
-            socket.disconnect();
+            s.disconnect();
             socketRef.current = null;
+            setSocket(null);
         };
     }, [user]);
 
     return (
-        <SocketContext.Provider value={{ socket: socketRef.current }}>
+        <SocketContext.Provider value={{ socket }}>
             {children}
         </SocketContext.Provider>
     );

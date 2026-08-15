@@ -1,8 +1,7 @@
-const cookie = require("cookie");
+const cookie = require("cookie") as { parse: (str: string) => Record<string, string> };
 import { Server, Socket } from "socket.io";
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 import { PresenceService } from "../services/presence.service";
-import { SocketAddress } from "node:net";
 
 interface AuthedSocket extends Socket {
     data: { userId: string };
@@ -18,7 +17,7 @@ export function initSocket(io: Server) {
             const rawCookie = socket.handshake.headers.cookie ?? "";
             if (!rawCookie) return next(new Error("No cookie"));
 
-            const parsed = cookie.parseCookie(rawCookie);
+            const parsed = cookie.parse(rawCookie);
             const token = parsed.token;
 
             if (!token) return next(new Error("No token"));

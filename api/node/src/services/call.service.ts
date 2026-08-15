@@ -182,12 +182,17 @@ export class CallService {
         }
     }
     static async resolveSessionOutcome(bookingId: string) {
+        const orderInclude = {
+            seller: { include: { user: true } },
+            buyer: true,
+            gig: { select: { title: true } },
+        };
         const booking = await prisma.sessionBooking.findUniqueOrThrow({
             where: { id: bookingId },
             include: { 
                 callSession: { include: { events: true } },
-                package: { include: { order: { include: { seller: true } } } },
-                enrollment: { include: { order: { include: { seller: true } } } },
+                package: { include: { order: { include: orderInclude } } },
+                enrollment: { include: { order: { include: orderInclude } } },
             },
         });
 
@@ -204,8 +209,11 @@ export class CallService {
             return;
         }
 
-        const sellerUserId = order!.seller.userId;
-        const buyerUserId = order!.buyerId;
+        const sellerUserId = order.seller.userId;
+        const buyerUserId = order.buyerId;
+        const sellerName = order.seller.user.name;
+        const buyerName = order.buyer.name;
+        const gigTitle = order.gig.title; 
 
         let outcome: SessionOutcome;
         if (booking.buyerJoinedAt && booking.sellerJoinedAt) {
@@ -245,12 +253,12 @@ export class CallService {
         });
 
         if (outcome === "BUYER_MISSED") {
-            await NotificationService.notifyNoShowFlagged(sellerUserId, bookingId, "BUYER"); // seller showed up but no buyer
+            await NotificationService.notifyNoShowFlagged(sellerUserId, bookingId, "BUYER", buyerName, gigTitle); // seller showed up but no buyer
         } else if (outcome === "SELLER_MISSED") {
-            await NotificationService.notifyNoShowFlagged(buyerUserId, bookingId, "SELLER")
+            await NotificationService.notifyNoShowFlagged(buyerUserId, bookingId, "SELLER", sellerName, gigTitle)
         } else if (outcome === "BOTH_MISSED") {
-            await NotificationService.notifyNoShowFlagged(sellerUserId, bookingId, "BUYER");
-            await NotificationService.notifyNoShowFlagged(buyerUserId, bookingId, "SELLER");
+            await NotificationService.notifyNoShowFlagged(sellerUserId, bookingId, "BUYER", buyerName, gigTitle);
+            await NotificationService.notifyNoShowFlagged(buyerUserId, bookingId, "SELLER", sellerName, gigTitle);
         }
 
         const bookingWithPackage = await prisma.sessionBooking.findUnique({ where: { id: bookingId } });
