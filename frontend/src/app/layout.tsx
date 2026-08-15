@@ -42,7 +42,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: "Summayh — Hire Freelancers & Sell Your Skills Online",
+    default: "Summayh - Hire Freelancers & Sell Your Skills Online",
     template: "%s | Summayh",
   },
   description:
@@ -57,13 +57,21 @@ export const metadata: Metadata = {
       "gig marketplace",
       "freelance jobs",
   ],
+  icons: {
+    icon: [
+      { url: "/icon.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "icon/png",
+    apple: "/icon.png"
+  },
   openGraph: {
     type: "website",
     url: baseUrl,
     siteName: "Summayh",
-    title: "Summayh — Hire Freelancers & Sell Your Skills Online",
+    title: "Summayh - Hire Freelancers & Sell Your Skills Online",
     description:
-      "A fast, low-fee freelance marketplace. Post a gig, hire a pro, get it delivered — a modern alternative to Fiverr.",
+      "A fast, low-fee freelance marketplace. Post a gig, hire a pro, get it delivered - a modern alternative to Fiverr.",
     images: [
       {
         url: `${baseUrl}/og-image.png`,
@@ -75,7 +83,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Summayh — Hire Freelancers & Sell Your Skills Online",
+    title: "Summayh - Hire Freelancers & Sell Your Skills Online",
     description: "A fast, low-fee freelance marketplace and Fiverr alternative.",
     images: [`${baseUrl}/og-image.png`],
   },
@@ -94,7 +102,7 @@ export const metadata: Metadata = {
     canonical: baseUrl,
   },
   verification: {
-    google: "XsF1KlumO11ryw6ZB9qGi4jXfm119B-nmK5lFbHblU8",
+    google: "",
   },
 };
 
