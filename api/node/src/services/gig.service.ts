@@ -667,6 +667,54 @@ static async addTiersToGig(
       throw error;
     }
   }
+  static async getAllGigsBySeller(
+    userId: string,
+    page: number,
+    limit: number,
+  ): Promise<any> {
+    try {
+      const sellerProfile = await prisma.sellerProfile.findFirst({
+        where: { userId: userId },
+      });
+
+      if (!sellerProfile) {
+        throw new Error(
+          "Seller profile not found. Only registered sellers can view their gigs.",
+        );
+      }
+
+      const skip = (page - 1) * limit;
+
+      const [gigs, total] = await Promise.all([
+        prisma.gig.findMany({
+          where: { sellerId: sellerProfile.id },
+          skip,
+          take: limit,
+          orderBy: { createdAt: "desc" },
+          include: {
+            tiers: {
+              include: { quantityPricing: true },
+              orderBy: { price: "asc" },
+            },
+          },
+        }),
+        prisma.gig.count({ where: { sellerId: sellerProfile.id } }),
+      ]);
+
+      return {
+        data: gigs,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    } catch (error: any) {
+      console.error("Error in GigService.getAllGigsBySeller:", error);
+      throw error;
+    }
+  }
   static async deleteGig(userId: string, gigId: string): Promise<any> {
     try {
       // Validation is gig creator the current user who wanna deletes it?
