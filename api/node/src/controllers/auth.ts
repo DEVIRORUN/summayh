@@ -322,6 +322,7 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<any> => {
         email: true,
         university: true,
         isPhoneVerified: true,
+        isEmailVerified: true,
         createdAt: true,
         role: true,
         sellerProfile: {
