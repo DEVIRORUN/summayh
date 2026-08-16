@@ -6,6 +6,7 @@ import { GigGallery } from "@/components/axiom/GigGallery";
 import { GigTitleBlock } from "@/components/theorems/GigTitleBlock";
 import { GigDescriptionAccordion } from "@/components/axiom/GigDescriptionAccordion";
 import { GigOrderPanel } from "@/components/shared/GigOrderPanel";
+import { getCurrentUser } from "@/lib/auth";
 import { GigReviews } from "@/components/axiom/GigReviews";
 
 interface GigPageProps {
@@ -16,8 +17,11 @@ const BASE_URL = "https://summayh.com";
 
 async function getGig(id: string) {
   try {
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/gig/${id}`, {
       cache: "no-store",
+      headers: { Cookie: cookieStore.toString() },
     });
     if (!res.ok) return null;
     const body = await res.json();
@@ -137,6 +141,10 @@ export default async function GigDetailPage({ params }: GigPageProps) {
     },
   ];
 
+  const currentUser = await getCurrentUser();
+  const isOwner = currentUser?.id === gig.seller?.userId;
+
+
   return (
     <>
       <script
@@ -145,6 +153,11 @@ export default async function GigDetailPage({ params }: GigPageProps) {
       />
       <div className="max-w-5xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-2 flex flex-col gap-6">
+          {isOwner && gig.state !== "ACTIVE" && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-600 text-xs px-3 py-2 font-medium">
+              {gig.state === "DRAFT" ? "This gig is a draft — only you can see it." : `Status: ${gig.state}`}
+            </div>
+          )}
           <GigTitleBlock
             title={gig.title}
             category={gig.category?.name || "Uncategorized"}

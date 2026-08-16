@@ -462,24 +462,27 @@ export class GigService {
   //     throw error;
   //   }
   // }
-  static async readGigData(userId: string, gigId: string): Promise<any> {
+  static async readGigData(userId: string | undefined, gigId: string): Promise<any> {
     try {
       console.log(new Date(), "-> [Gig Service read]: Hit!");
+
       const mainGig = await prisma.gig.findUnique({
         where: { id: gigId },
         include: {
           category: true,
-          tiers: {
-            include: {
-              quantityPricing: true,
-            },
-          },
+          tiers: { include: { quantityPricing: true } },
           seller: true,
         },
       });
 
-      
       if (!mainGig) throw new Error("Gig not found.");
+
+      const isOwner = userId && mainGig.seller.userId === userId;
+
+      if (mainGig.state !== "ACTIVE" && !isOwner) {
+        throw new Error("Gig not found."); // don't leak draft existence to non-owners
+      }
+
       return mainGig;
     } catch (error) {
       console.error("Error in GigService.readGigData:", error);
