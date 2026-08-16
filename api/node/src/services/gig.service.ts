@@ -45,13 +45,14 @@ interface GigFAQInput {
   order?: number;
 }
 
-interface GigFilters {
+export interface GigFilters {
   category?: string;
   search?: string;
   minPrice?: number;
   maxPrice?: number;
   rating?: number;
   deliveryTime?: number;
+  sortBy?: SortOption;
 }
 
 interface GigUpsertInput {
@@ -771,13 +772,19 @@ export class GigService {
         case "price_asc":
           orderBy = {
             tiers: {
-              _count: "asc", // Prisma orders by relation count; for price sorting, use tier price ordering below if preferred
+              _min: {
+                price: "asc",
+              },
             },
           };
           break;
         case "price_desc":
           orderBy = {
-            baseRankingScore: "desc",
+            tiers: {
+              _max: {
+                price: "desc",
+              },
+            },
           };
           break;
         case "newest":
@@ -796,7 +803,7 @@ export class GigService {
           include: {
             tiers: {
               include: { quantityPricing: true },
-              orderBy: { price: "asc" }, // Ensures lowest price tier is first in response
+              orderBy: { price: "asc" }, // Ensures lowest price tier is always index 0
             },
             seller: {
               select: {
