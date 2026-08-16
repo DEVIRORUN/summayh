@@ -13,8 +13,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     return (
         <div className="flex h-dvh w-full bg-background">
             <AppShell categories={categories} >
-                {/* <AuthGate>{children}</AuthGate> */}
-                {children}
+                <AuthGate>{children}</AuthGate>
+                {/* {children} */}
             </AppShell>
         </div>
     )
