@@ -151,7 +151,7 @@ export default async function GigDetailPage({ params }: GigPageProps) {
       <Breadcrumbs
           items={[
             { label: "Gigs", href: "/gigs" },
-            { label: gig.category?.name || "Category", href: `/gig?category=${gig.category?.slug}` },
+            { label: gig.category?.name || "Category", href: `/gigs?category=${gig.category?.slug}` },
             { label: gig.title },
           ]}
         />

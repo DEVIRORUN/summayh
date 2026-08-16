@@ -3,11 +3,14 @@
 import { prisma } from "../utils/prisma";
 import { TierLabel } from "../../generated/prisma";
 import { connect } from "http2";
+import { State } from "../../generated/prisma";
 
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { r2Client } from "../utils/r2Client";
 import { randomUUID } from "crypto";
+
+export type SortOption = "newest" | "price_asc" | "price_desc" | "rating" | "popular";
 
 interface TierInput {
   customName?: string;
@@ -695,78 +698,117 @@ export class GigService {
   ): Promise<any> {
     try {
       const skip = (page - 1) * limit;
-      const where: any = { isActive: true };
 
+      // 1. Base where condition
+      const where: Prisma.GigWhereInput = { state: State.ACTIVE };
+
+      // 2. Category Filter (UUID vs. Slug detection)
       if (filters.category) {
-        where.OR = [
-          { category: { is: { slug: filters.category } } },
-          { categoryId: filters.category }
-        ]
-      }
+        const isUuid = /^[0-9a-fA-F-]{36}$/.test(filters.category);
 
-      if (filters.search) {
-        const searchCondition = [
-          { title: { contains: filters.search, mode: "insensitive" } },
-          { description: { contains: filters.search, mode: "insensitive" } },
-        ]
-        
-        if (where.OR) {
-          where.AND = [
-            { OR: where.OR },
-            { OR: searchCondition },
-          ];
-          delete where.OR;
+        if (isUuid) {
+          where.categoryId = filters.category;
         } else {
-          where.OR = searchCondition;
+          where.category = {
+            slug: filters.category,
+          };
         }
       }
 
-
-      if (filters.rating) {
-        where.avgRating = { gte: filters.rating }
+      // 3. Search Filter
+      if (filters.search) {
+        where.AND = [
+          ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
+          {
+            OR: [
+              { title: { contains: filters.search, mode: "insensitive" } },
+              { description: { contains: filters.search, mode: "insensitive" } },
+            ],
+          },
+        ];
       }
 
-      if (filters.minPrice !== undefined || filters.maxPrice !== undefined || filters.deliveryTime !== undefined) {
+      // 4. Minimum Average Rating Filter
+      if (filters.rating) {
+        where.avgRating = { gte: filters.rating };
+      }
+
+      // 5. Tier Price & Delivery Time Filters
+      if (
+        filters.minPrice !== undefined ||
+        filters.maxPrice !== undefined ||
+        filters.deliveryTime !== undefined
+      ) {
         where.tiers = {
           some: {
             ...(filters.minPrice !== undefined || filters.maxPrice !== undefined
               ? {
-                price: {
-                  ...(filters.minPrice !== undefined ? { gte: filters.minPrice } : {}),
-                  ...(filters.maxPrice !== undefined ? { lte: filters.maxPrice } : {}),
-                },
-              }
+                  price: {
+                    ...(filters.minPrice !== undefined ? { gte: filters.minPrice } : {}),
+                    ...(filters.maxPrice !== undefined ? { lte: filters.maxPrice } : {}),
+                  },
+                }
               : {}),
-              ...(filters.deliveryTime !== undefined
-                ? { deliveryDays: { lte: filters.deliveryTime } }
-                : {}),
+            ...(filters.deliveryTime !== undefined
+              ? { deliveryDays: { lte: filters.deliveryTime } }
+              : {}),
           },
         };
       }
 
+      // 6. Dynamic Sorting Logic
+      let orderBy: Prisma.GigOrderByWithRelationInput | Prisma.GigOrderByWithRelationInput[] = {
+        createdAt: "desc",
+      };
+
+      switch (filters.sortBy) {
+        case "rating":
+          orderBy = { avgRating: "desc" };
+          break;
+        case "popular":
+          orderBy = { totalReviews: "desc" };
+          break;
+        case "price_asc":
+          orderBy = {
+            tiers: {
+              _count: "asc", // Prisma orders by relation count; for price sorting, use tier price ordering below if preferred
+            },
+          };
+          break;
+        case "price_desc":
+          orderBy = {
+            baseRankingScore: "desc",
+          };
+          break;
+        case "newest":
+        default:
+          orderBy = { createdAt: "desc" };
+          break;
+      }
+
+      // 7. Execute Queries Concurrently
       const [gigs, total] = await Promise.all([
-        await prisma.gig.findMany({
+        prisma.gig.findMany({
           where,
-          skip: skip,
+          skip,
           take: limit,
-          orderBy: { createdAt: "desc" }, // Default chronological order for now
+          orderBy,
           include: {
             tiers: {
               include: { quantityPricing: true },
+              orderBy: { price: "asc" }, // Ensures lowest price tier is first in response
             },
             seller: {
-              select: { 
-                id: true, 
+              select: {
+                id: true,
                 sellerUsername: true,
                 avatar: true,
                 isPro: true,
                 user: {
-                  select: {
-                    name: true
-                  }
+                  select: { name: true },
                 },
-                rating: true, 
-                totalReviews: true 
+                rating: true,
+                totalReviews: true,
               },
             },
           },
@@ -785,55 +827,6 @@ export class GigService {
       };
     } catch (error: any) {
       console.error("ERROR fetching MULTIPLE gigs bro:", error);
-      throw error;
-    }
-  }
-  static async getAllGigsBySeller(
-    userId: string,
-    page: number = 1,
-    limit: number = 15,
-  ): Promise<any> {
-    try {
-      console.error("MULTIPLE gigs for seller bro: HIT!!!!");
-      const skip = (page - 1) * limit;
-
-      const gigs = await prisma.gig.findMany({
-        where: { seller: { userId } },
-        skip: skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          tiers: {
-            include: { quantityPricing: true },
-          },
-          seller: {
-            select: {
-              userId: true,
-              sellerUsername: true,
-              rating: true,
-              totalReviews: true,
-            },
-          },
-        },
-      });
-
-      // Count the num of Gigs provided
-      const totalGigs = await prisma.gig.count({
-        where: { seller: { userId } },
-      });
-
-      console.error("MULTIPLE gigs for seller bro: SUCCESSFUL!!!!");
-      return {
-        data: gigs,
-        meta: {
-          total: totalGigs,
-          page,
-          limit,
-          totalPages: Math.ceil(totalGigs / limit),
-        },
-      };
-    } catch (error: any) {
-      console.error("ERROR fetching MULTIPLE gigs by seller bro: ", error);
       throw error;
     }
   }
