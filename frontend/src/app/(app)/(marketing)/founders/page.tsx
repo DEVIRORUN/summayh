@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 interface Pass {
@@ -9,6 +10,8 @@ interface Pass {
 }
 
 export default async function FoundersPage() {
+    redirect("/pricing");
+    
     const res = await fetch(`${process.env.NODE_API_URL}/api/founders-pass/availability`, { cache: "no-store" });
     if(!res.ok) {
         throw new Error(`Failed to fetch availability: ${res.statusText}`);
