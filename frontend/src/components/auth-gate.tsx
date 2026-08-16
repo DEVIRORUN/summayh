@@ -16,9 +16,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
     const isPublicPath = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
-    if (!user.isEmailVerified && !isPublicPath) {
-      router.push("/verify-email");
-    }
+    // if (!user.isEmailVerified && !isPublicPath) {
+    //   router.push("/verify-email");
+    // }
   }, [isLoading, user, pathname, router]);
 
   return <>{children}</>;
