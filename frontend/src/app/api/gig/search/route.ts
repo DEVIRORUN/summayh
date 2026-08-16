@@ -1,36 +1,3 @@
-// import { NextResponse } from "next/server";
-// import { proxyFetchRoute } from "@/lib/proxy-fetch";
-
-
-// export async function GET(request: Request) {
-//     try {
-//         const { searchParams } = new URL(request.url);
-//         const { query } = searchParams.get("q") || "";
-
-//         const backendRes = await proxyFetchRoute(
-//             request,
-//             `/api/gigs/search?q=${encodeURIComponent(query)}`,
-//             { method: "GET" }
-//         )
-
-//         if (!backendRes.ok) {
-//             const errorData = await backendRes.json().catch(() => ({}));
-//             return NextResponse.json(
-//                 { error: errorData.message || "Search faield" },
-//                 { status: backendRes.status }
-//             );
-//         }
-
-//         const data = backendRes.json();
-//         return NextResponse.json(data);
-//     } catch(error) {
-//         return NextResponse.json({ error: "Internal Server Error"}, { status: 500 });
-//     }
-// }
-
-
-
-// src/app/api/gig/search/route.ts
 import { NextResponse } from "next/server";
 import { proxyFetchRoute } from "@/lib/proxy-fetch";
 
@@ -47,7 +14,11 @@ export async function POST(request: Request) {
     const backendRes = await proxyFetchRoute(
       request,
       `/api/gig/search?${params.toString()}`,
-      { method: "GET" }
+      { 
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+       }
     );
 
     if (!backendRes.ok) {

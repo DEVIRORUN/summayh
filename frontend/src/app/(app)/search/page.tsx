@@ -140,8 +140,15 @@ export default function SearchPage() {
   };
 
   useEffect(() => {
-    if (!query || !category) return;
-    if ((query || query.trim().length < 3) && !category) return;
+    const trimmedQuery = query.trim();
+
+    const hasValidQuery = trimmedQuery.length >= 3;
+    const hasCategory = Boolean(category);
+
+    if (!hasValidQuery && !hasCategory) {
+      setResults([]);
+      return;
+    }
 
     const fetchGigs = async () => {
       setError(null);
@@ -227,7 +234,15 @@ export default function SearchPage() {
           />
           <Button
             type="submit"
-            form="search-filter-form"
+            onClick={() => {
+              const params = new URLSearchParams(searchParams.toString());
+              if (searchInput.trim()) {
+                params.set("q", searchInput.trim());
+              } else {
+                params.delete("q");
+              }
+              router.push(`/search?${params.toString()}`)
+            }}
             className="bg-foreground hover:bg-muted-foreground cursor-pointer rounded-xs text-xs font-medium px-5 shrink-0"
           >
             Search

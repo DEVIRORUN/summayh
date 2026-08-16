@@ -59,11 +59,40 @@ router.post("/draft", protectRoute, requireSeller, GigController.createDraftGig)
  *   post:
  *     summary: Agentic AI-powered gig search using Gemini
  *     tags: [Gigs]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               query:
+ *                 type: string
+ *                 example: "I need to know how to solve calculus, right now"
+ *               budgetMax:
+ *                 type: number
+ *                 example: 10000
+ *               location:
+ *                 type: string
+ *                 example: "ogbomosho"
+ *               gigType:
+ *                 type: string
+ *                 example: "LIVE"
+ *               category:
+ *                 type: string
+ *                 example: "VIDEO AND TUTORING"
+ *               limit:
+ *                 type: integer
+ *                 default: 20
+ *                 example: 20
+ *               page:
+ *                 type: integer
+ *                 default: 1
+ *                 example: 1
  *     responses:
  *       200:
  *         description: Search results with AI extraction metadata
  */
-router.get("/search", GigController.searchGigs);
 router.post("/search", GigController.searchGigs);
 
 /**
