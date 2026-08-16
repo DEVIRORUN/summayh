@@ -42,6 +42,15 @@ interface GigFAQInput {
   order?: number;
 }
 
+interface GigFilters {
+  category?: string;
+  search?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  rating?: number;
+  deliveryTime?: number;
+}
+
 interface GigUpsertInput {
   title: string;
   category: string;
@@ -679,37 +688,65 @@ export class GigService {
     }
   }
   static async listGigs(
-    userId: string,
-    page: number = 1,
-    limit: number = 30,
-    category?: string,
-    search?: string
+    userId: string | undefined,
+    page: number,
+    limit: number,
+    filters: GigFilters
   ): Promise<any> {
     try {
       const skip = (page - 1) * limit;
+      const where: any = { isActive: true };
 
-      // basic filter (only ACTIVE GIGS)
-      const whereClause: any = { state: "ACTIVE" };
+      if (filters.category) {
+        where.OR = [
+          { category: { is: { slug: filters.category } } },
+          { categoryId: filters.category }
+        ]
+      }
 
-      if (category) {
-        whereClause.category = {
-          OR: [
-            { id: category },
-            { slug: category },
-            { parent: { slug: category } },
-          ]
+      if (filters.search) {
+        const searchCondition = [
+          { title: { contains: filters.search, mode: "insensitive" } },
+          { description: { contains: filters.search, mode: "insensitive" } },
+        ]
+        
+        if (where.OR) {
+          where.AND = [
+            { OR: where.OR },
+            { OR: searchCondition },
+          ];
+          delete where.OR;
+        } else {
+          where.OR = searchCondition;
         }
       }
-      if (search && search.trim().length > 0) {
-        whereClause.OR = [
-          { title: { contains: search, mode: "insensitive" } },
-          { description: { contains: search, mode: "insensitive" } },
-        ]
+
+
+      if (filters.rating) {
+        where.avgRating = { gte: filters.rating }
+      }
+
+      if (filters.minPrice !== undefined || filters.maxPrice !== undefined || filters.deliveryTime !== undefined) {
+        where.tiers = {
+          some: {
+            ...(filters.minPrice !== undefined || filters.maxPrice !== undefined
+              ? {
+                price: {
+                  ...(filters.minPrice !== undefined ? { gte: filters.minPrice } : {}),
+                  ...(filters.maxPrice !== undefined ? { lte: filters.maxPrice } : {}),
+                },
+              }
+              : {}),
+              ...(filters.deliveryTime !== undefined
+                ? { deliveryDays: { lte: filters.deliveryTime } }
+                : {}),
+          },
+        };
       }
 
       const [gigs, total] = await Promise.all([
         await prisma.gig.findMany({
-          where: whereClause,
+          where,
           skip: skip,
           take: limit,
           orderBy: { createdAt: "desc" }, // Default chronological order for now
@@ -734,7 +771,7 @@ export class GigService {
             },
           },
         }),
-        prisma.gig.count({ where: whereClause }),
+        prisma.gig.count({ where }),
       ]);
 
       return {

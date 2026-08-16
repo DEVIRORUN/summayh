@@ -8,15 +8,19 @@ interface SearchParams {
   category?: string;
   search?: string;
   page?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  rating?: string;
+  deliveryTime?: string;
 }
 
 async function fetchGigs(params: SearchParams) {
   const baseUrl = process.env.NODE_API_URL || "http://localhost:3001";
   const queryParams = new URLSearchParams();
 
-  if (params.category) queryParams.append("category", params.category);
-  if (params.search) queryParams.append("search", params.search);
-  if (params.page) queryParams.append("page", params.page);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) queryParams.append(key, value);
+  });
 
   try {
     const res = await fetch(`${baseUrl}/api/gig?${queryParams.toString()}`, {
@@ -24,7 +28,11 @@ async function fetchGigs(params: SearchParams) {
     });
     console.log("RES:", res)
 
-    if (!res.ok) throw new Error("Failed to load gigs");
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        console.error("Backend Error Payload:", errorData);
+        throw new Error("Failed to load gigs");
+    };
     return await res.json();
   } catch (err) {
     console.error("Error fetching gigs:", err);

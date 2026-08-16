@@ -616,10 +616,25 @@ console.log("[GET UPLAOD URL]: SUCCESSFUL!!!");
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 30;
       const category = (req.query.category || req.query.categoryId) as string;
-      const search = req.query.search as string;
+      const search = req.query.search as string;  
+
+      const minPrice = req.query.minPrice ? parseFloat(req.query.minPrice as string) : undefined;
+      const maxPrice = req.query.maxPrice ? parseFloat(req.query.maxPrice as string) : undefined;
+      const rating = req.query.rating ? parseFloat(req.query.rating as string) : undefined;
+      const deliveryTime = req.query.deliveryTime ? parseInt(req.query.deliveryTime as string, 10) : undefined;
+
       const userId = (req as any).userId;
 
-      const gigs = await GigService.listGigs(userId, page, limit, category, search);
+      const filters = {
+        category,
+        search,
+        minPrice,
+        maxPrice,
+        rating,
+        deliveryTime,
+      };
+
+      const gigs = await GigService.listGigs(userId, page, limit, filters);
 
       // Fire-and-forget impression tracking for every gig returned in this page
       const gigIds = gigs?.data?.map((g: any) => g.id) ?? [];

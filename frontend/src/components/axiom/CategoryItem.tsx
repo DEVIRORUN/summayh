@@ -29,7 +29,7 @@ function CategoryItem({
         <div className="flex flex-col">
             <div className="flex items-center rounded-md hover:bg-muted transition-colors">
                 <Link
-                    href={`/gigcategory=${category.slug}`}
+                    href={`/gig?category=${category.slug}`}
                     onClick={onItemClick}
                     className="flex-1 px-3 py-2 text-sm text-foreground/80 hover:text-foreground"
                 >
@@ -55,7 +55,7 @@ function CategoryItem({
                     {category.children.map((sub) => (
                         <Link
                             key={sub.id}
-                            href={`/gigcategory=${sub.slug}`}
+                            href={`/gig?category=${sub.slug}`}
                             onClick={onItemClick}
                             className="rounded-md px-2 py-1.5 text-xs text-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
                         >
