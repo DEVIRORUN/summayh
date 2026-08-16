@@ -226,33 +226,36 @@ export class SellerService {
         throw error;
         }
     } 
-    static async getPublicSellerProfile(sellerUsername: string): Promise<any> {
-        const seller = await prisma.sellerProfile.findUnique({
-            where: { sellerUsername },
+    static async getPublicSellerProfile(username: string): Promise<any> {
+        const user = await prisma.user.findUnique({
+            where: { username },
             select: {
-                id: true,
-                sellerUsername: true,
-                bio: true,
-                aiBio: true,
-                skills: true,
-                avatar: true,
-                avgRating: true,
-                totalReviews: true,
-                isPro: true,
-                founderBadge: true,
-                isOnline: true,
-                lastActiveAt: true,
-                createdAt: true,
-                user: {
-                    select: { name: true, university: true } 
+                name: true,
+                university: true,
+                sellerProfile: {
+                    select: {
+                        id: true,
+                        sellerUsername: true,
+                        bio: true,
+                        aiBio: true,
+                        skills: true,
+                        avatar: true,
+                        avgRating: true,
+                        totalReviews: true,
+                        isPro: true,
+                        founderBadge: true,
+                        isOnline: true,
+                        lastActiveAt: true,
+                        createdAt: true,
+                    },
                 },
-            }
+            },
         });
 
-        if (!seller) throw new Error("Seller not found");
+        if (!user?.sellerProfile) throw new Error("Seller not found");
 
         const gigs = await prisma.gig.findMany({
-            where: { sellerId: seller.id, state: "ACTIVE" }, // only show live gigs publicly
+            where: { sellerId: user.sellerProfile.id, state: "ACTIVE" },
             select: {
                 id: true,
                 title: true,
@@ -260,10 +263,14 @@ export class SellerService {
                 coverImage: true,
                 avgRating: true,
                 totalReviews: true,
-                tiers: { select: { price: true }, orderBy: { price: "asc" }, take: 1 }, // cheapest tier for "starting at"
+                tiers: { select: { price: true }, orderBy: { price: "asc" }, take: 1 },
             },
         });
 
-        return { ...seller, gigs };
+        return {
+            ...user.sellerProfile,
+            user: { name: user.name, university: user.university }, // keep same shape SellerProfilePage expects
+            gigs,
+        };
     }
 }

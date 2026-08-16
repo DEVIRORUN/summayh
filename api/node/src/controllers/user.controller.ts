@@ -40,4 +40,16 @@ export class UserController {
             return res.status(500).json({ message: "Something went wrong updating user data." })
         }
     }
+    static async getByUsername(req: Request, res: Response): Promise<any> {
+        try {
+            const { username } = req.params;
+            const user = await UserService.getUserByUsername(username);
+            if (!user) return res.status(404).json({ message: "User not found." });
+            return res.status(200).json({ message: "User fetched", data: user });
+        } catch (error: any) {
+            const handled = handlePrismaError(error, res);
+            if (handled) return;
+            return res.status(500).json({ message: "Failed to fetch user." });
+        }
+    }
 }

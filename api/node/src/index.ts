@@ -41,6 +41,7 @@ import agentDecisionRoutes from './routes/agentDesicion.route';
 import sessionMaterialRoutes from './routes/sessionMaterial.route';
 import proSubscriptionRoutes from './routes/proSubscription.route';
 import livekitWebhookRouter from "./routes/livekitWebhook.route";
+import avatarRoutes from "./routes/avatar.route";
 
 const app = express();
 app.use(helmet());
@@ -263,6 +264,7 @@ app.use("/api/admin/agent-decisions", agentDecisionRoutes);
 app.use("/api/session-material", sessionMaterialRoutes);
 app.use("/api/pro-subscriptions", proSubscriptionRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/avatar", avatarRoutes)
 
 initSocket(io);
 

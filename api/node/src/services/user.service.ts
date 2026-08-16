@@ -12,6 +12,7 @@ export class UserService {
           name: true,
           username: true,
           email: true,
+          avatar: true,
           university: true,
           isPhoneVerified: true,
           isEmailVerified: true,
@@ -76,5 +77,21 @@ export class UserService {
       console.error("ERROR updating user: ", error);
       throw error;
     }
+  }
+  static async getUserByUsername(username: string): Promise<any> {
+    const user = await prisma.user.findUnique({
+      where: { username },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        avatar: true,
+        university: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+
+    return user;
   }
 }

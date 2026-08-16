@@ -300,6 +300,8 @@ export class GigService {
           where: { id: gigId, sellerId },
           include: {
             seller: true,
+            tiers: true,
+            category: true,
           },
           data: {
             state: "ACTIVE",

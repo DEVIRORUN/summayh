@@ -29,43 +29,70 @@ export class SellerController {
         accountNumber,
         biography,
         phoneNumber,
+        sellerUsername,
+        skills,
       } = req.body;
 
       if (!settlementBank || !accountNumber) {
         return res
           .status(400)
-          .json({ error: "Bnak code and account numner are required." });
+          .json({ error: "Bank code and account number are required." });
+      }
+
+      const finalUsername = user.username || sellerUsername;
+
+      if (!finalUsername || finalUsername.trim().length < 3) {
+        return res.status(400).json({ error: "A valid username is required." });
+      }
+
+      if (!user.username) {
+        const [existingUser, existingSeller] = await Promise.all([
+          prisma.user.findUnique({ where: { username: finalUsername } }),
+          prisma.sellerProfile.findUnique({ where: { sellerUsername: finalUsername } }),
+        ]);
+        if ((existingUser && existingUser.id !== userId) || existingSeller) {
+          return res.status(409).json({ error: "Username already taken." });
+        }
       }
 
       // 1. Fire the Paystack generator method we wrote above
-      console.log(`🏦 Registering subaccount for user ${userId}...`);
+      console.log(`Registering subaccount for user ${userId}...`);
       const subaccountCode = await PaystackService.createSellerSubaccount(
         accountName || `Summayh Seller ${userId.slice(0, 4)}`,
         settlementBank,
         accountNumber,
-        10, // my cut
+        10, 
       );
 
-      // 2. Update the user record with the generated payout kwy
+      // 2. Update seller profile — sellerUsername stays mirrored for the FastAPI search service
       const updateProfile = await prisma.sellerProfile.upsert({
         where: { userId },
         update: {
           paystackSubaccountCode: subaccountCode,
+          sellerUsername: finalUsername,
+          bio: biography,
+          phoneNumber,
+          skills: Array.isArray(skills) ? skills : [],
         },
         create: {
-          user: {
-            connect: { id: userId },
-          },
+          user: { connect: { id: userId } },
           paystackSubaccountCode: subaccountCode,
+          sellerUsername: finalUsername,
           bio: biography as string,
-          phoneNumber: phoneNumber,
-          skills: [],
+          phoneNumber,
+          skills: Array.isArray(skills) ? skills : [],
         },
       });
+
+      // 3. User is now the source of truth for `username` + role
       await prisma.user.update({
         where: { id: userId },
-        data: { role: "SELLER" },
+        data: {
+          role: "SELLER",
+          ...(user.username ? {} : { username: finalUsername }),
+        },
       });
+
       console.log(
         new Date(),
         "-> [Seller Onboard]: Succesully created SellerProfile!",
@@ -80,7 +107,7 @@ export class SellerController {
       if (handled) return;
       return res.status(500).json({ message: "Something went wrong." });
     }
-  }
+}
   // To list all supported banks from Paystack
   static async listBanks(req: Request, res: Response): Promise<any> {
     try {

@@ -21,6 +21,27 @@ const router = Router();
  * 
  */
 router.get("/me", protectRoute, UserController.getMe);
+
+/**
+ * @openapi
+ * /api/user/u/{username}:
+ *   get:
+ *     summary: Get a public user profile by username
+ *     tags: [User]
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User profile found
+ *       404:
+ *         description: User not found
+ */
+router.get("/u/:username", UserController.getByUsername);
+
 /**
  * @openapi
  * /api/user/update:

@@ -287,7 +287,7 @@ model User {
   email              String           @unique
   password           String
   name               String
-  username           String?
+  username           String? @unique
   university         String?          @default("Unkown University")
   dateOfBirth        DateTime?
   avatar             String?
