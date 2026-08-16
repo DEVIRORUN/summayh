@@ -2,11 +2,12 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../utils/prisma";
 import { AuthedRequest } from "./requireEmailVerified";
+import { Role } from "../../generated/prisma";
 
 export interface AuthRequest extends Request {
     userId?: string;
     tokenVersion?: number;
-    role?: string; 
+    role?: Role; 
 }
 
 export const protectRoute = async (req: AuthRequest & AuthedRequest, res: Response, next: NextFunction): Promise<any> => {

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../utils/prisma";
+import { Role } from "../../generated/prisma";
 
 const EXEMPT_PREFIXES = [
     "/api/email-otp",
@@ -15,6 +16,7 @@ export interface AuthedRequest extends Request {
         tokenVersion: number;
         isBanned: boolean;
         isEmailVerified: boolean;
+        role: Role;
     }
 }
 
@@ -35,7 +37,7 @@ export async function requireEmailVerified(
 
         const user = await prisma.user.findUnique({
             where: { id: decoded.userId },
-            select: { tokenVersion: true, isBanned: true, isEmailVerified: true }
+            select: { tokenVersion: true, isBanned: true, isEmailVerified: true, role: true }
         });
 
         if (!user) return next();
@@ -45,6 +47,7 @@ export async function requireEmailVerified(
             tokenVersion: user.tokenVersion,
             isBanned: user.isBanned,
             isEmailVerified: user.isEmailVerified,
+            role: user.role,
         };
 
         if (!user.isEmailVerified) {

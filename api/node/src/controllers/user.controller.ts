@@ -43,6 +43,9 @@ export class UserController {
     static async getByUsername(req: Request, res: Response): Promise<any> {
         try {
             const { username } = req.params;
+            if (!username || typeof username !== "string") {
+                return res.status(400).json({ available: false, message: "Username is required." });
+            }
             const user = await UserService.getUserByUsername(username);
             if (!user) return res.status(404).json({ message: "User not found." });
             return res.status(200).json({ message: "User fetched", data: user });
