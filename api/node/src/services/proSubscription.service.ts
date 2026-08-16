@@ -6,8 +6,8 @@ export class ProSubscriptionService {
         return prisma.proPlan.findMany({ where: { isActive: true }, orderBy: { priceNaira: "asc" } })
     }
     static async initializeSubscription(sellerId: string, planId: string, buyerEmail: string) {
-        const plan = await prisma.proPlan.findUniqueOrThrow({ where: { id: sellerId } });
-        const seller = await prisma.sellerProfile.findUniqueOrThrow({ where: { id: planId } });
+        const plan = await prisma.proPlan.findUniqueOrThrow({ where: { id: planId } });
+        const seller = await prisma.sellerProfile.findUniqueOrThrow({ where: { id: sellerId } });
 
         if (seller.isPro && seller.proSource === "FOUNDERS"){
             throw new Error("You already have a lifetime Founders Pass - no need to subscribe.");

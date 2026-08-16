@@ -39,6 +39,13 @@ export function Navbar() {
                     <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
                 ) : user ? (
                     <>
+                        {user.role !== "SELLER" && (
+                            <Link
+                                href="/onboarding/seller"
+                                className="hidden sm:block text-sm font-medium hover:bg-foreground hover:text-background px-3 py-2 rounded-md transition-colors"
+                            >
+                            Become a seller</Link>
+                        )}
                         <NotificationBell />
                         <Popover>
                             <PopoverTrigger asChild>

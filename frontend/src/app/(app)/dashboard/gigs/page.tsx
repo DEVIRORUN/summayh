@@ -67,6 +67,19 @@ export default async function GigsDahboardPage({
     return 0;
   });
 
+  if (gigs.length === 0) {
+    return (
+      <div className="flex items-center gap-4">
+        <span className="text-muted-foreground">You have no gigs, go create a gig.</span>
+        <Link href="/gigs/new/basics">
+          <Button variant="outline" className="cursor-pointer rounded-sm">
+            Create Gigs
+          </Button>
+          </Link>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col max-w-5xl gap-4 w-full min-w-0 p-4">
       <header className="flex flex-row justify-between">

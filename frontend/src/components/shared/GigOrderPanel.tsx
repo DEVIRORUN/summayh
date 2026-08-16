@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SlotPicker } from "@/components/axiom/SlotPicker";
+import { useAuth } from "@/contexts/auth-context";
 
 // Matches your backend's GigTier model shape (label, customName, description,
 // price, deliveryDays, revisionCount) — this is what gig.tiers contains
@@ -35,12 +36,15 @@ interface BackendTier {
 
 }; 
 
-export function GigOrderPanel({ sellerId, gigId, tiers, deliveryMode }: { sellerId: string; gigId: string; tiers: BackendTier[]; deliveryMode: "LIVE" | "DIGITAL"}) {
+export function GigOrderPanel({ sellerId, sellerUserId, gigId, tiers, deliveryMode }: { sellerId: string; sellerUserId: string; gigId: string; tiers: BackendTier[]; deliveryMode: "LIVE" | "DIGITAL"}) {
   const router = useRouter();
+  const { user } = useAuth();
   const [selectedTierId, setSelectedTierId] = useState<"basic" | "standard" | "premium">("standard");
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ start: string; end: string } | null>(null);
   const isLive = deliveryMode === "LIVE";
+
+  const isOwnGig = user?.id === sellerUserId;
 
   if(!tiers || !Array.isArray(tiers) || tiers.length === 0) {
     return (
@@ -48,6 +52,14 @@ export function GigOrderPanel({ sellerId, gigId, tiers, deliveryMode }: { seller
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground mb-2" />
             <p className="text-xs text-muted-foreground">Loading offer details...</p>
         </div>
+    )
+  }
+
+  if (isOwnGig) {
+    return (
+      <div className="border border-border rounded-lg p-6 bg-card text-card-foreground shadow-sm text-sm text-muted-foreground">
+        This is your own gig - you can&apos;t order it yourself.
+      </div>
     )
   }
 

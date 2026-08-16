@@ -72,7 +72,7 @@ export function NotificationBell() {
                             href={n.link ?? "#"}
                             onClick={() => !n.read && markAsRead(n.id)}
                             className={`flex items-start gap-2 border-b px-3 py-2.5 text-sm hover:bg-muted last:border-b-0 ${
-                                !n.read ? "bg-muted/85" : ""
+                                !n.read ? "bg-muted-foreground/30" : ""
                             }`}
                         >
                             {!n.read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-500" />}

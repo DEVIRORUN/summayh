@@ -9,6 +9,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { DeliverySection } from "@/components/axiom/DeliverySection";
 import { LiveSessionSection } from "@/components/axiom/LiveSessionSection";
 import { DisputeDialog } from "@/components/axiom/DisputeDialog";
+import { ReviewForm } from "@/components/axiom/ReviewForm";
 
 
 function mapOrderStatusToSteps(status: string): TimelineStep[] {
@@ -115,6 +116,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
                         orderStatus={order.status}/>
                 )}
             </div>
+
+            {isBuyer && order.status === "COMPLETED" && !order.review && (
+                <ReviewForm orderId={order.id}/>
+            )}
             
             <OrderActionBar order={order} />
         </div>

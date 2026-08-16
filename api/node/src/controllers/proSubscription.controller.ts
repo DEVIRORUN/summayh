@@ -21,7 +21,7 @@ export class ProSubscriptionController {
             if (!planId || !email) {
                 return res.status(400).json({ message: "planId and email are required." });
             }
-
+            console.log("[DEBUG] received planId:", planId, "| email:", email);
             const sellerProfile = await prisma.sellerProfile.findUnique({ where: { userId } });
             if (!sellerProfile) {
                 return res.status(403).json({ message: "You must be a seller to subscribe to Pro." })

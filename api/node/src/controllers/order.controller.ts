@@ -135,9 +135,16 @@ export class OrderController {
 
             const gig = await prisma.gig.findUnique({ 
                 where: { id: serviceId },
-                include: { tiers: true }
+                include: { 
+                    tiers: true,
+                    seller: { select: { userId: true } }
+                }
              });
             if (!gig) return res.status(404).json({ message: "Gig not found." });
+
+            if (gig.seller.userId === buyerId) {
+                return res.status(403).json({ message: "You cannot purchase your own gig" })
+            }
 
             const buyer = await prisma.user.findUnique({ where: { id: buyerId }, select: { id: true, email: true, phoneNumber: true } });
             if (!buyer) return res.status(404).json({ message: "Buyer not found." })

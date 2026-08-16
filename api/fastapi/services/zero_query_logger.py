@@ -80,7 +80,7 @@ async def _upsert_exact(
             INSERT INTO "ZeroResultQuery"
                 (id, query, "normalizedQuery", "gigType", location, "budgetMax", "searchCount", "lastSearchedAt", "createdAt")
                 VALUES (%s, %s, %s, %s, %s, %s, 1, %s, %s)
-                ON CONFLICT ("normalizedQuery)
+                ON CONFLICT ("normalizedQuery")
                 DO UPDATE SET
                     "searchCount" = "ZeroResultQuery"."searchCount" + 1,
                     "lastSearchedAt" = EXCLUDED."lastSearchedAt"
@@ -90,7 +90,7 @@ async def _upsert_exact(
         conn.commit()
         logger.info(f"[ZeroQuery] Exact upsert: '{query}")
     except Exception as e:
-        logger.info(f"[ZeroQuery] Exact upsert failed: {e}")
+        logger.error(f"[ZeroQuery] Exact upsert failed: {e}")
     finally:
         if conn:
             conn.close()

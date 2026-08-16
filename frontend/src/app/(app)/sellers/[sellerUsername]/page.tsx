@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getSellerByUsername } from "@/lib/seller";
 import { GigCard } from "@/components/theorems/GigCard";
 import { notFound } from "next/navigation";

@@ -1038,15 +1038,16 @@ model Notification {
 }
 
 model ZeroResultQuery {
-  id              String   @id @default(uuid())
+  id              String                      @id @default(uuid())
   query           String
-  normalizedQuery String   @unique
+  normalizedQuery String                      @unique
   gigType         String?
   location        String?
   budgetMax       Float?
-  searchCount     Int      @default(1)
-  lastSearchedAt  DateTime @default(now())
-  createdAt       DateTime @default(now())
+  searchCount     Int                         @default(1)
+  lastSearchedAt  DateTime                    @default(now())
+  createdAt       DateTime                    @default(now())
+  embedding       Unsupported("vector(768)")?
 
   @@index([searchCount])
 }

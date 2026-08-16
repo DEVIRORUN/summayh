@@ -38,6 +38,7 @@ interface Order {
   }
   buyer: { name?: string; avatar?: string; id: string; }
   seller: { user: { name: string; id: string }, avatar: string; isOnline: boolean; };
+  review?: { id: string; rating: number; commet: string } | null;
 }
 
 export interface OrderListItem {

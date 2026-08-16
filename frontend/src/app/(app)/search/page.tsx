@@ -48,6 +48,7 @@ export default function SearchPage() {
   const query = searchParams.get("q") ?? "";
   const budgetMax = searchParams.get("budgetMax") ?? "";
   const location = searchParams.get("location") ?? "";
+  const category = searchParams.get("category") ?? "";
 
   const [searchInput, setSearchInput] = useState(query);
   const [results, setResults] = useState<GigCardProps[]>([]);
@@ -80,7 +81,8 @@ export default function SearchPage() {
   };
 
   useEffect(() => {
-    if (!query || query.trim().length < 3) return;
+    if (!query || !category) return;
+    if (query || query.trim().length < 3 && !category) return;
 
     const fetchGigs = async () => {
       setError(null);
@@ -91,7 +93,8 @@ export default function SearchPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            query,
+            query: query || undefined,
+            category: category || undefined,
             budgetMax: budgetMax ? Number(budgetMax) : undefined,
             location: location || undefined,
           }),
@@ -115,7 +118,7 @@ export default function SearchPage() {
     };
 
     fetchGigs(); // Execute it
-  }, [query, budgetMax, location]);
+  }, [query, category, budgetMax, location]);
 
   return (
     <div className="flex flex-row min-w-0">

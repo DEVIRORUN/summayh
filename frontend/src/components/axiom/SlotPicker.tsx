@@ -42,14 +42,16 @@ export function SlotPicker({
     onSelect: (slot: Slot) => void;
 }) {
     const [date, setDate] = useState("");
+    const [minDate, setMinDate] = useState("");
     const [slots, setSlots] = useState<Slot[]>([]);
     const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        setDate(toLocaleDateString(new Date()))
+        const today = toLocaleDateString(new Date());
+        setDate(today);
+        setMinDate(today);
     }, []);
-
     useEffect(() => {
         async function loadSlots() {
             setIsLoading(true);
@@ -110,7 +112,7 @@ export function SlotPicker({
                 <Input
                     type="date"
                     value={date}
-                    min={toLocaleDateString(new Date())}
+                    min={minDate}
                     onChange={(e) => setDate(e.target.value)}
                     className="text-xs border border-border rounded-xs px-2 py-1 w-fit"
                 />

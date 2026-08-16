@@ -707,8 +707,9 @@ console.log("[GET UPLAOD URL]: SUCCESSFUL!!!");
       const budgetMax = req.body?.budgetMax ?? (req.query?.budgetMax ? Number(req.query.budgetMax) : undefined); // Because it is a number we ise ??
       const location = (req.body?.location || req.query?.location) as string | undefined;
       const gigType = (req.body?.gigType || req.query?.gigType) as string | undefined;
+      const category = (req.body?.category || req.query?.category) as string | undefined;
 
-      if (!query || query.length < 3) {
+      if (!category && (!query || query.length < 3)) {
         return res
           .status(400)
           .json({ message: "Search query must be at least 3 characters." });
@@ -721,6 +722,7 @@ console.log("[GET UPLAOD URL]: SUCCESSFUL!!!");
         budgetMax,
         location,
         gigType,
+        category,
       );
 
       const fastApiResponse = await fetch(
@@ -728,7 +730,7 @@ console.log("[GET UPLAOD URL]: SUCCESSFUL!!!");
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, budgetMax, location, gigType }),
+          body: JSON.stringify({ query, budgetMax, location, gigType, category }),
         },
       );
 

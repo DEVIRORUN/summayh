@@ -6,6 +6,7 @@ import { GigGallery } from "@/components/axiom/GigGallery";
 import { GigTitleBlock } from "@/components/theorems/GigTitleBlock";
 import { GigDescriptionAccordion } from "@/components/axiom/GigDescriptionAccordion";
 import { GigOrderPanel } from "@/components/shared/GigOrderPanel";
+import { GigReviews } from "@/components/axiom/GigReviews";
 
 interface GigPageProps {
   params: Promise<{ id: string }>;
@@ -110,7 +111,9 @@ export default async function GigDetailPage({ params }: GigPageProps) {
         url: `${BASE_URL}/gigs/${id}`,
         priceCurrency: "NGN",
         price: gig.price || 0,
-        priceValidUntil: new Date(Date.now() + 31536000000).toISOString().split("T")[0],
+        priceValidUntil: new Date(
+          new Date(gig.updatedAt || gig.createdAt).getTime() + 31536000000
+        ).toISOString().split("T")[0],
         availability: "https://schema.org/InStock",
         seller: {
           "@type": "Person",
@@ -167,11 +170,14 @@ export default async function GigDetailPage({ params }: GigPageProps) {
             deliveryMode={gig.deliveryMode}
             tiers={gig.tiers}
           />
+
+          <GigReviews gigId={gig.id} />
         </div>
 
         <div className="md:col-span-1">
           <GigOrderPanel
             sellerId={gig.seller.id}
+            sellerUserId={gig.seller.userId}
             gigId={gig.id}
             tiers={gig.tiers}
             deliveryMode={gig.deliveryMode}

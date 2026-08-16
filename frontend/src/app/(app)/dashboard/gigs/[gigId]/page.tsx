@@ -1,16 +1,10 @@
-export const dynamic = "force-dynamic";
+import { redirect } from "next/navigation";
 
-
-
-
-export default function GigDetaislPage() {
-
-
-
-
-    return (
-        <div className="flex min-w-0">
-            <span>Personal Gig spot</span>
-        </div>
-    )
+export default async function GigDetailsPage({
+  params,
+}: {
+  params: Promise<{ gigId: string }>;
+}) {
+  const { gigId } = await params;
+  redirect(`/gigs/${gigId}`);
 }

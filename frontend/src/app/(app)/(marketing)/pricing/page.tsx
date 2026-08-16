@@ -82,7 +82,7 @@ export default async function PricingPage() {
       <div className="flex flex-col gap-6">
         
         {/* Founders Pass Card */}
-        {!foundersData.soldOut && (
+        {!founders.soldOut && (
           <div className="relative overflow-hidden bg-card border-2 border-primary rounded-xs p-6 shadow-sm">
             {/* Double Slanted Gradient Reflection (Tied to CSS Variables) */}
             <div className="absolute inset-0 bg-[linear-gradient(105deg,transparent_20%,hsl(var(--primary)/0.12)_25%,hsl(var(--primary)/0.04)_30%,transparent_35%,transparent_50%,hsl(var(--primary)/0.08)_55%,hsl(var(--primary)/0.02)_60%,transparent_65%)] pointer-events-none" />
@@ -90,7 +90,7 @@ export default async function PricingPage() {
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="flex flex-col gap-1">
                 <span className="text-[11px] font-bold tracking-wider uppercase text-primary">
-                  Limited Availability — {founders.remaining} left
+                  Limited Availability - {founders.remaining} left
                 </span>
                 <h2 className="text-xl font-bold text-foreground mt-1">
                   Lifetime Founders Pass
