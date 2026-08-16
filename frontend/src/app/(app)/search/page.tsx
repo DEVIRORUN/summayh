@@ -20,7 +20,7 @@ import React, { useEffect, useState } from "react";
 interface RawGigResult {
   id: string;
   title: string;
-  decsription: string;
+  description: string; // Fixed typo here
   tags: string[];
   gigType: string;
   avgRating: number;
@@ -60,7 +60,7 @@ function mapToGigCardProps(raw: RawGigResult): GigCardProps {
 }
 
 // ----------------------------------------------------------------------
-// 2. Extracted Filter Component (Placed FIRST so TS finds it)
+// 2. Extracted Filter Component
 // ----------------------------------------------------------------------
 function FilterForm({ isMobile = false, handleSearchSubmit, budgetMax, location }: FilterFormProps) {
   return (
