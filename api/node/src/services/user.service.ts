@@ -14,6 +14,7 @@ export class UserService {
           email: true,
           university: true,
           isPhoneVerified: true,
+          isEmailVerified: true,
           phoneNumber: true,
           role: true,
           createdAt: true,
