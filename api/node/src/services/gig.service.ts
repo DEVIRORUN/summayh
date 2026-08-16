@@ -1,9 +1,8 @@
 // TALKING TO PRISMA and some shii
 
 import { prisma } from "../utils/prisma";
-import { TierLabel } from "../../generated/prisma";
+import { Prisma, TierLabel, State } from "../../generated/prisma";
 import { connect } from "http2";
-import { State } from "../../generated/prisma";
 
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -150,7 +149,7 @@ export class GigService {
       throw err;
     }
   }
-  static async addTiersToGig(
+static async addTiersToGig(
     gigId: string,
     tiers: GigTiersInput,
     sellerId: string,
@@ -191,6 +190,16 @@ export class GigService {
             buildTierData(TierLabel.STANDARD, tiers.standard),
             buildTierData(TierLabel.PREMIUM, tiers.premium),
           ],
+        });
+
+        // Keep gig-level price range in sync with tiers
+        const prices = [tiers.basic.price, tiers.standard.price, tiers.premium.price];
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+
+        await tx.gig.update({
+          where: { id: gigId },
+          data: { minPrice, maxPrice },
         });
 
         console.log(new Date(), "-> [ADD TIERS TO DRAFT]: Draft Gig created!!!");
@@ -770,22 +779,10 @@ export class GigService {
           orderBy = { totalReviews: "desc" };
           break;
         case "price_asc":
-          orderBy = {
-            tiers: {
-              _min: {
-                price: "asc",
-              },
-            },
-          };
+          orderBy = { minPrice: "asc" };
           break;
         case "price_desc":
-          orderBy = {
-            tiers: {
-              _max: {
-                price: "desc",
-              },
-            },
-          };
+          orderBy = { maxPrice: "desc" };
           break;
         case "newest":
         default:
@@ -836,6 +833,23 @@ export class GigService {
       console.error("ERROR fetching MULTIPLE gigs bro:", error);
       throw error;
     }
+  }
+  static async syncGigPriceRange(gigId: string) {
+    const tiers = await prisma.gigTier.findMany({
+      where: { gigId },
+      select: { price: true },
+    });
+
+    if (tiers.length === 0) {
+      await prisma.gig.update({ where: { id: gigId }, data: { minPrice: null, maxPrice: null } });
+      return;
+    }
+
+    const prices = tiers.map((t) => t.price);
+    const minPrice = prices.reduce((a, b) => (a < b ? a : b));
+    const maxPrice = prices.reduce((a, b) => (a > b ? a : b));
+
+    await prisma.gig.update({ where: { id: gigId }, data: { minPrice, maxPrice } });
   }
   static async addBulkingPricing(
     gigId: string,

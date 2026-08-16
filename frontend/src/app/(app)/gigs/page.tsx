@@ -3,6 +3,7 @@ import Link from "next/link";
 import { GigCard } from "@/components/theorems/GigCard";
 import { SlidersHorizontal, Sparkles } from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { GigFilters } from "@/components/axiom/GigFilters";
 
 interface SearchParams {
   category?: string;
@@ -80,10 +81,7 @@ export default async function GigsPage({
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 text-xs font-medium border border-border rounded-lg px-3 py-2 hover:bg-muted transition-colors">
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            Filters
-          </button>
+            <GigFilters />
         </div>
       </div>
 
