@@ -3,13 +3,21 @@
 import { GigCard, type GigCardProps } from "@/components/theorems/GigCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useRouter, useSearchParams } from "next/navigation"; // Fixed import
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { SlidersHorizontal } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
 interface RawGigResult {
   id: string;
   title: string;
-  decsription: string;
+  decsription: string; // Keeping your spelling from the original type
   tags: string[];
   gigType: string;
   avgRating: number;
@@ -61,7 +69,7 @@ export default function SearchPage() {
     const formData = new FormData(e.currentTarget);
     const params = new URLSearchParams(searchParams.toString());
 
-    // the loop
+    // Loop through form data and update URL params
     formData.forEach((value, key) => {
       const valStr = value.toString().trim();
       if (valStr) {
@@ -72,9 +80,9 @@ export default function SearchPage() {
     });
 
     if (searchInput.trim()) {
-      params.set("q", searchInput.trim())
+      params.set("q", searchInput.trim());
     } else {
-      params.delete("q")
+      params.delete("q");
     }
 
     router.push(`/search?${params.toString()}`);
@@ -82,7 +90,7 @@ export default function SearchPage() {
 
   useEffect(() => {
     if (!query || !category) return;
-    if (query || query.trim().length < 3 && !category) return;
+    if ((query || query.trim().length < 3) && !category) return;
 
     const fetchGigs = async () => {
       setError(null);
@@ -104,7 +112,7 @@ export default function SearchPage() {
           const text = await res.text();
           const data = text ? JSON.parse(text) : {};
           throw new Error(
-            data.message || `Search failed with status ${res.status}`,
+            data.message || `Search failed with status ${res.status}`
           );
         }
 
@@ -121,59 +129,71 @@ export default function SearchPage() {
   }, [query, category, budgetMax, location]);
 
   return (
-    <div className="flex flex-row min-w-0">
-      {/* Sidebar Filters */}
-      <form
-        id="search-filter-form"
-        onSubmit={handleSearchSubmit}
-        className="w-[240px] shrink-0 flex flex-col gap-4 p-4 border-r border-border min-w-0"
-      >
-        <div>
-          <label className="text-xs font-semibold">Max Budget (₦)</label>
-          <Input
-            type="number"
-            name="budgetMax"
-            defaultValue={budgetMax}
-            placeholder="Any"
-            className="rounded-xs text-xs mt-1"
-          />
-        </div>
-        <div>
-          <label className="text-xs font-semibold">Location</label>
-          <Input
-            name="location"
-            defaultValue={location}
-            placeholder="e.g. LAUTECH, Ogbomosho"
-            className="rounded-xs text-xs mt-1"
-          />
-        </div>
-      </form>
+    <div className="flex flex-col md:flex-row min-w-0 w-full">
+      {/* Desktop Sidebar (Hidden on mobile) */}
+      <aside className="hidden md:flex w-[240px] shrink-0 flex-col gap-4 p-5 border-r border-border min-w-0 bg-card min-h-screen">
+        <h2 className="text-sm font-bold text-foreground">Filters</h2>
+        <FilterForm 
+          handleSearchSubmit={handleSearchSubmit}
+          budgetMax={budgetMax}
+          location={location}
+        />
+      </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 min-w-0 p-4">
-        <div className="flex gap-2 mb-4">
+      <main className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col gap-4">
+        {/* Search Bar & Mobile Trigger Row */}
+        <div className="flex items-center gap-2 w-full">
+          {/* Mobile Filter Trigger */}
+          <div className="md:hidden shrink-0">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="rounded-xs px-3 border-border cursor-pointer bg-card">
+                  <SlidersHorizontal className="h-4 w-4 text-foreground" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[280px] p-5 sm:w-[320px]">
+                <SheetHeader className="mb-6 text-left">
+                  <SheetTitle className="text-sm font-bold text-foreground">Filters</SheetTitle>
+                </SheetHeader>
+                <FilterForm 
+                  isMobile 
+                  handleSearchSubmit={handleSearchSubmit}
+                  budgetMax={budgetMax}
+                  location={location}
+                />
+              </SheetContent>
+            </Sheet>
+          </div>
+
           <Input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search for a service..."
-            className="rounded-xs text-xs"
+            className="rounded-xs text-xs bg-card"
           />
-          <Button type="submit" form="search-filter-form" className="bg-foreground hover:bg-muted-foreground cursor-pointer rounded-xs">
+          <Button
+            type="submit"
+            form="search-filter-form"
+            className="bg-foreground hover:bg-muted-foreground cursor-pointer rounded-xs text-xs font-medium px-5 shrink-0"
+          >
             Search
           </Button>
         </div>
 
+        {/* State Messages */}
         {isLoading && (
-          <p className="text-xs text-muted-foreground animate-pulse">Searching...</p>
+          <p className="text-xs text-muted-foreground font-medium animate-pulse">Searching...</p>
         )}
-        {error && <p className="text-xs text-destructive">{error}</p>}
+        {error && <p className="text-xs font-medium text-destructive">{error}</p>}
         {!isLoading && !error && query && results.length === 0 && (
           <p className="text-xs text-muted-foreground">
-            {`No results found for "${query}"`}.
+            No results found for <span className="font-semibold text-foreground">"{query}"</span>.
           </p>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-w-0">
+        {/* Results Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 min-w-0 pt-2">
           {results.map((gig) => (
             <GigCard key={gig.id} {...gig} />
           ))}
@@ -182,3 +202,54 @@ export default function SearchPage() {
     </div>
   );
 }
+
+// ----------------------------------------------------------------------
+// Extracted Sub-Components
+// ----------------------------------------------------------------------
+
+interface FilterFormProps {
+  isMobile?: boolean;
+  handleSearchSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  budgetMax: string;
+  location: string;
+}
+
+const FilterForm = ({ 
+  isMobile = false, 
+  handleSearchSubmit, 
+  budgetMax, 
+  location 
+}: FilterFormProps) => (
+  <form
+    id={isMobile ? "mobile-search-filter-form" : "search-filter-form"}
+    onSubmit={handleSearchSubmit}
+    className="flex flex-col gap-5 min-w-0"
+  >
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-semibold text-foreground">Max Budget (₦)</label>
+      <Input
+        type="number"
+        name="budgetMax"
+        defaultValue={budgetMax}
+        placeholder="Any"
+        className="rounded-xs text-xs bg-background"
+      />
+    </div>
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-semibold text-foreground">Location</label>
+      <Input
+        name="location"
+        defaultValue={location}
+        placeholder="e.g. LAUTECH, Ogbomosho"
+        className="rounded-xs text-xs bg-background"
+      />
+    </div>
+    
+    {/* Mobile-only apply button inside the drawer */}
+    {isMobile && (
+      <Button type="submit" className="w-full mt-4 rounded-xs text-xs font-medium cursor-pointer">
+        Apply Filters
+      </Button>
+    )}
+  </form>
+);
