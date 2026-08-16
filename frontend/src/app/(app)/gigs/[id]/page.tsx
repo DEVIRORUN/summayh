@@ -8,6 +8,7 @@ import { GigDescriptionAccordion } from "@/components/axiom/GigDescriptionAccord
 import { GigOrderPanel } from "@/components/shared/GigOrderPanel";
 import { getCurrentUser } from "@/lib/auth";
 import { GigReviews } from "@/components/axiom/GigReviews";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 interface GigPageProps {
   params: Promise<{ id: string }>;
@@ -147,6 +148,13 @@ export default async function GigDetailPage({ params }: GigPageProps) {
 
   return (
     <>
+      <Breadcrumbs
+          items={[
+            { label: "Gigs", href: "/gigs" },
+            { label: gig.category?.name || "Category", href: `/gigcategory=${gig.category?.slug}` },
+            { label: gig.title },
+          ]}
+        />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

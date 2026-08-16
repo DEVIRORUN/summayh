@@ -615,10 +615,11 @@ console.log("[GET UPLAOD URL]: SUCCESSFUL!!!");
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 30;
-      const categoryId = req.query.categoryId as string;
+      const category = (req.query.category || req.query.categoryId) as string;
+      const search = req.query.search as string;
       const userId = (req as any).userId;
 
-      const gigs = await GigService.listGigs(userId, page, limit, categoryId);
+      const gigs = await GigService.listGigs(userId, page, limit, category, search);
 
       // Fire-and-forget impression tracking for every gig returned in this page
       const gigIds = gigs?.data?.map((g: any) => g.id) ?? [];

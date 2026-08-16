@@ -682,43 +682,68 @@ export class GigService {
     userId: string,
     page: number = 1,
     limit: number = 30,
-    categoryId?: string,
+    category?: string,
+    search?: string
   ): Promise<any> {
     try {
       const skip = (page - 1) * limit;
 
       // basic filter (only ACTIVE GIGS)
       const whereClause: any = { state: "ACTIVE" };
-      if (categoryId) {
-        whereClause.categoryId = categoryId;
+
+      if (category) {
+        whereClause.category = {
+          OR: [
+            { id: category },
+            { slug: category },
+            { parent: { slug: category } },
+          ]
+        }
+      }
+      if (search && search.trim().length > 0) {
+        whereClause.OR = [
+          { title: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+        ]
       }
 
-      // Then we fect many gigs with relational pricing data // 2. Single database trip to fetch exactly what we need
-      const gigs = await prisma.gig.findMany({
-        where: whereClause,
-        skip: skip,
-        take: limit,
-        orderBy: { createdAt: "desc" }, // Default chronological order for now
-        include: {
-          tiers: {
-            include: { quantityPricing: true },
+      const [gigs, total] = await Promise.all([
+        await prisma.gig.findMany({
+          where: whereClause,
+          skip: skip,
+          take: limit,
+          orderBy: { createdAt: "desc" }, // Default chronological order for now
+          include: {
+            tiers: {
+              include: { quantityPricing: true },
+            },
+            seller: {
+              select: { 
+                id: true, 
+                sellerUsername: true,
+                avatar: true,
+                isPro: true,
+                user: {
+                  select: {
+                    name: true
+                  }
+                },
+                rating: true, 
+                totalReviews: true 
+              },
+            },
           },
-          seller: {
-            select: { userId: true, rating: true, totalReviews: true },
-          },
-        },
-      });
-      /// count the toal for frontend pagination math
-      const totalGigs = await prisma.gig.count({ where: whereClause });
-      console.log(totalGigs);
+        }),
+        prisma.gig.count({ where: whereClause }),
+      ]);
 
       return {
         data: gigs,
         meta: {
-          total: totalGigs,
+          total,
           page,
           limit,
-          totalPages: Math.ceil(totalGigs / limit),
+          totalPages: Math.ceil(total / limit),
         },
       };
     } catch (error: any) {

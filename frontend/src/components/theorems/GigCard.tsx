@@ -30,7 +30,7 @@ export interface GigCardProps{
     rating: { avgRating: number; reviewCount?: number; };
     avgRating?: number;
     totalReviews?: number;
-    seller: { avatar: string; name: string; sellerUsername?: string; isOnline: boolean; level?: SellerLevel }
+    seller: { avatar: string; name: string; sellerUsername?: string; isOnline: boolean; isPro?: boolean; level?: SellerLevel }
     tags?: string[];
     createdAt?: string | number | Date | undefined;
     variant?: "default" | "compact" | "list" | "grid";
