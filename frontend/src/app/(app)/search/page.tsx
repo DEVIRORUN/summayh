@@ -14,10 +14,13 @@ import { SlidersHorizontal } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
+// ----------------------------------------------------------------------
+// 1. Types & Interfaces
+// ----------------------------------------------------------------------
 interface RawGigResult {
   id: string;
   title: string;
-  decsription: string; // Keeping your spelling from the original type
+  decsription: string;
   tags: string[];
   gigType: string;
   avgRating: number;
@@ -29,6 +32,13 @@ interface RawGigResult {
   avatar: string;
   startingPrice: number;
   relevance: number;
+}
+
+interface FilterFormProps {
+  isMobile?: boolean;
+  handleSearchSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  budgetMax: string;
+  location: string;
 }
 
 function mapToGigCardProps(raw: RawGigResult): GigCardProps {
@@ -49,6 +59,48 @@ function mapToGigCardProps(raw: RawGigResult): GigCardProps {
   };
 }
 
+// ----------------------------------------------------------------------
+// 2. Extracted Filter Component (Placed FIRST so TS finds it)
+// ----------------------------------------------------------------------
+function FilterForm({ isMobile = false, handleSearchSubmit, budgetMax, location }: FilterFormProps) {
+  return (
+    <form
+      id={isMobile ? "mobile-search-filter-form" : "search-filter-form"}
+      onSubmit={handleSearchSubmit}
+      className="flex flex-col gap-5 min-w-0"
+    >
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-semibold text-foreground">Max Budget (₦)</label>
+        <Input
+          type="number"
+          name="budgetMax"
+          defaultValue={budgetMax}
+          placeholder="Any"
+          className="rounded-xs text-xs bg-background"
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-semibold text-foreground">Location</label>
+        <Input
+          name="location"
+          defaultValue={location}
+          placeholder="e.g. LAUTECH, Ogbomosho"
+          className="rounded-xs text-xs bg-background"
+        />
+      </div>
+      
+      {isMobile && (
+        <Button type="submit" className="w-full mt-4 rounded-xs text-xs font-medium cursor-pointer">
+          Apply Filters
+        </Button>
+      )}
+    </form>
+  );
+}
+
+// ----------------------------------------------------------------------
+// 3. Main Page Component
+// ----------------------------------------------------------------------
 export default function SearchPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -69,7 +121,6 @@ export default function SearchPage() {
     const formData = new FormData(e.currentTarget);
     const params = new URLSearchParams(searchParams.toString());
 
-    // Loop through form data and update URL params
     formData.forEach((value, key) => {
       const valStr = value.toString().trim();
       if (valStr) {
@@ -125,7 +176,7 @@ export default function SearchPage() {
       }
     };
 
-    fetchGigs(); // Execute it
+    fetchGigs();
   }, [query, category, budgetMax, location]);
 
   return (
@@ -133,6 +184,7 @@ export default function SearchPage() {
       {/* Desktop Sidebar (Hidden on mobile) */}
       <aside className="hidden md:flex w-[240px] shrink-0 flex-col gap-4 p-5 border-r border-border min-w-0 bg-card min-h-screen">
         <h2 className="text-sm font-bold text-foreground">Filters</h2>
+        {/* Passed props safely to the desktop form */}
         <FilterForm 
           handleSearchSubmit={handleSearchSubmit}
           budgetMax={budgetMax}
@@ -156,6 +208,7 @@ export default function SearchPage() {
                 <SheetHeader className="mb-6 text-left">
                   <SheetTitle className="text-sm font-bold text-foreground">Filters</SheetTitle>
                 </SheetHeader>
+                {/* Passed props safely to the mobile form */}
                 <FilterForm 
                   isMobile 
                   handleSearchSubmit={handleSearchSubmit}
@@ -202,54 +255,3 @@ export default function SearchPage() {
     </div>
   );
 }
-
-// ----------------------------------------------------------------------
-// Extracted Sub-Components
-// ----------------------------------------------------------------------
-
-interface FilterFormProps {
-  isMobile?: boolean;
-  handleSearchSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  budgetMax: string;
-  location: string;
-}
-
-const FilterForm = ({ 
-  isMobile = false, 
-  handleSearchSubmit, 
-  budgetMax, 
-  location 
-}: FilterFormProps) => (
-  <form
-    id={isMobile ? "mobile-search-filter-form" : "search-filter-form"}
-    onSubmit={handleSearchSubmit}
-    className="flex flex-col gap-5 min-w-0"
-  >
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold text-foreground">Max Budget (₦)</label>
-      <Input
-        type="number"
-        name="budgetMax"
-        defaultValue={budgetMax}
-        placeholder="Any"
-        className="rounded-xs text-xs bg-background"
-      />
-    </div>
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold text-foreground">Location</label>
-      <Input
-        name="location"
-        defaultValue={location}
-        placeholder="e.g. LAUTECH, Ogbomosho"
-        className="rounded-xs text-xs bg-background"
-      />
-    </div>
-    
-    {/* Mobile-only apply button inside the drawer */}
-    {isMobile && (
-      <Button type="submit" className="w-full mt-4 rounded-xs text-xs font-medium cursor-pointer">
-        Apply Filters
-      </Button>
-    )}
-  </form>
-);
