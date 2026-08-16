@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
 import { FoundersPassService } from "../services/foundersPass.service"
-
+import { prisma } from "../utils/prisma";
 
 export class FoundersPassController {
     static async initialize(req: Request, res: Response): Promise<any> {
