@@ -22,7 +22,7 @@ function toMinutes(t: string) {
     return h * 60 + m;
 }
 
-export default function SellerAvailabilityForm() {
+export default function SellerAvailabilityForm({ onSaved }: { onSaved?: () => void }) {
     const [schedule, setSchedule] = useState<Record<number, TimeBlock[]>>({});
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,6 +104,7 @@ export default function SellerAvailabilityForm() {
                 throw new Error(data.error || "Failed to save avaialability.");
             }
             setJustSaved(true);
+            onSaved?.()
             setTimeout(() => setJustSaved(false), 2000);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Something went wrong" );

@@ -3,6 +3,7 @@
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import SellerAvailabilityForm from "@/components/axiom/SellerAvailabilityForm";
 import Image from "next/image";
 
 interface CategoryObject {
@@ -28,6 +29,7 @@ interface GigSummary {
     images?: string[];
     video?: string | null;
     gallery: string[];
+    deliveryMode: "DIGITAL" | "LIVE"; // added
 }
 
 export default function PublishPage() {
@@ -36,6 +38,7 @@ export default function PublishPage() {
     const [gig, setGig] = useState<GigSummary | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [availabilityCount, setAvailabilityCount] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -46,12 +49,22 @@ export default function PublishPage() {
             try {
                 const res = await fetch(`/api/gig/${gigId}`);
                 if (!res.ok) throw new Error("Failed to load gig");
-
                 const data = await res.json();
-
                 const gigData = data.data || data;
                 setGig(gigData);
-                console.log("Fetched Gig Data:", gigData);;
+
+                // If it's a LIVE gig, check existing availability count
+                if (gigData.deliveryMode === "LIVE") {
+                    const availRes = await fetch(`/api/seller/availability`);
+                    if (availRes.ok) {
+                        const { data: slots } = await availRes.json();
+                        setAvailabilityCount(Array.isArray(slots) ? slots.length : 0);
+                    } else {
+                        setAvailabilityCount(0);
+                    }
+                } else {
+                    setAvailabilityCount(0); 
+                }
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Something went wrong.")
             } finally {
@@ -60,6 +73,9 @@ export default function PublishPage() {
         }
         loadGig();
     }, [gigId]);
+
+    const isLive = gig?.deliveryMode === "LIVE";
+    const needsAvailability = isLive && availabilityCount === 0;
 
     async function handleSubmit () {
         setError(null);
@@ -91,6 +107,7 @@ export default function PublishPage() {
 
     return (
         <main className="flex flex-col gap-4">
+
             <div>
                 <h1 className="text-xl font-semibold">Review your gig</h1>
                 <p className="text-sm text-muted-foreground">
@@ -169,18 +186,34 @@ export default function PublishPage() {
                         )}
             </section>
 
+            {/* Availability gate for LIVE gigs */}
+            {needsAvailability && (
+                <section className="border border-amber-500/40 bg-amber-500/10 rounded-md p-4 flex flex-col gap-3">
+                    <div>
+                        <h2 className="text-sm font-medium text-amber-700">Set your availability</h2>
+                        <p className="text-xs text-amber-700/80">
+                            This is a live gig — set your available time slots before publishing.
+                        </p>
+                    </div>
+                    <SellerAvailabilityForm
+                        onSaved={() => setAvailabilityCount((c) => (c ?? 0) + 1)}
+                    />
+                </section>
+            )}
+
             {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
 
                 <Button
                     onClick={handleSubmit}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || needsAvailability}
                     className="bg-muted-foreground hover:bg-foreground rounded-xs cursor-pointer"
                 >
-                    {isSubmitting ? "Publish..." : "Publish"}
+                    {isSubmitting
+                        ? "Publish..."
+                        : needsAvailability
+                            ? "Set availability first"
+                            : "Publish"}
                 </Button>
         </main>
     )
 }
-
-
-

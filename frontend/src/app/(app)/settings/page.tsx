@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import SellerAvailabilityForm from "@/components/axiom/SellerAvailabilityForm";
+import { AvatarUpload } from "@/components/settings/AvatarUpload";
 
 interface ThemeOption {
     id: string;
@@ -78,6 +79,13 @@ export default function SettingsPage() {
                 <p className="text-sm text-muted-foreground mt-1">
                     Customize your workspace interface, theme states, and layout preferences.
                 </p>
+            </div>
+
+            <hr className="border-border" />
+
+            <div>
+                <h2 className="text-lg font-medium mb-3">Profile Photo</h2>
+                <AvatarUpload />
             </div>
 
             <hr className="border-border" />

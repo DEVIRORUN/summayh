@@ -9,11 +9,14 @@ type ProSource = "FOUNDERS" | "SUBSCRIPTION";
 interface User {
     id: string;
     name: string;
+    username: string | null;
+    avatar: string | null;
     role: Role;
     isPro: boolean;
     founderBadge: boolean;
     proSource: ProSource | null;
-    isEmailVerified: boolean
+    isEmailVerified: boolean;
+    sellerUsername: string | null;
 }
 
 interface AuthContextValue {

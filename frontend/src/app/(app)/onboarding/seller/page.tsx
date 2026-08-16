@@ -69,7 +69,7 @@ export default function SellerOnboardingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           accountName: name,
-          sellerUsername: username,
+          username: username,
           biography: bio,
           accountNumber,
           settlementBank: accountBank,

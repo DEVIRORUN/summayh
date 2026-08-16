@@ -5,10 +5,12 @@ import { useSidebar } from "@/contexts/sidebar-context";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "./ui/badge";
 import { Menu } from "lucide-react";
+import Image from "next/image";
 import Logo from "../../public/logo2.svg";
 import Link from "next/link";
 import { NotificationBell } from "@/components/axiom/NotificationBell";
 import { useRouter } from "next/navigation";
+import { getProfileHref } from "@/lib/profileHref";
 
 export function Navbar() {
     const { user, isLoading, logout } = useAuth();
@@ -19,6 +21,8 @@ export function Navbar() {
         await logout();
         router.push("/login");
     }
+
+    const profileHref = getProfileHref(user);
 
     return (
         <header className="flex h-14 items-center justify-between border-b px-4">
@@ -50,13 +54,22 @@ export function Navbar() {
                         <Popover>
                             <PopoverTrigger asChild>
                                 <button className="flex items-center gap-2 rounded-full">
-                                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm">
-                                        {user.name?.[0] ?? "?"}
+                                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm overflow-hidden">
+                                        {user.avatar ? (
+                                            <Image src={user.avatar} alt={user.name} width={32} height={32} className="object-cover h-full w-full" />
+                                        ) : (
+                                            user.name?.[0] ?? "?"
+                                        )}
                                     </div>
                                     {user.isPro && <Badge variant="secondary">Pro</Badge>}
                                 </button>
                             </PopoverTrigger>
                             <PopoverContent align="end" className="w-48 p-1">
+                                {profileHref && (
+                                    <Link href={profileHref} className="block rounded px-2 py-1.5 text-sm hover:bg-muted">
+                                        Profile
+                                    </Link>
+                                )}
                                 <Link href="/dashboard" className="block rounded px-2 py-1.5 text-sm hover:bg-muted">
                                     Dashboard
                                 </Link>
