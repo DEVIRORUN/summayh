@@ -129,7 +129,7 @@ export function GigCard({
                 {/* Content */}
                 <div className={cn("flex flex-col gap-2 p-3", isList && "flex-1" )}>
                     <Link
-                        href={`/sellers/${seller.sellerUsername}`}
+                        href={`/seller/${seller.sellerUsername}`}
                         onClick={(e) => e.stopPropagation()}
                         className="w-fit"
                     >

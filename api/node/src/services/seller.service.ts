@@ -226,51 +226,40 @@ export class SellerService {
         throw error;
         }
     } 
-    static async getPublicSellerProfile(username: string): Promise<any> {
-        const user = await prisma.user.findUnique({
-            where: { username },
-            select: {
-                name: true,
-                university: true,
-                sellerProfile: {
-                    select: {
-                        id: true,
-                        sellerUsername: true,
-                        bio: true,
-                        aiBio: true,
-                        skills: true,
-                        avatar: true,
-                        avgRating: true,
-                        totalReviews: true,
-                        isPro: true,
-                        founderBadge: true,
-                        isOnline: true,
-                        lastActiveAt: true,
-                        createdAt: true,
-                    },
+    static async getPublicSellerProfile(identifier: string): Promise<any> {
+    const sellerProfile = await prisma.sellerProfile.findFirst({
+        where: {
+            OR: [
+                { sellerUsername: identifier },
+                { user: { username: identifier } },
+            ],
+        },
+        include: {
+            user: {
+                select: {
+                    name: true,
+                    username: true,
+                    university: true,
+                    role: true,
                 },
             },
-        });
-
-        if (!user?.sellerProfile) throw new Error("Seller not found");
-
-        const gigs = await prisma.gig.findMany({
-            where: { sellerId: user.sellerProfile.id, state: "ACTIVE" },
-            select: {
-                id: true,
-                title: true,
-                description: true,
-                coverImage: true,
-                avgRating: true,
-                totalReviews: true,
-                tiers: { select: { price: true }, orderBy: { price: "asc" }, take: 1 },
+            gigs: {
+                where: { state: "ACTIVE" },
+                select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    coverImage: true,
+                    avgRating: true,
+                    totalReviews: true,
+                    tiers: { select: { price: true }, orderBy: { price: "asc" }, take: 1 },
+                },
             },
-        });
+        },
+    });
 
-        return {
-            ...user.sellerProfile,
-            user: { name: user.name, university: user.university }, // keep same shape SellerProfilePage expects
-            gigs,
-        };
-    }
+    if (!sellerProfile) throw new Error("Seller not found");
+
+    return sellerProfile;
+}
 }

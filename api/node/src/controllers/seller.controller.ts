@@ -265,9 +265,11 @@ export class SellerController {
   }
   static async getPublicSellerProfile(req: Request, res: Response): Promise<any> {
     try {
+        console.log("[SELLER PROFILE]: HIT111");
         const { sellerUsername } = req.params;
         const sellerProfile = await SellerService.getPublicSellerProfile(sellerUsername as string);
-        return res.status(200).json({ sellerProfile });
+        console.log("[SELLER PROFILE]: SUCCESSFUL")
+        return res.status(200).json(sellerProfile);
     } catch (error: any) {
         console.error("ERROR in Getting Public Seller Profile: ", error);
         const handled = handlePrismaError(error, res);
