@@ -1,6 +1,6 @@
-export const dynamic = 'force-dynamic';
 
 "use client";
+
 
 import { use, useEffect, useRef, useState } from "react";
 import { Room, RoomEvent, Track, RemoteTrack, RemoteParticipant, VideoPresets, ConnectionQuality, Participant } from "livekit-client";
