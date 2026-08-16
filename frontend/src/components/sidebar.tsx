@@ -137,8 +137,10 @@ export function Sidebar({ categories }: { categories: CategoryNode[] }) {
                 <SidebarLinks categories={categories} />
             </aside>
             <Drawer open={isOpen} onOpenChange={(open) => !open && close()} direction="left">
-                <DrawerContent className="h-full w-75">
-                    <SidebarLinks categories={categories} onItemClick={close}/>
+                <DrawerContent className="h-full w-75 flex flex-col data-[vaul-drawer-direction=left]:rounded-r-xs">
+                    <div className="flex-1 min-h-0 overflow-y-auto">
+                        <SidebarLinks categories={categories} onItemClick={close}/>
+                    </div>
                 </DrawerContent>
             </Drawer>
         </>

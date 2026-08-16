@@ -9,6 +9,11 @@
   height: 6px;
 }
 
+::selection {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
@@ -193,5 +198,9 @@
   }
   body {
     @apply bg-background text-foreground overscroll-none;
+  }
+  ::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
   }
 }

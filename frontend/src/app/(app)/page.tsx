@@ -137,7 +137,7 @@ export default async function HomePage() {
             </h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Book real-time video sessions with sellers for tutoring, code reviews,
-              design walkthroughs, and more — no scheduling headaches, no third-party
+              design walkthroughs, and more - no scheduling headaches, no third-party
               apps. Just book a slot and join when it's time.
             </p>
           </div>
