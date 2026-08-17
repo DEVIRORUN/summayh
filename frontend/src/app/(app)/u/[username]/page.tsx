@@ -14,9 +14,14 @@ export default async function UserProfilePage({
 
     if (!user) notFound();
 
-    if (user.role === "SELLER" && user.sellerProfile?.sellerUsername) {
+    if (user.role === "SELLER" && user.sellerUsername) {
         redirect(`/seller/${user.sellerUsername}`);
     }
+    console.log("[PROFILE ROUTE]", {
+        username,
+        role: user.role,
+        sellerUsername: user.sellerUsername,
+        });
 
     return (
         <div className="max-w-3xl mx-auto p-6 flex flex-col gap-6">
