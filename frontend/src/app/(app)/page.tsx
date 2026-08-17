@@ -106,7 +106,7 @@ export default async function HomePage() {
             Explore top talents and specialized services.
           </h2>
           <p className="text-sm text-muted-foreground">
-            Explore top talents and specialized services
+            Connect with skilled professionals ready to bring your next project to life.
           </p>
         </div>
         <div className="w-full min-w-0">
