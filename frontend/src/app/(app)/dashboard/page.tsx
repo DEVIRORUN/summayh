@@ -88,6 +88,14 @@ export default function DashboardPage() {
                     {user!.isPro && <span className="font-bold ml-1">Pro</span>}
                 </p>
             </div>
+            {isSeller && (
+                <Link
+                    href="/gigs/new/basics"
+                    className="text-xs font-medium bg-none w-fit border text-foreground hover:border-foreground duration-200 px-3 py-2 rounded-xs shrink-0"
+                >
+                    + New gig
+                </Link>
+            )}
 
             {error && <span className="text-xs text-red-500">{error}</span>}
 

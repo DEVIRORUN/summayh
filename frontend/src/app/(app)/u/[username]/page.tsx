@@ -14,8 +14,8 @@ export default async function UserProfilePage({
 
     if (!user) notFound();
 
-    if (user.role === "SELLER") {
-        redirect(`/seller/${user.username}`);
+    if (user.role === "SELLER" && user.sellerProfile?.sellerUsername) {
+        redirect(`/seller/${user.sellerUsername}`);
     }
 
     return (

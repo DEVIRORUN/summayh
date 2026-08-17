@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { PriceTag } from "@/components/axiom/PriceTag";
 import { OrderStatusTimeline, type TimelineStep } from "@/components/axiom/OrderStatusTimeline";
-// import { OrderRequirementsForm }
+import { OrderRequirementsForm } from "@/components/axiom/OrderRequirementsForm";
 import { OrderActionBar } from "@/components/axiom/OrderActionBar";
 import { ChatSection } from "@/components/theorems/ChatSection";
 import { getOrder, getBuyerOrders } from "@/lib/order";
@@ -99,9 +99,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
                 <OrderStatusTimeline steps={mapOrderStatusToSteps(order.status)} variant="line" orientation="horizontal" />
             </div>
 
-            {/* {order.status === "ACTIVE" && !order.requirementsSubmittedAt && (
-                <OrderRequirementsForm orderId={order.id} /> I have not built this componenet yet
-            )} */}
+            {order.status === "ACTIVE" && !order.requirementsSubmittedAt && (
+                <OrderRequirementsForm 
+                    orderId={order.id}
+                    templates={order.gig.requirementTemplates} />
+            )}
 
             <div className="w-full min-w-0">
                 <ChatSection messagePage={false} otherUserId={otherUserId} currentUserId={currentUser.id}/>

@@ -382,7 +382,27 @@ export class OrderService {
         const order = await prisma.order.findUnique({
             where: { id: orderId },
             include: {
-                gig: { select: { id: true, title: true, coverImage: true, deliveryMode: true } },
+                gig: {
+                    select: {
+                        id: true,
+                        title: true,
+                        coverImage: true,
+                        deliveryMode: true,
+                        requirementTemplates: {
+                            orderBy: {
+                                order: "asc",
+                            },
+                            select: {
+                                id: true,
+                                question: true,
+                                inputType: true,
+                                options: true,
+                                isRequired: true,
+                                order: true,
+                            },
+                        },
+                    },
+                },
                 buyer: { select: { id: true, name: true } },
                 seller: {
                     include: {

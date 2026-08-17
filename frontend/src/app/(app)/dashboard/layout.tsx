@@ -57,7 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </p>
                 </div>
                 <nav className="flex flex-col gap-1 p-2 flex-1 overflow-y-auto min-h-0">
-                    {navItems.map((item) => {
+                    {visibleNavItems.map((item) => {
                         const isActive = item.exact
                             ? pathname === item.href
                             : pathname.startsWith(item.href)

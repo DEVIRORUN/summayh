@@ -11,6 +11,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "../ui/textarea";
 import { SlotPicker } from "@/components/axiom/SlotPicker";
 import { useAuth } from "@/contexts/auth-context";
 

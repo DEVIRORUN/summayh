@@ -89,9 +89,20 @@ export class UserService {
         university: true,
         role: true,
         createdAt: true,
+        sellerProfile: {
+          select: {
+            sellerUsername: true
+          },
+        },
       },
     });
 
-    return user;
+    if (!user) return null;
+    
+    return {
+        ...user,
+        sellerUsername: user.sellerProfile?.sellerUsername ?? null,
+        sellerProfile: undefined,
+      };
   }
 }
