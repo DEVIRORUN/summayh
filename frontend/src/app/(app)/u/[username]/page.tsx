@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
-import { getUserByUsername } from "@/lib/user";
 import { getSellerByUsername } from "@/lib/seller";
+import { getUserByUsername } from "@/lib/user";
 import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 
@@ -12,18 +12,16 @@ export default async function UserProfilePage({
 }) {
   const { username } = await params;
 
+  const seller = await getSellerByUsername(username);
+
+  if (seller?.sellerUsername) {
+    redirect(`/seller/${seller.sellerUsername}`);
+  }
+
   const user = await getUserByUsername(username);
 
   if (!user) {
     notFound();
-  }
-
-  if (user.role === "SELLER") {
-    const seller = await getSellerByUsername(username);
-
-    if (seller?.sellerUsername) {
-      redirect(`/seller/${seller.sellerUsername}`);
-    }
   }
 
   return (
