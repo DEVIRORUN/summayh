@@ -1,9 +1,12 @@
 export function getProfileHref(
-  user: {
-    username?: string | null;
-    role?: string;
-    sellerUsername?: string | null;
-  } | null | undefined
+  user:
+    | {
+        username?: string | null;
+        role?: string;
+        sellerUsername?: string | null;
+      }
+    | null
+    | undefined
 ): string | null {
   if (!user) return null;
 

@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { getUserByUsername } from "@/lib/user";
+import { getSellerByUsername } from "@/lib/seller";
 import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 
@@ -10,18 +11,19 @@ export default async function UserProfilePage({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
+
   const user = await getUserByUsername(username);
 
-  if (!user) notFound();
+  if (!user) {
+    notFound();
+  }
 
-  console.log("[PROFILE ROUTE]", {
-    username,
-    role: user.role,
-    sellerUsername: user.sellerUsername,
-  });
+  if (user.role === "SELLER") {
+    const seller = await getSellerByUsername(username);
 
-  if (user.role === "SELLER" && user.sellerUsername) {
-    redirect(`/seller/${user.sellerUsername}`);
+    if (seller?.sellerUsername) {
+      redirect(`/seller/${seller.sellerUsername}`);
+    }
   }
 
   return (
@@ -45,6 +47,7 @@ export default async function UserProfilePage({
 
         <div className="flex flex-col gap-1">
           <h1 className="text-xl font-semibold">{user.name}</h1>
+
           <p className="text-sm text-muted-foreground">
             @{user.username}
           </p>
