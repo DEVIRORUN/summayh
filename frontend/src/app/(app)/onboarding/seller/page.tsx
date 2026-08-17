@@ -69,7 +69,7 @@ export default function SellerOnboardingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           accountName: name,
-          username: username,
+          sellerUsername: username,
           biography: bio,
           accountNumber,
           settlementBank: accountBank,
@@ -87,7 +87,7 @@ export default function SellerOnboardingPage() {
         );
       }
 
-      router.push("/gigs/new"); // I wire this rn so straight to gig creation [For now]
+      router.push("/gigs/new/basics"); // I wire this rn so straight to gig creation [For now]
     } catch (err) {
       setError(
         err instanceof Error
