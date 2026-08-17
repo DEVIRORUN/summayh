@@ -44,9 +44,8 @@ interface Order {
   status: string;
   totalPrice: string;
   requirementsSubmittedAt: string | null;
-
+  requirements?: RequirementAnswer[] | null;
   orderDeliveries: Delivery[];
-
   gig: {
     id: string;
     title: string;

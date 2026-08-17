@@ -39,7 +39,6 @@ export function OrderRequirementsForm({
       [questionId]: value,
     }));
 
-    // Clear a previous validation error as the buyer edits.
     if (error) {
       setError(null);
     }
