@@ -33,7 +33,8 @@ export function GigsSection({ url, avatar }: GigsSectionProps) {
         price={15000}
         deliveryTime="3 days"
         rating={{ avgRating: 4.8, reviewCount: 120 }}
-        seller={{ avatar, name: "John Adebayo", isOnline: true, level: "sentinel" }}
+        state={"ACTIVE"}
+        seller={{ avatar, sellerUsername: "John Adebayo", isOnline: true, level: "sentinel" }}
         tags={["modern logo", "logo", 'digital skill']}
         variant="list"
         isFavorited={!!favorites["1"]} 
