@@ -70,6 +70,7 @@ export default async function SellerProfilePage({
                                 price={gig.tiers?.[0]?.price ?? 0}
                                 deliveryTime="-"
                                 rating={{ avgRating: gig.avgRating, reviewCount: gig.totalReviews }}
+                                state={gig.state}
                                 seller={{
                                     avatar: seller.avatar,
                                     sellerUsername: seller.sellerUsername,
