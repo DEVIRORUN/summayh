@@ -5,7 +5,7 @@ import { TermiiService } from "./termii.service";
 import { NotificationService } from "./notification.service"
 import { PresenceService } from "./presence.service"
 import { SessionOutcome } from "../../generated/prisma";
-import { callQueue } from "../utils/queue";
+import { callQueue } from "../queues/queue";
 
 
 const roomService  = new RoomServiceClient(

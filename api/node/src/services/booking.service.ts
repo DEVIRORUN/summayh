@@ -1,4 +1,4 @@
-import { callQueue } from "../utils/queue";
+import { callQueue } from "../queues/queue";
 import { prisma } from "../utils/prisma";
 
 export class BookingService {

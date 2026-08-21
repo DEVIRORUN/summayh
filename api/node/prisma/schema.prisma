@@ -215,6 +215,15 @@ enum ProPlanInterval {
   YEARLY
 }
 
+enum CreationState {
+  DRAFT_BASICS
+  DRAFT_DESCRIPTION
+  DRAFT_TIERS
+  DRAFT_REQUIREMENTS
+  DRAFT_GALLERY
+  PUBLISH
+}
+
 enum NotificationType {
   ORDER_PLACED
   ORDER_ACCEPTED
@@ -446,6 +455,7 @@ model Gig {
   totalReviews Int      @default(0)
   minPrice     Decimal? // or Float, matching your Tier.price type
   maxPrice     Decimal?
+  creationState CreationState @default(DRAFT_BASICS)
 
   deliveryMode GigDeliveryMode @default(DIGITAL)
 
@@ -455,7 +465,7 @@ model Gig {
   // Ranking
   baseRankingScore Int           @default(0)
   statusFlag       GigStatusFlag @default(NORMAL)
-  isRookiePeriod   Boolean       @default(true)
+  isRookiePeriod   Boolean       @default(false)
   rookieExpiredAt  DateTime?
 
   // Relationships

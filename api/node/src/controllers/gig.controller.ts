@@ -321,116 +321,28 @@ console.log("[GET UPLAOD URL]: SUCCESSFUL!!!");
         .json({ message: "Failed to publish gig. Please try again." });
     }
   }
-  // POST /api/gig/create
-  // static async createGig(req: Request, res: Response): Promise<any> {
-  //   console.log(new Date(), "-> [Gig Controller]: Hit!");
-  //   console.log(`[Gig Controller]: Data: ${req.body}`);
-  //   try {
-  //     const {
-  //       title,
-  //       description,
-  //       tags,
-  //       categoryId,
-  //       tiers,
-  //       requirementTemplates,
-  //     } = req.body;
-  //     const userId = (req as any).userId;
-
-  //     // Validation first: required fields
-  //     if (!title || !description || !categoryId) {
-  //       return res.status(400).json({
-  //         message: "title, description, and categoryId are required.",
-  //       });
-  //     }
-
-  //     // Validate if the tiers are in Array
-  //     if (!Array.isArray(tags)) {
-  //       return res.status(400).json({
-  //         message: "tags must be an array (can be empty: []).",
-  //       });
-  //     }
-
-  //     // Validation: all 3 tiers must be present
-  //     if (!tiers || typeof tiers != "object") {
-  //       return res.status(400).json({
-  //         message:
-  //           "tiers must be present, containing basic, standard, and premium.",
-  //       });
-  //     }
-
-  //     const requiredTierKeys = ["basic", "standard", "premium"] as const;
-  //     const missingTiers = requiredTierKeys.filter((key) => !tiers[key]);
-
-  //     if (missingTiers.length > 0) {
-  //       return res.status(400).json({
-  //         message: `Missing required tier(s): ${missingTiers.join(", ")}. All three tiers are mandatory.`,
-  //       });
-  //     }
-
-  //     // Validation: each tier's required fields
-  //     for (const key of requiredTierKeys) {
-  //       const tier = tiers[key];
-  //       const tierError: string[] = [];
-
-  //       if (!tier.description) tierError.push("description: No description.");
-  //       if (typeof tier.price != "number" || tier.price <= 500)
-  //         tierError.push("price (must be higher than 500 niara)");
-  //       if (typeof tier.deliveryDays != "number" || tier.deliveryDays <= 0)
-  //         tierError.push("deliveryDays (must be a positive number)");
-  //       if (typeof tier.revisionCount != "number" || tier.revisionCount < 0)
-  //         tierError.push("revisionCount (must be 0 or more)");
-
-  //       if (tierError.length > 0) {
-  //         return res.status(400).json({
-  //           message: `Tier "${key}": is missing or has invalid field(s): ${tierError.join(", ")}.`,
-  //         });
-  //       }
-  //     }
-  //     // Now All good, lets create the gig
-  //     const newGig = await GigService.initiateGigCreation(
-  //       title,
-  //       description,
-  //       tags,
-  //       categoryId,
-  //       userId,
-  //       tiers,
-  //       requirementTemplates,
-  //     );
-
-  //     // Fire-and-forget: only pro sellers get embeddings generated
-  //     if (newGig.seller?.isPro) {
-  //       fetch(`${process.env.FASTAPI_URL}/api/embeddings/gig`, {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({
-  //           gigId: newGig.id,
-  //           title: newGig.title,
-  //           description: newGig.description,
-  //           tags: newGig.tags,
-  //         }),
-  //       }).catch((err) =>
-  //         console.error("Failed to trigger gig embedding: ", err),
-  //       );
-  //     }
-
-  //     console.log(
-  //       new Date(),
-  //       "-> [Gig Controller]: Succesfully created the Gig!",
-  //     );
-  //     return res.status(201).json({
-  //       message: "Gig creation successful",
-  //       data: newGig,
-  //     });
-  //   } catch (error) {
-  //     console.error("ERROR CREATING GIG bro: ", error);
-  //     const handled = handlePrismaError(error, res);
-  //     if (handled) return;
-  //     // Fallback for really unexpected errors
-  //     return res
-  //       .status(500)
-  //       .json({ message: "Failed to create gig. Please try again." });
-  //   }
-  // }
+  static async getDraftForEditing(req: Request, res: Response): Promise<any> {
+    try {
+      console.log("[GIG DRAFT DETAILS]: HIT!!!")
+      const sellerId = (req as any).sellerId;
+      const { gigId } = req.params;
+  
+      if (!gigId) {
+        return res.status(400).json({ message: "GigId is required." })
+      }
+  
+      const details = await GigService.getDraftForEditing(gigId as string, sellerId);
+      return res.status(200).json({
+        message: "Details fetched succesfully",
+        data: details,
+      });
+    } catch (error: any) {
+      console.error("[FAILED TO FETCH GIG DETAILS]")
+      const handled = handlePrismaError(error, res);
+      if (handled) return;
+      return res.status(500).json({ message: "Failed to fetch Gig details" })
+    }
+  }
   static async updateGig(req: Request, res: Response): Promise<any> {
     try {
       const { title, description, tags, categoryId, tiers, gigId } = req.body;
@@ -574,10 +486,6 @@ console.log("[GET UPLAOD URL]: SUCCESSFUL!!!");
 
       const gigData = await GigService.readGigData(userId, gigId as string);
 
-      // GigStatsService.recordClick(gigId as string).catch(err =>
-      //     console.error("Failed to record gig click: ", err)
-      // );
-
       // 3. Fire the stats tracking safely afterward
       console.log(new Date(), "-> [Gig Controller]: Recording click");
       try {
@@ -593,6 +501,10 @@ console.log("[GET UPLAOD URL]: SUCCESSFUL!!!");
       });
     } catch (error: any) {
       console.error("ERROR GETTING DATA BRO: ", error);
+
+      if (error.message === "Gig not found.") {
+        return res.status(404).json({ message: error.message })
+      }
       const handled = handlePrismaError(error, res);
       if (handled) return;
 

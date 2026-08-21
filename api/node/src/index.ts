@@ -5,6 +5,7 @@ if (!process.env.JWT_SECRET) {
 }
 import './workers/call.worker'; // just importing starts it listening
 import './workers/proSubscription.worker'; // just importing starts it listening
+import './workers/ranking.worker'; // just importing starts it listening
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 import express from "express";

@@ -1,7 +1,7 @@
 import { Worker } from "bullmq";
 import { createBullMQConnection } from "../utils/redis";
 import { CallService } from "../services/call.service";
-import { callQueue } from "../utils/queue";
+import { callQueue } from "../queues/queue";
 
 export const callWorker = new Worker(
     "call-sessions",

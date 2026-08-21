@@ -1,7 +1,7 @@
 // TALKING TO PRISMA and some shii
 
 import { prisma } from "../utils/prisma";
-import { Prisma, TierLabel, State } from "../../generated/prisma";
+import { Prisma, TierLabel, State, CreationState } from "../../generated/prisma";
 import { connect } from "http2";
 
 import { PutObjectCommand } from "@aws-sdk/client-s3";
@@ -64,6 +64,22 @@ interface GigUpsertInput {
   gallery: string[]
 }
 
+export const STEP_ROUTES: Record<CreationState, string> = {
+  DRAFT_BASICS: "basics",
+  DRAFT_DESCRIPTION: "description",
+  DRAFT_TIERS: "tiers",
+  DRAFT_REQUIREMENTS: "requirements",
+  DRAFT_GALLERY: "gallery",
+  PUBLISH: "publish",
+}
+
+export const STEP_ORDER = Object.keys(STEP_ROUTES) as CreationState[];
+
+function nextCreationState(current: CreationState, candidate: CreationState) {
+  const currentIdx = STEP_ORDER.indexOf(current);
+  const candidateIdx = STEP_ORDER.indexOf(candidate);
+  return candidateIdx > currentIdx ? candidate : current;
+}
 
 export class GigService {
   /**
@@ -99,6 +115,7 @@ export class GigService {
           category: {
             connect: { id: categoryId },
           },
+          creationState: "DRAFT_BASICS",
         },
       });
 
@@ -118,10 +135,14 @@ export class GigService {
       console.log(new Date(), "-> [ADD DESC TO DRAFT]: Hit!!!");
       // We get the existing Gig
       const descGig = await prisma.$transaction(async (tx) => {
+        const existing = await tx.gig.findFirst({ where: { id: gigId, sellerId } });
+        if (!existing) throw new Error("Gig not found or you don't have permission to edit it.");
+
         const newGig = await tx.gig.update({
           where: { id: gigId, sellerId },
           data: {
             description,
+            creationState: nextCreationState(existing.creationState, "DRAFT_DESCRIPTION"),
           },
         });
 
@@ -149,7 +170,7 @@ export class GigService {
       throw err;
     }
   }
-static async addTiersToGig(
+  static async addTiersToGig(
     gigId: string,
     tiers: GigTiersInput,
     sellerId: string,
@@ -199,7 +220,11 @@ static async addTiersToGig(
 
         await tx.gig.update({
           where: { id: gigId },
-          data: { minPrice, maxPrice },
+          data: { 
+            minPrice, 
+            maxPrice,
+            creationState: nextCreationState(newGig.creationState, "DRAFT_TIERS"),
+          },
         });
 
         console.log(new Date(), "-> [ADD TIERS TO DRAFT]: Draft Gig created!!!");
@@ -255,16 +280,23 @@ static async addTiersToGig(
   ): Promise<any> {
     try {
       console.log(new Date(), "-> [SAVE GALLERY TO GIG]: Hit!!!");
+      const gig = await prisma.$transaction(async (tx) => {
+        const existing = await tx.gig.findFirst({ where: { id: gigId, sellerId } });
+        if (!existing) throw new Error("Gig not found or you don't have the permission to edit it.")
 
-      // First we find the gig in matter and update in one line transacion not neccesarily needed
-      const gig = await prisma.gig.update({
-        where: { id: gigId, sellerId },
-        data: {
-          images,
-          video,
-          coverImage: images?.[0] // Next tiem this coverImage alwways gets its pic
-        },
-      }); // so with these from the types from schema no stress needed, the work is done
+        const newGig = await tx.gig.update({
+          where: { id: gigId, sellerId },
+          data: {
+            images,
+            video,
+            coverImage: images?.[0], // Next tiem this coverImage alwways gets its pic
+            creationState: nextCreationState(existing.creationState, "DRAFT_GALLERY"),
+          },
+        }); 
+
+        return newGig;
+      })
+
 
       console.log(
         new Date(),
@@ -329,6 +361,7 @@ static async addTiersToGig(
             state: "ACTIVE",
             isRookiePeriod: true,
             rookieExpiredAt,
+            creationState: nextCreationState(gig.creationState, "PUBLISH"),
           },
         });
 
@@ -340,6 +373,23 @@ static async addTiersToGig(
     }
   }
 
+  static async getDraftForEditing(gigId: string, sellerId: string): Promise<any> {
+    const gig = await prisma.gig.findFirst({
+      where: { id: gigId, sellerId },
+      include: {
+        category: true,
+        tiers: { include: { quantityPricing: true } },
+        gigFAQs: { orderBy: { order: "asc" } },
+        requirementTemplates: { orderBy: { order: "asc" } },
+      },
+    });
+
+    if (!gig) throw new Error("Gig not found or you don't have permission to edit it.");
+    if (gig.state !== "DRAFT") throw new Error("This gig is not a draft.");
+
+    return gig;
+  }
+
   static async addQuestionsToGig(
     gigId: string,
     sellerId: string,
@@ -348,15 +398,18 @@ static async addTiersToGig(
     try {
       console.log(new Date(), "-> [ADD QUESTIONS TO DRAFT]: Hit!!!");
       const questionGig = await prisma.$transaction(async (tx) => {
-        const newGig = await tx.gig.findFirst({
+        const existing = await tx.gig.findFirst({
           where: { id: gigId, sellerId },
         });
+        if (!existing) throw new Error("Gig not found or You don't have access to edit this gig.");
 
-        if (!newGig) {
-          throw new Error(
-            "Gig not found, You don't have permission to edit it.",
-          );
-        }
+
+        const newGig = await tx.gig.update({
+          where: { id: gigId, sellerId },
+          data: {
+            creationState: nextCreationState(existing.creationState, "DRAFT_REQUIREMENTS"),
+          }
+        });
 
         await tx.gigRequirementTemplate.deleteMany({ where: { gigId } });
 
@@ -385,107 +438,6 @@ static async addTiersToGig(
       throw err;
     }
   }
-  // static async initiateGigCreation(
-  //   title: string,
-  //   description: string,
-  //   tags: string[],
-  //   categoryId: string,
-  //   userId: string,
-  //   tiers: GigTiersInput,
-  //   requirementTemplates?: RequirementTemplateInput[], // Optional
-  // ): Promise<any> {
-  //   try {
-  //     const newGig = await prisma.$transaction(async (tx) => {
-  //       const rookieExpiry = new Date(Date.now() + 72 * 60 * 60 * 1000); // 3 days form now()
-
-  //       const gig = await tx.gig.create({
-  //         data: {
-  //           title,
-  //           description,
-  //           tags,
-  //           rookieExpiredAt: rookieExpiry,
-  //           seller: {
-  //             connect: { userId: userId },
-  //           },
-  //           category: {
-  //             connect: { id: categoryId },
-  //           },
-  //         },
-  //       });
-
-  //       await tx.gigStats.create({
-  //         data: { gigId: gig.id },
-  //       });
-
-  //       await tx.gigTier.createMany({
-  //         data: [
-  //           {
-  //             gigId: gig.id,
-  //             label: TierLabel.BASIC,
-  //             customName: tiers.basic.customName || "BASIC",
-  //             description: tiers.basic.description,
-  //             price: tiers.basic.price,
-  //             deliveryDays: 0,
-  //             revisionCount: tiers.basic.revisionCount,
-  //           },
-  //           {
-  //             gigId: gig.id,
-  //             label: TierLabel.STANDARD,
-  //             customName: tiers.standard.customName || "STANDARD",
-  //             description: tiers.standard.description,
-  //             price: tiers.standard.price,
-  //             deliveryDays: tiers.standard.deliveryDays,
-  //             revisionCount: tiers.standard.revisionCount,
-  //           },
-  //           {
-  //             gigId: gig.id,
-  //             label: TierLabel.PREMIUM,
-  //             customName: tiers.premium.customName || "PREMIUM",
-  //             description: tiers.premium.description,
-  //             price: tiers.premium.price,
-  //             deliveryDays: tiers.premium.deliveryDays,
-  //             revisionCount: tiers.premium.revisionCount,
-  //           },
-  //         ],
-  //       });
-
-  //       // We only create requiremnets templates if sller provided them
-  //       if (requirementTemplates && requirementTemplates.length > 0) {
-  //         await tx.gigRequirementTemplate.createMany({
-  //           data: requirementTemplates.map((rt, index) => ({
-  //             gigId: gig.id,
-  //             question: rt.question,
-  //             inputType: rt.inputType,
-  //             options: rt.options ?? [],
-  //             isRequired: rt.isRequired,
-  //             order: rt.order ?? index, // fallback to array order
-  //           })),
-  //         });
-  //       }
-
-  //       // Return the gig with its tiers attached, so the controller
-  //       // doesn't need a second round-trip query
-  //       return tx.gig.findUnique({
-  //         where: { id: gig.id },
-  //         include: {
-  //           tiers: true,
-  //           seller: {
-  //             select: { isPro: true },
-  //           },
-  //           requirementTemplates: {
-  //             orderBy: { order: "asc" },
-  //           },
-  //           // stats: true // well i don't think stats is upposed ot be here at initation of the Gig
-  //         },
-  //       });
-  //     });
-
-  //     return newGig;
-  //   } catch (error) {
-  //     console.error("Error in GigService.initiateGigCreation:", error);
-  //     throw error;
-  //   }
-  // }
   static async readGigData(userId: string | undefined, gigId: string): Promise<any> {
     try {
       console.log(new Date(), "-> [Gig Service read]: Hit!");
@@ -692,6 +644,7 @@ static async addTiersToGig(
           take: limit,
           orderBy: { createdAt: "desc" },
           include: {
+            seller: true,
             tiers: {
               include: { quantityPricing: true },
               orderBy: { price: "asc" },

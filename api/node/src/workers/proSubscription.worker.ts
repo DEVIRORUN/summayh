@@ -1,7 +1,7 @@
 import { Worker } from "bullmq";
 import { createBullMQConnection } from "../utils/redis";
 import { ProSubscriptionService } from "../services/proSubscription.service";
-import { proQueue } from "../utils/proQueue";
+import { proQueue } from "../queues/pro.queue";
 
 export const proSubscriptionWorker = new Worker(
     "pro-subscriptions",

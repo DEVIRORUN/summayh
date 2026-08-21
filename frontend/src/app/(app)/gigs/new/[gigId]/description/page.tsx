@@ -4,18 +4,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import GigStepper from "@/components/axiom/GigStepper";
-
+import { useDraftGig } from "@/contexts/draftGigContext";
+import { STEP_ROUTES } from "@/lib/gigSteps";
 import { cn } from "@/lib/utils";
 
 export default function DescriptionPage() {
     const router = useRouter();
     const { gigId } = useParams();
+    const { draft, refetchDraft } = useDraftGig();
 
-  const [description, setDescription] = useState("");
-  const [faqs, setFaqs] = useState<{ question: string; answer: string }[]>([]);
+  const [description, setDescription] = useState(draft?.description ?? "");
+  const [faqs, setFaqs] = useState<{ question: string; answer: string }[]>(
+    draft?.gigFAQs?.map(f => ({ question: f.question, answer: f.answer })) ?? []
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function addFaq() {
+    setFaqs([...faqs, { question: "", answer: "" }]);
+  }
 
   const handleSubmit = async () => {
     setError(null);
@@ -35,7 +42,8 @@ export default function DescriptionPage() {
             throw new Error(data.message || "Failed to save description.");
         }
 
-        router.push(`/gigs/new/${gigId}/pricing`);
+        await refetchDraft();
+        router.push(`/gigs/new/${gigId}/${STEP_ROUTES.DRAFT_DESCRIPTION}`);
     } catch(err: unknown) {
         setError(err instanceof Error ? err.message : "Something went wrong.")
     } finally {

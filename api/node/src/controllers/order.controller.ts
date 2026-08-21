@@ -359,7 +359,6 @@ export class OrderController {
             return res.status(404).json({ message: error.message || "Order not found." });
         }
     }
-
     static async submitOrderRequirements(req: Request, res: Response): Promise<any> {
         try {
             const buyerId = (req as any).userId;
@@ -379,7 +378,7 @@ export class OrderController {
             // Now the actuall submission
             const updatedOrder = await OrderService.submitOrderRequirements(
                 orderId as string,
-                buyerId,
+                buyerId, // as CurrentuserId, but since i did not change anything here that means somethign is wrong in the first place, as i did not apply that gaurd in frontend its still there or we good??
                 answers
             );
 
@@ -402,7 +401,6 @@ export class OrderController {
             return res.status(500).json({ message: "Something went wrong." });
         }
     }
-
     static async scheduleNextSession(req: Request, res: Response): Promise<any> {
         try {
             const buyerId = (req as any).userId;

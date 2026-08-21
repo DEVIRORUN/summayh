@@ -5,6 +5,7 @@ import { SlidersHorizontal, Sparkles } from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { GigFilters } from "@/components/axiom/GigFilters";
 
+
 interface SearchParams {
   category?: string;
   search?: string;
@@ -27,7 +28,7 @@ async function fetchGigs(params: SearchParams) {
     const res = await fetch(`${baseUrl}/api/gig?${queryParams.toString()}`, {
       cache: "no-store",
     });
-    console.log("RES:", res)
+    // console.log("RES:", res)
 
     if (!res.ok) {
         const errorData = await res.json().catch(() => null);
@@ -52,6 +53,8 @@ export default async function GigsPage({
   const response = await fetchGigs(resolvedParams);
   const gigs = response?.data?.data || response?.data || [];
   const total = response?.data?.pagination?.total ?? gigs.length;
+
+  console.log("GIG:", gigs[0])
 
   const formattedTitle = category
     ? category.replace(/-/g, " ")
@@ -107,11 +110,9 @@ export default async function GigsPage({
                   avgRating: gig.avgRating || 5.0,
                   reviewCount: gig.totalReviews || 0,
                 }}
+                state={gig.state}
                 seller={{
-                  name:
-                    gig.seller?.user?.name ||
-                    gig.seller?.sellerUsername ||
-                    "Seller",
+                  sellerUsername: gig.seller.sellerUsername,
                   avatar: gig.seller?.avatar || "",
                   isPro: gig.seller?.isPro ?? false,
                   isOnline: true,

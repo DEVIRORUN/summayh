@@ -86,7 +86,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
                 <OrderStatusTimeline steps={mapOrderStatusToSteps(order.status)} variant="line" orientation="horizontal" />
             </div>
 
-            {order.status === "ACTIVE" && !order.requirementsSubmittedAt && (
+            {isBuyer && order.status === "ACTIVE" && !order.requirementsSubmittedAt && (
                 <OrderRequirementsForm 
                     orderId={order.id}
                     templates={order.gig.requirementTemplates} />

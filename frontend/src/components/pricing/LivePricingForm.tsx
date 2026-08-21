@@ -12,15 +12,38 @@ import {
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { DraftGig } from "@/types/draftGig";
 
-export default function LivePricingGigPage({ gigId }: { gigId: string }) {
+interface LivePricingGigPageProps {
+  gigId: string;
+  draft: DraftGig;
+  refetchDraft: () => Promise<void>
+}
+
+export default function LivePricingGigPage({ gigId, draft, refetchDraft }: LivePricingGigPageProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const findTier = (label: "BASIC" | "STANDARD" | "PREMIUM") => 
+  draft.tiers?.find(t => t.label === label);
+
+  const seedTier = (label: "BASIC" | "STANDARD" | "PREMIUM") => {
+    const t = findTier(label);
+    return {
+      customName: t?.customName ?? "",
+      description: t?.description ?? "",
+      price: t?.price ?? 0,
+      sessionLengthMin: t?.sessionLengthMin ?? 30,
+      breakLengthMin: t?.breakLengthMin ?? 5,
+      totalSessions: t?.totalSessions ?? 1,
+    }
+  }
+
   const [tiers, setTiers] = useState({
-    basic: { customName: "", description: "", price: 0, sessionLengthMin: 30, breakLengthMin: 5, totalSessions: 1 },
-    standard: { customName: "", description: "", price: 0, sessionLengthMin: 30, breakLengthMin: 5, totalSessions: 1 },
-    premium: { customName: "", description: "", price: 0, sessionLengthMin: 30, breakLengthMin: 5, totalSessions: 1 },
+    basic: seedTier("BASIC"),
+    standard: seedTier("STANDARD"),
+    premium: seedTier("PREMIUM"),
   });
 
   const validateTiers = (): string | null => {
@@ -56,9 +79,10 @@ export default function LivePricingGigPage({ gigId }: { gigId: string }) {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.message || "Failed to save tiers.");
+        throw new Error(data.error || data.message || "Failed to save tiers.");
       }
 
+      await refetchDraft();
       router.push(`/gigs/new/${gigId}/requirements`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

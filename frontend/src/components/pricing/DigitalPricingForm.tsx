@@ -12,33 +12,35 @@ import {
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { DraftGig } from "@/types/draftGig";
 
-export default function DigitalPricingGigPage({ gigId }: { gigId: string }) {
+export default function DigitalPricingGigPage({ 
+  gigId,
+  draft,
+  refetchDraft,
+  }: { gigId: string, draft: DraftGig, refetchDraft: () => Promise<void> }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const findTier = (label: "BASIC" | "STANDARD" | "PREMIUM") => 
+    draft.tiers?.find(t => t.label === label);
+
+  const seedTier = (label: "BASIC" | "STANDARD" | "PREMIUM") => {
+    const t = findTier(label);
+    return {
+      customName: t?.customName ?? "",
+      description: t?.description ?? "",
+      price: t?.price ?? 0,
+      deliveryDays: t?.deliveryDays ?? 1,
+      revisionCount: t?.revisionCount ?? 0,
+    }
+  }
+
   const [tiers, setTiers] = useState({
-    basic: {
-      customName: "",
-      description: "",
-      price: 0,
-      deliveryDays: 1,
-      revisionCount: 0,
-    },
-    standard: {
-      customName: "",
-      description: "",
-      price: 0,
-      deliveryDays: 1,
-      revisionCount: 0,
-    },
-    premium: {
-      customName: "",
-      description: "",
-      price: 0,
-      deliveryDays: 1,
-      revisionCount: 0,
-    },
+    basic: seedTier("BASIC"),
+    standard: seedTier("STANDARD"),
+    premium: seedTier("PREMIUM"),
   });
 
   const validateTiers = (): string | null => {
@@ -84,9 +86,10 @@ export default function DigitalPricingGigPage({ gigId }: { gigId: string }) {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.message || "Failed to save tiers.");
+        throw new Error(data.error || data.message || "Failed to save tiers.");
       }
-
+      
+      await refetchDraft();
       router.push(`/gigs/new/${gigId}/requirements`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

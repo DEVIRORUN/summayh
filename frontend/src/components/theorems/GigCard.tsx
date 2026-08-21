@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { CreationState, STEP_ROUTES } from "@/lib/gigSteps";
 
 export interface GigTier {
   id?: string;
@@ -30,11 +31,13 @@ export interface GigCardProps{
     rating: { avgRating: number; reviewCount?: number; };
     avgRating?: number;
     totalReviews?: number;
-    seller: { avatar: string; name: string; sellerUsername?: string; isOnline: boolean; isPro?: boolean; level?: SellerLevel }
+    seller: { avatar: string; sellerUsername: string; isOnline: boolean; isPro?: boolean; level?: SellerLevel }
     tags?: string[];
     createdAt?: string | number | Date | undefined;
     variant?: "default" | "compact" | "list" | "grid";
+    state: "DRAFT" | "ACTIVE" | "PAUSED" | "INACTIVE"
     isFavorited?: boolean;
+    creationState?: CreationState
     onFavorite?: (id: string) => void; // Not really sure what to write here
 }
 
@@ -54,7 +57,9 @@ export function GigCard({
     seller,
     tags = [],
     variant = "default",
+    state,
     isFavorited = false,
+    creationState,
     onFavorite,
 }: GigCardProps) {
     const isCompact = variant === "compact";
@@ -87,18 +92,24 @@ export function GigCard({
             ? (rawImage as { url: string }).url
             : null;
 
-    const sellerName = seller?.name || seller.sellerUsername || "Seller"
+    const sellerName = seller.sellerUsername
+    // console.log("SELLER DETAILS", sellerName, sellerAvatar)
     const sellerAvatar = seller?.avatar || "";
 
     function handleCardClick() {
-        router.push(`/gigs/${id}`)
+        if (state === "DRAFT") {
+            const step = creationState ? STEP_ROUTES[creationState] : "basics";
+            router.push(`/gigs/new/${id}/${step}`);
+            return;
+        }
+        router.push(`/gigs/${id}`);
     }
 
     return (
             <Card
                 onClick={handleCardClick}
                 className={cn(
-                    "overflow-hidden p-0",
+                    "overflow-hidden p-0 rounded-sm",
                     isList ? "flex flex-row" : "flex flex-col"
                 )}
             >
@@ -106,7 +117,7 @@ export function GigCard({
                 <div className={cn(
                     "relative shrink-0 overflow-hidden", 
                     isList 
-                        ? "w-40 min-h-[140px]" :  "w-full aspect-video")}>
+                        ? "w-50 min-h-[140px]" :  "w-full aspect-video")}>
                     <Image 
                         src={displayImage || "/placeholder.jpg"} 
                         alt={title} 
@@ -131,7 +142,7 @@ export function GigCard({
                     <Link
                         href={`/seller/${seller.sellerUsername}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="w-fit"
+                        className="w-full flex flex-row justify-between items-center"
                     >
                         <SellerMiniRow 
                             avatar={sellerAvatar}
@@ -140,6 +151,11 @@ export function GigCard({
                             level={seller.level}
                             compact={isCompact}
                         />
+                        {state === "DRAFT" && 
+                            <span className="text-xs font-bold bg-foreground text-background p-1 rounded-md h-fit ">
+                                DRAFT
+                            </span>
+                        }
                     </Link>
 
                     <p className={cn("font-medium line-clamp-2", isCompact ? "text-xs" : "text-sm")}>
@@ -157,7 +173,7 @@ export function GigCard({
 
                     <div className="flex flex-wrap">
                         {tags && (tags.map((t, i) => (
-                            <span key={i}  className="m-1 px-2 p-1 rounded-xl bg-foreground text-xs text-muted/90 font-bold">{t}</span>
+                            <span key={i}  className="m-1 px-2 p-1 rounded-md  bg-foreground text-xs text-muted/90 font-bold">{t}</span>
                         )))}
                     </div>
                 </div>

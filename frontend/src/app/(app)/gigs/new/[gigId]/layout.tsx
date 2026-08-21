@@ -1,10 +1,11 @@
 "use client";
 
 import { usePathname, useParams } from "next/navigation";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import GigStepper, { STEPS } from "@/components/axiom/GigStepper";
-
+import { DraftGig } from "@/types/draftGig";
+import { DraftGigProvider } from "@/contexts/draftGigContext";
 
 interface Helper {
     key: string;
@@ -62,46 +63,81 @@ const HELPER_CONTENT: Record<string, Helper> = {
   },
 };
 
-
 export default function LayoutGigPage({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const { gigId } = useParams();
+    const { gigId } = useParams<{ gigId: string }>();
+    const [draft, setDraft] = useState<DraftGig | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    async function loadDraft() {
+      try {
+        const res = await fetch(`/api/gig/${gigId}/draft`);
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || "Failed to load draft.")
+        }
+        const { data } = await res.json();
+        setDraft(data);
+      } catch (err) {
+        console.error("Failed to load draft:", err);
+        setError("Couldn't load this gig draft.")
+      }
+    }
+
+    useEffect(() => {
+      if (!gigId) {
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      loadDraft().finally(() => setLoading(false));
+    }, [gigId]);
 
     // To know which step we're on
     const currentStep = pathname.split("/").pop(); // The last var after "/"
     const currentIndex = STEPS.findIndex(s => s.key === currentStep);
     const currentStepInfo = STEPS[currentIndex];
-    
     const currentHelper = HELPER_CONTENT[currentStep ?? ""];
-
-    // step check
+    
     const prevStep = STEPS[currentIndex - 1];
     const backHref = prevStep ? `/gigs/new/${gigId}/${prevStep.key}` : `/gigs/new/basics`;
+    
+    if (loading) return <div className="p-5 animate-pulse">Loading...</div>
+    if (error) {
+      return <div className="p-5 destructive text-sm font-semibold">Loading...</div>
+    }
+
+    if (loading) {
+      return <div className="p-5 animate-pulse font-semibold">Loading...</div>
+    }
 
    return (
-    <div className="flex flex-col min-h-screen min-w-0">
-        <div className="p-5 min-w-0">
-        <GigStepper />
-        </div>
+    <DraftGigProvider value={{ draft, refetchDraft: loadDraft }}>
+      <div className="flex flex-col min-h-screen min-w-0">
+          <div className="p-5 min-w-0">
+          <GigStepper gigId={gigId}/>
+          </div>
 
-        <div className="body flex flex-row gap-4 px-5 min-w-0 flex-1">
-        <main className="flex-1 min-w-0">{children}</main>
+          <div className="body flex flex-row gap-4 px-5 min-w-0 flex-1">
+          <main className="flex-1 min-w-0">{children}</main>
 
-        <aside className="w-[260px] shrink-0 hidden lg:block">
-            {currentHelper && (
-            <div className="bg-muted rounded-xs p-4 sticky top-5">
-                <h3 className="font-semibold text-sm mb-2">{currentHelper.title}</h3>
-                <p className="text-xs text-muted-foreground">{currentHelper.stepsToFollow}</p>
-            </div>
-            )}
-        </aside>
-        </div>
+          <aside className="w-[260px] shrink-0 hidden lg:block">
+              {currentHelper && (
+              <div className="bg-muted rounded-tl-none rounded-xs p-4 sticky top-5">
+                  <h3 className="font-semibold text-sm mb-2">{currentHelper.title}</h3>
+                  <p className="text-xs text-muted-foreground">{currentHelper.stepsToFollow}</p>
+              </div>
+              )}
+          </aside>
+          </div>
 
-        <div className="bottom flex justify-start p-5 border-t border-border mt-auto">
-        <Link href={backHref} className="text-sm underline text-muted-foreground">
-            ← Back
-        </Link>
-        </div>
-    </div>
+          <div className="bottom flex justify-start p-5 border-t border-border mt-auto">
+          <Link href={backHref} className="text-sm underline text-muted-foreground">
+              ← Back
+          </Link>
+          </div>
+      </div>
+    </DraftGigProvider>
     );
 }

@@ -18,7 +18,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   return (
     <nav
       aria-label="Breadcrumb"
-      className={cn("flex items-center space-x-1.5 text-xs text-muted-foreground", className)}
+      className={cn("mx-4 mt-6 flex items-center space-x-1.5 text-xs text-muted-foreground", className)}
     >
       <Link
         href="/"

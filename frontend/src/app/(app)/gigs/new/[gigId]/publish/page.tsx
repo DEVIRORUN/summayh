@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import SellerAvailabilityForm from "@/components/axiom/SellerAvailabilityForm";
 import Image from "next/image";
+import { useDraftGig } from "@/contexts/draftGigContext";
+import { DraftGig } from "@/types/draftGig";
 
 interface CategoryObject {
     id: string;
@@ -35,46 +37,42 @@ interface GigSummary {
 export default function PublishPage() {
     const router = useRouter();
     const { gigId } = useParams();
-    const [gig, setGig] = useState<GigSummary | null>(null);
+    const { draft, refetchDraft } = useDraftGig();
+
+    const [gig, setGig] = useState<DraftGig | null>(draft);
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [availabilityCount, setAvailabilityCount] = useState<number | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingAvailability, setIsLoadingAvailability] = useState(true);
+
+    const isLive = gig?.deliveryMode === "LIVE";
 
     useEffect(() => {
         if (!gigId) return;
 
-        async function loadGig() {
-            setIsLoading(true);
+        async function loadAvailability() {
+            setIsLoadingAvailability(true);
             try {
-                const res = await fetch(`/api/gig/${gigId}`);
-                if (!res.ok) throw new Error("Failed to load gig");
-                const data = await res.json();
-                const gigData = data.data || data;
-                setGig(gigData);
-
-                // If it's a LIVE gig, check existing availability count
-                if (gigData.deliveryMode === "LIVE") {
+                setGig(draft);
+                if (isLive) {
                     const availRes = await fetch(`/api/seller/availability`);
                     if (availRes.ok) {
                         const { data: slots } = await availRes.json();
-                        setAvailabilityCount(Array.isArray(slots) ? slots.length : 0);
-                    } else {
-                        setAvailabilityCount(0);
+                        setAvailabilityCount(Array.isArray(slots) ? slots.length : 0)
                     }
                 } else {
-                    setAvailabilityCount(0); 
+                    setAvailabilityCount(0)
                 }
             } catch (err) {
-                setError(err instanceof Error ? err.message : "Something went wrong.")
+                console.error("Failed to load availability:", err);
+                setAvailabilityCount(0);
             } finally {
-                setIsLoading(false)
+                setIsLoadingAvailability(false)
             }
         }
-        loadGig();
-    }, [gigId]);
+        loadAvailability();
+    }, [draft, isLive]);
 
-    const isLive = gig?.deliveryMode === "LIVE";
     const needsAvailability = isLive && availabilityCount === 0;
 
     async function handleSubmit () {
@@ -92,6 +90,7 @@ export default function PublishPage() {
                 throw new Error(data.message || "Failed to publish gig")
             }
 
+            await refetchDraft();
             router.push(`/gigs/${gigId}`)
         } catch (err) {
             setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -100,10 +99,11 @@ export default function PublishPage() {
         }
     }
 
-    if (isLoading) return <main className="p-6 animate-pulse">Loading...</main>
-    if (!gig) return <main className="p-6 text-red-500">Could not load gig.</main>
+    if (!draft || isLoadingAvailability) {
+        return <main className="p-6 animate-pulse">Loading...</main>
+    } 
 
-    const galleryItems = gig.gallery || gig.images || [];
+    const galleryItems = draft.images ?? [];
 
     return (
         <main className="flex flex-col gap-4">
@@ -119,10 +119,9 @@ export default function PublishPage() {
             <section className="border rounded-md p-4">
                 <div className="flex justify-between items-start">
                     <div>
-                        <h2 className="font-medium">{gig.title}</h2>
+                        <h2 className="font-medium">{draft.title}</h2>
                         <p className="text-xs text-muted-foreground">
-                            {typeof gig.category === "object" ? gig.category?.name : gig.category} / 
-                            {typeof gig.subcategory === "object" ? gig.subcategory?.name : gig.subcategory}
+                            {draft.category?.name}
                         </p>
                     </div>
                     <a href={`/gigs/${gigId}/edit/basics`} className="text-xs underline">
@@ -134,7 +133,7 @@ export default function PublishPage() {
             {/* Description */}
             <section className="border rounded-md p-4">
                 <div className="flex justify-between items-start">
-                    <h2 className="font-medium">{gig.description}</h2>
+                    <h2 className="font-medium">{draft.description}</h2>
                     <a href={`/gigs/${gigId}/edit/description`} className="text-xs underline">
                         Edit
                     </a>
@@ -150,11 +149,19 @@ export default function PublishPage() {
                     </a>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                    {gig.tiers.map((tier) => (
+                    {draft.tiers.map((tier) => (
                         <div key={tier.price} className="border rounded-sm p-2 text-center">
-                            <p className="text-xs font-medium">{tier.name}</p>
+                            <p className="text-xs font-medium">{tier.customName}</p>
                             <p className="text-sm">₦{tier.price.toLocaleString()}</p>
-                            <p className="text-[10px] text-muted-foreground">{tier.deliveryDays}d delivery</p>
+                            {isLive ? (
+                                <p className="text-[10px] text-muted-foreground">
+                                    {tier.sessionLengthMin}min · {tier.totalSessions} sessions
+                                </p>
+                            ) : (
+                                <p className="text-[10px] text-muted-foreground">
+                                    {tier.deliveryDays}d delivery
+                                </p>
+                            )}
                         </div>
                     ))}
                 </div>

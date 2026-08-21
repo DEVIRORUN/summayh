@@ -1,11 +1,13 @@
 import { GigStatusFlag } from "../../../generated/prisma"; // adjust path to match your actual generated client import
 
 export interface RankingInputs {
-    trustScore: number;        // 0–100, from SellerProfile.avgRating scaled up
-    completionRate: number;    // 0–1, completed orders / total orders
-    ctr: number;               // 0–1, clicks / impressions
-    conversionRate: number;    // 0–1, completed orders / clicks
-    activityScore: number;     // 0–1, recency-based (e.g. lastActiveAt decay)
+    avgRating: number;       
+    completedOrders: number;   
+    totalTerminalOrders: number;        
+    totalOrdersPlaced: number;        
+    impressions: number;              
+    clicks: number;    
+    activityScore: number;     // 0–1
     statusFlag: GigStatusFlag;
     isRookiePeriod: boolean;
 }
@@ -13,7 +15,14 @@ export interface RankingInputs {
 export interface RankingResult {
     baseRankingScore: number;  // final 8-digit int, 0–99999999
     weightedFloat: number;     // pre-scale float, useful for debugging/logs
+    debug: {
+        trustScore: number;
+        completionRate: number;
+        ctr: number;
+        conversionRate: number;
+    };
 }
+
 
 const WEIGHTS = {
     trust: 0.40,
@@ -24,41 +33,43 @@ const WEIGHTS = {
 };
 
 const MAX_SCORE = 99999999;
-const ROOKIE_BOOST_FLOOR = 0.95;
+export const PRIORS = {
+    completion: { weight: 10, rate: 0.85 },
+    ctr: { weight: 200, rate: 0.03 },
+    conversion: { weight: 20, rate: 0.05 },
+}
 
-/**
- * Pure function — takes raw gig/seller metrics, returns the final 8-digit ranking score.
- * No DB calls here. All I/O happens in recalculateScore.ts, which gathers these inputs
- * and calls this function.
- */
+export function smoothedRate(successes: number, total: number, prior: { weight: number; rate:  number }) {
+    return (successes + prior.weight * prior.rate) / (total + prior.weight)
+}
+
 export function calculateRankingScore(inputs: RankingInputs): RankingResult {
-    // Normalize trustScore (0–100) down to 0–1 to match the other metrics before weighting
-    const normalizedTrust = inputs.trustScore / 100;
+    const trustScore = (inputs.avgRating / 5);
+
+    const completionRate = smoothedRate(inputs.completedOrders, inputs.totalTerminalOrders, PRIORS.completion)
+    const ctr = smoothedRate(inputs.clicks, inputs.impressions, PRIORS.ctr)
+    const conversionRate = smoothedRate(inputs.totalOrdersPlaced, inputs.clicks, PRIORS.conversion); // this means 2 diff gigs with same number can differ
 
     let weightedFloat =
-        (normalizedTrust * WEIGHTS.trust) +
-        (inputs.completionRate * WEIGHTS.completion) +
-        (inputs.ctr * WEIGHTS.ctr) +
-        (inputs.conversionRate * WEIGHTS.conversion) +
+        (trustScore * WEIGHTS.trust) +
+        (completionRate * WEIGHTS.completion) +
+        (ctr * WEIGHTS.ctr) +
+        (conversionRate * WEIGHTS.conversion) +
         (inputs.activityScore * WEIGHTS.activity);
 
-    // Clamp defensively — weighted sum should never exceed 1.0, but guard against bad inputs
     weightedFloat = Math.min(Math.max(weightedFloat, 0), 1);
 
-    // Apply status flag suppression/kill-switch
     if (inputs.statusFlag === GigStatusFlag.SHADOWBAN) {
         weightedFloat = 0;
     } else if (inputs.statusFlag === GigStatusFlag.WARNING) {
         weightedFloat *= 0.5;
     }
 
-    // Apply rookie boost override - forces score up during the 72h trial window,
-    // but never overrides a shadowban (a banned rookie stays banned)
-    if (inputs.isRookiePeriod && inputs.statusFlag !== GigStatusFlag.SHADOWBAN) {
-        weightedFloat = Math.max(weightedFloat, ROOKIE_BOOST_FLOOR);
-    }
-
     const baseRankingScore = Math.round(weightedFloat * MAX_SCORE);
 
-    return { baseRankingScore, weightedFloat };
+    return { 
+        baseRankingScore, 
+        weightedFloat,
+        debug: { trustScore, completionRate, ctr, conversionRate }
+    };
 }

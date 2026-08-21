@@ -199,7 +199,7 @@ router.get("/verify/:reference", protectRoute, OrderController.verifyOrderByRefe
 router.get("/:orderId", protectRoute, OrderController.getOrder);
 
 /**
- * @openapi
+ * @openapiders/:orderId/requirements
  * /api/orders/{orderId}/requirements:
  *   post:
  *     summary: Submit project requirements

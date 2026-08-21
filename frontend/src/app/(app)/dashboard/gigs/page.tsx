@@ -6,6 +6,7 @@ import { GigCard } from "@/components/theorems/GigCard";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+export type CreationState = "DRAFT_BASICS" | "DRAFT_DESCRIPTION" | "DRAFT_TIERS" | "DRAFT_REQUIREMENTS" | "DRAFT_GALLERY" | "PUBLISH";
 
 type pageProps = {
     searchParams: Promise<{ page: string; limit: string; sort: GigSortOption; }>;
@@ -22,7 +23,7 @@ export default async function GigsDahboardPage({
         ? (gig.coverImage as { url: string }).url
         : gig.coverImage,
     })) ?? []
-    // console.log("Response payload:", gigs)
+    console.log("Response payload:", gigs[0]);
 
     if (!gigs|| !Array.isArray(gigs)) {
         return <div className="max-4xl mx-auto px-4 py-16 text-center">Gig not found.</div>
@@ -70,7 +71,7 @@ export default async function GigsDahboardPage({
   if (gigs.length === 0) {
     return (
       <div className="flex items-center gap-4">
-        <span className="text-muted-foreground">You have no gigs, go create a gig.</span>
+        <span className="w-full h-full items-center justify-center text-muted-foreground">You have no gigs, go create a gig.</span>
         <Link href="/gigs/new/basics">
           <Button variant="outline" className="cursor-pointer rounded-sm">
             Create Gigs
@@ -104,13 +105,15 @@ export default async function GigsDahboardPage({
                 avgRating: gig.avgRating ?? 0,
                 reviewCount: gig.totalReviews ?? 0,
               }}
+              creationState={gig.creationState}
               seller={{
-                name: gig.seller?.sellerUsername || "Seller",
-                avatar: gig.seller?.avatar || "",
+                sellerUsername: gig.seller.sellerUsername,
+                avatar: gig.seller.avatar,
                 isOnline: gig.seller?.isOnline ?? false,
               }}
               tags={gig.tags}
               variant="list"
+              state={gig.state}
             />
           );
         })}

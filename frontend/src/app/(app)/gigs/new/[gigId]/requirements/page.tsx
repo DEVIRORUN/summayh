@@ -13,6 +13,7 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { X } from "lucide-react";
+import { useDraftGig } from "@/contexts/draftGigContext";
 
 interface RequirementInput {
   question: string;
@@ -22,9 +23,17 @@ interface RequirementInput {
 }
 
 export default function RequirementsGigPage() {
+  const { draft, refetchDraft } = useDraftGig();
   const router = useRouter();
   const { gigId } = useParams();
-  const [requirements, setRequirements] = useState<RequirementInput[]>([]);
+  const [requirements, setRequirements] = useState<RequirementInput[]>(
+    draft?.requirementTemplates?.map(rt => ({
+      question: rt.question,
+      inputType: rt.inputType as RequirementInput["inputType"],
+      options: rt.options,
+      isRequired: rt.isRequired,
+    })) ?? []
+  );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [optionDrafts, setOptionDrafts] = useState<Record<number, string>>({});
@@ -68,8 +77,6 @@ export default function RequirementsGigPage() {
 
   const handleSubmit = async () => {
     setError(null);
-    setIsSubmitting(true);
-
     const invalidMC = requirements.find(
       (r) => r.inputType === "MULTIPLE_CHOICE" && r.options.length < 2
     );
@@ -77,6 +84,7 @@ export default function RequirementsGigPage() {
       setError("Multiple choice questions need at least 2 options.");
       return;
     }
+    setIsSubmitting(true);
     try {
       const res = await fetch(`/api/gig/${gigId}/requirements`, {
         method: "PATCH",
@@ -86,9 +94,10 @@ export default function RequirementsGigPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.message || "Failed to save requirements.");
+        throw new Error(data.error || data.message || "Failed to save requirements.");
       }
 
+      await refetchDraft();
       router.push(`/gigs/new/${gigId}/gallery`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

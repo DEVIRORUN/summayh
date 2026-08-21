@@ -26,7 +26,6 @@ export class AvatarService {
 
         return { uploadUrl, publicUrl };
     }
-
     static async saveAvatar(userId: string, avatarUrl: string, role: string): Promise<any> {
         
         const updatedUser = await prisma.user.update({

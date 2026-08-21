@@ -5,15 +5,17 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { X, Loader2, ImagePlus, Film } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDraftGig } from "@/contexts/draftGigContext";
 
 const MAX_IMAGES = 3;
 
 export default function GalleryGigPage() {
+  const { draft, refetchDraft } = useDraftGig();
   const router = useRouter();
   const { gigId } = useParams();
 
-  const [images, setImages] = useState<string[]>([]);
-  const [video, setVideo] = useState<string | null>(null);
+  const [images, setImages] = useState<string[]>(draft?.images ?? []);
+  const [video, setVideo] = useState<string | null>(draft?.video ?? null);
 
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
@@ -103,6 +105,7 @@ export default function GalleryGigPage() {
         throw new Error(data.error || "Failed to save gallery.");
       }
 
+      await refetchDraft();
       router.push(`/gigs/new/${gigId}/publish`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { GigController } from "../controllers/gig.controller";
 import { protectRoute } from "../middleware/auth";
 import { requireSeller } from "../middleware/isSeller";
+import { optionalAuth } from "../middleware/optionalAuth";
 
 const router = Router();
 
@@ -38,21 +39,6 @@ const router = Router();
  *         description: Internal server error
  */
 router.post("/draft", protectRoute, requireSeller, GigController.createDraftGig);
-
-/**
- * @openapi
- * /api/gig/create:
- *   post:
- *     summary: Create a new Gig (All-in-one legacy route)
- *     tags: [Gigs]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       201:
- *         description: Gig created successfully
- */
-// router.post("/create", protectRoute, requireSeller, GigController.createGig);
-
 /**
  * @openapi
  * /api/gig/search:
@@ -94,7 +80,6 @@ router.post("/draft", protectRoute, requireSeller, GigController.createDraftGig)
  *         description: Search results with AI extraction metadata
  */
 router.post("/search", GigController.searchGigs);
-
 /**
  * @openapi
  * /api/gig/me:
@@ -108,7 +93,6 @@ router.post("/search", GigController.searchGigs);
  *         description: List of seller gigs
  */
 router.get("/me", protectRoute, GigController.getAllGigsBySeller);
-
 /**
  * @openapi
  * /api/gig:
@@ -178,7 +162,6 @@ router.patch("/:gigId/requirements", protectRoute, requireSeller, GigController.
  *         description: Presigned upload URL generated
  */
 router.post("/:gigId/upload-url", protectRoute, requireSeller, GigController.getUploadUrl);
-
 /**
  * @openapi
  * /api/gig/{gigId}/gallery:
@@ -192,7 +175,6 @@ router.post("/:gigId/upload-url", protectRoute, requireSeller, GigController.get
  *         description: Gallery saved successfully
  */
 router.patch("/:gigId/gallery", protectRoute, requireSeller, GigController.saveGalleryToGig);
-
 /**
  * @openapi
  * /api/gig/{gigId}/publish:
@@ -206,7 +188,6 @@ router.patch("/:gigId/gallery", protectRoute, requireSeller, GigController.saveG
  *         description: Gig published successfully
  */
 router.patch("/:gigId/publish", protectRoute, requireSeller, GigController.publishGig);
-
 /**
  * @openapi
  * /api/gig/{gigId}/tiers/{tierId}/bulk-pricing:
@@ -235,6 +216,17 @@ router.get("/:gigId/tiers/:tierId/bulk-pricing", GigController.getBulkPricing);
 /**
  * @openapi
  * /api/gig/{gigId}:
+ *   get:
+ *     summary: Get a single Gig
+ *     tags: [Gigs]
+ *     responses:
+ *       200:
+ *         description: Gig retrieved successfully
+ */
+router.get("/:gigId/draft", protectRoute, requireSeller, GigController.getDraftForEditing);
+/**
+ * @openapi
+ * /api/gig/{gigId}:
  *   patch:
  *     summary: Update an existing Gig
  *     tags: [Gigs]
@@ -245,7 +237,6 @@ router.get("/:gigId/tiers/:tierId/bulk-pricing", GigController.getBulkPricing);
  *         description: Gig updated successfully
  */
 router.patch("/:gigId", protectRoute, requireSeller, GigController.updateGig);
-
 /**
  * @openapi
  * /api/gig/{gigId}:
@@ -269,10 +260,6 @@ router.delete("/:gigId", protectRoute, requireSeller, GigController.deleteGig);
  *       200:
  *         description: Gig retrieved successfully
  */
-router.get("/:gigId", GigController.readGig);
+router.get("/:gigId", optionalAuth, GigController.readGig);
 
-
-/* ==========================================================================
-   3. EXPORT ROUTER AT THE VERY END
-   ========================================================================== */
 export default router;
