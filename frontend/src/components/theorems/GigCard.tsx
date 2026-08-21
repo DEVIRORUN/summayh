@@ -109,40 +109,46 @@ export function GigCard({
             <Card
                 onClick={handleCardClick}
                 className={cn(
-                    "overflow-hidden p-0 rounded-sm",
+                    "overflow-hidden p-0 rounded-md sm:rounded-sm cursor-pointer w-full",
+                    "transition-all duration-200 active:scale-[0.98] hover:shadow-md hover:bg-card-foreground/2 hover:border-foreground",
                     isList ? "flex flex-row" : "flex flex-col"
                 )}
             >
                 {/* Thumbnail */}
                 <div className={cn(
-                    "relative shrink-0 overflow-hidden", 
+                    "relative shrink-0 overflow-hidden bg-muted", 
                     isList 
-                        ? "w-50 min-h-[140px]" :  "w-full aspect-video")}>
+                        ? "w-20 sm:w-40 h-auto self-stretch" 
+                        :  "w-full aspect-video")}>
                     <Image 
                         src={displayImage || "/placeholder.jpg"} 
                         alt={title} 
                         fill 
-                        sizes={isList ? "160px" : "(max-width: 768px) 100vw, 300px" }
+                        sizes={isList ? "(max-width: 640px) 122px, 160px" : "(max-width: 768px) 100vw, 300px" }
                         className="object-cover"
                         priority/>
+                        
                     <button
                         onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation()
                             onFavorite?.(id);
                         }}
-                        className="absolute top-2 right-2 bg-background/80 rounded-full p-1.5"
+                        className={cn(
+                            "absolute top-2 right-2 bg-background/90 rounded-full p-2 min-w-[40px] min-h-[40px] flex items-center justify-center shadow-sm transition-transform active:scale-90",
+                            isList && "hidden"
+                        )}
                     >
                         <Heart className={cn("w-4 h-4", isFavorited && "fill-red-500 text-red-500")} />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className={cn("flex flex-col gap-2 p-3", isList && "flex-1" )}>
+                <div className={cn("flex flex-col p-3 min-w-0", isList ? "flex-1 gap-1 sm:gap-2" : "gap-2")}>
                     <Link
                         href={`/seller/${seller.sellerUsername}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="w-full flex flex-row justify-between items-center"
+                        className={cn("w-full flex-row justify-between items-center", isList ? "hidden sm:flex" : "flex")}
                     >
                         <SellerMiniRow 
                             avatar={sellerAvatar}
@@ -151,30 +157,47 @@ export function GigCard({
                             level={seller.level}
                             compact={isCompact}
                         />
-                        {state === "DRAFT" && 
-                            <span className="text-xs font-bold bg-foreground text-background p-1 rounded-md h-fit ">
-                                DRAFT
-                            </span>
-                        }
                     </Link>
 
-                    <p className={cn("font-medium line-clamp-2", isCompact ? "text-xs" : "text-sm")}>
+                    <p className={cn(
+                        "font-medium", 
+                        isCompact ? "text-xs" : "text-sm",
+                        isList ? "line-clamp-1 sm:line-clamp-2" : "line-clamp-2")}>
                         {title}
                     </p>
 
                     {!isCompact && (
-                        <RatingInline avgRating={displayAvgRating} reviewCount={displayReviewCount} size="sm"/>
+                        <div className={isList ? "hidden sm:flex" : ""}>
+                            <RatingInline avgRating={displayAvgRating} reviewCount={displayReviewCount} size="sm" />
+                        </div>
                     )}
 
-                    <div className="flex items-center justify-between mt-auto">
-                        <span className="text-xs text-muted-foreground">{displayDelivery}</span>
-                        <PriceTag price={displayPrice} showFrom size={isCompact ? "sm" : "lg"} />
+                    <div className={cn("flex mt-auto", isList ? "flex-col items-start gap-0.5 sm:flex-row sm:items-center sm:justify-between" : "items-center justify-between")}>
+                        <span className="text-xs text-muted-foreground">{displayDelivery}</span> 
+                        <div className="flex flex-row justify-between w-full">
+                            <PriceTag price={displayPrice} showFrom size={isCompact ? "sm" : isList ? "sm" : "lg"} />
+                            {isList && state === "DRAFT" && 
+                                <span className="text-[10px] font-bold bg-foreground text-background px-2 py-1 rounded-xs shadow-sm sm:hidden">
+                                    DRAFT
+                                </span>
+                            }
+                        </div>
                     </div>
 
-                    <div className="flex flex-wrap">
-                        {tags && (tags.map((t, i) => (
-                            <span key={i}  className="m-1 px-2 p-1 rounded-md  bg-foreground text-xs text-muted/90 font-bold">{t}</span>
-                        )))}
+                    <div className={cn("flex items-end justify-between gap-1", isList && "hidden sm:flex")}>
+                        <div className="flex flex-wrap gap-1">
+                            {tags && (tags.map((t, i) => (
+                                <span key={i}  className="px-2 py-1 rounded-sm bg-foreground text-xs text-muted/90 font-bold">{t}</span>
+                            )))}
+                        </div>
+                        {state === "DRAFT" &&
+                            <span className={cn(
+                                "text-[10px] font-bold bg-foreground text-background px-2 py-1 rounded-xs shadow-sm shrink-0",
+                                isList && "hidden sm:inline-block"
+                            )}>
+                                DRAFT
+                            </span>
+                        }
                     </div>
                 </div>
             </Card>

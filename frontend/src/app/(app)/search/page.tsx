@@ -262,9 +262,11 @@ export default function SearchPage() {
         )}
 
         {/* Results Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 min-w-0 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pt-2">
           {results.map((gig) => (
-            <GigCard key={gig.id} {...gig} />
+            <div className="min-w-0" key={gig.id}>
+              <GigCard variant="list" {...gig} />
+            </div>
           ))}
         </div>
       </main>
