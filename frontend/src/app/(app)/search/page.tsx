@@ -13,7 +13,6 @@ import {
 import { SlidersHorizontal } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
-
 // ----------------------------------------------------------------------
 // 1. Types & Interfaces
 // ----------------------------------------------------------------------
@@ -32,6 +31,7 @@ interface RawGigResult {
   avatar: string;
   startingPrice: number;
   relevance: number;
+  state: "DRAFT" | "ACTIVE" | "PAUSED" | "INACTIVE";
 }
 
 interface FilterFormProps {
@@ -49,10 +49,11 @@ function mapToGigCardProps(raw: RawGigResult): GigCardProps {
     price: raw.startingPrice,
     tags: raw.tags,
     deliveryTime: "-",
+    state: raw.state,
     rating: { avgRating: raw.avgRating, reviewCount: raw.totalReviews },
     seller: {
       avatar: raw.avatar,
-      name: raw.sellerUsername,
+      sellerUsername: raw.sellerUsername,
       isOnline: false,
       level: undefined,
     },
@@ -256,7 +257,7 @@ export default function SearchPage() {
         {error && <p className="text-xs font-medium text-destructive">{error}</p>}
         {!isLoading && !error && query && results.length === 0 && (
           <p className="text-xs text-muted-foreground">
-            No results found for <span className="font-semibold text-foreground">"{query}"</span>.
+            No results found for <span className="font-semibold text-foreground">{`"${query}"`}</span>.
           </p>
         )}
 
