@@ -72,7 +72,7 @@ export default async function SellerProfilePage({
                                 rating={{ avgRating: gig.avgRating, reviewCount: gig.totalReviews }}
                                 seller={{
                                     avatar: seller.avatar,
-                                    name: seller.user.name,
+                                    sellerUsername: seller.sellerUsername,
                                     isOnline: seller.isOnline,
                                     level: undefined,
                                 }}
