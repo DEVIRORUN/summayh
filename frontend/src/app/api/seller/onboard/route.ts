@@ -13,9 +13,10 @@ export async function POST(request: Request) {
         if (!backendRes.ok) {
             const errorData = await backendRes.json().catch(() => ({}));
             return NextResponse.json(
-                { err: errorData.message || "Failed to onboard seller" },
+                { error: errorData.message || "Failed to onboard seller" },
                 { status: backendRes.status }
             );
+            console.log(backendRes.status, errorData)
         }
 
         const data = await backendRes.json();

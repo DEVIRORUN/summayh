@@ -73,7 +73,8 @@ router.get("/check-username", SellerController.checkUsernameAvailability);
  *       404:
  *         description: Seller profile not found
  */
-router.post("/onboard", protectRoute, requireEmailVerified, SellerController.onboardSeller);
+// router.post("/onboard", protectRoute, SellerController.onboardSeller);
+router.post("/onboard", protectRoute, requireEmailVerified, SellerController.onboardSeller); // Original
 
 /**
  * @openapi

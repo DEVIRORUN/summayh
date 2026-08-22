@@ -46,6 +46,7 @@ import avatarRoutes from "./routes/avatar.route";
 
 const app = express();
 app.use(helmet());
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3001;
 
 app.use(

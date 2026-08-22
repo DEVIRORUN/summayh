@@ -26,6 +26,7 @@ export class EmailOtpService {
             react: EmailOtpEmail({ name: user.name, otp })
         });
 
+        console.log("[SENT EMAIL OTP]");
         return { message: "OTP sent to email." }
     }
 
@@ -67,6 +68,7 @@ export class EmailOtpService {
             })
         ])
 
+        console.log("[VERIFIED EMAIL OTP]");
         return { success: true, message: "Email verified successfully." }
     }
 

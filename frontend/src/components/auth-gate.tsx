@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 
-const PUBLIC_PATHS = ["/", "/search", "/gigs", "/sellers"]; 
+const PUBLIC_PATHS = ["/", "/search", "/gigs", "/sellers", "/verify-email"]; 
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -13,13 +13,13 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (isLoading || !user) return;
-
     const isPublicPath = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-
-    // if (!user.isEmailVerified && !isPublicPath) {
-    //   router.push("/verify-email");
-    // }
-  }, [isLoading, user, pathname, router]);
+    if (!user.isEmailVerified && !isPublicPath) {
+      router.push("/verify-email");
+    }
+  }, [isLoading, user?.isEmailVerified, pathname, router]);
 
   return <>{children}</>;
 }
+
+// 468407

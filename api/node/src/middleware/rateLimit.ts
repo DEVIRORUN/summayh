@@ -1,4 +1,4 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 export const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 min
@@ -9,8 +9,9 @@ export const loginLimiter = rateLimit({
 })
 
 export const otpLimiter = rateLimit({
-    windowMs: 10 * 60 * 1000, // 10 min, same with Otp expiry
-    max: 5,
+    windowMs: 20 * 60 * 1000, // 10 min, same with Otp expiry
+    max: 15,
+    keyGenerator: (req) => (req as any).userId || ipKeyGenerator(req.ip!),
     message: { message: "Too many OTP attempts. Try again later." },
     standardHeaders: true,
     legacyHeaders: false,

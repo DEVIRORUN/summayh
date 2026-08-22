@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/axiom/AuthCard";
 import { OTPInput } from "@/components/axiom/OTPInput";
@@ -41,19 +41,22 @@ export default function VerifyEmailPage() {
         }
     }, []);
 
+    const hasSentRef = useRef(false);
+
     // Send the first OTP automatically once we know who the user is
     useEffect(() => {
-        if (!authLoading && user && !sentOnce) {
+        if (!authLoading && user?.id && !hasSentRef.current) {
+            hasSentRef.current = true;
             sendOtp();
         }
-    }, [authLoading, user, sentOnce, sendOtp]);
+    }, [authLoading, user?.id, sendOtp]);
 
     // If already verified, don't sit on this page
     useEffect(() => {
         if (!authLoading && user?.isEmailVerified) {
             router.push("/");
         }
-    }, [authLoading, user, router]);
+    }, [authLoading, user?.isEmailVerified, router]);
 
     // Resend cooldown ticker
     useEffect(() => {

@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { BankInput } from "@/components/shared/BankSearchHandler";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/auth-context";
 
 interface BankInputProps {
   inputValue: string;
@@ -18,6 +20,7 @@ interface BankInputProps {
 }
 
 export default function SellerOnboardingPage() {
+  const { refetch } = useAuth();
   const router = useRouter();
   const [name, setName] = useState(""); //accountName
   const [username, setUsername] = useState(""); //accountName
@@ -87,6 +90,7 @@ export default function SellerOnboardingPage() {
         );
       }
 
+      await refetch()
       router.push("/gigs/new/basics"); // I wire this rn so straight to gig creation [For now]
     } catch (err) {
       setError(
@@ -286,7 +290,7 @@ export default function SellerOnboardingPage() {
           <Button
             onClick={() => handleSubmit()}
             disabled={isFormInvalid}
-            className="rounded-xs font-medium text-xs px-5 cursor-pointer w-full sm:w-auto"
+            className={cn("rounded-xs font-medium text-xs px-5 cursor-pointer w-full sm:w-auto", isSubmitting ? "animate-pulse" : "")}
             suppressHydrationWarning
           >
             {isSubmitting ? "Saving..." : "Save & Continue"}
