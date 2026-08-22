@@ -21,10 +21,23 @@ interface TierInput {
   breakLengthMin?: number;
   totalSessions?: number;
 }
+interface TopicInput {
+  order: number;
+  title: string
+  descritpion: string;
+  goal: string
+  priceFullCousre: number;
+}
 interface GigTiersInput {
   basic: TierInput;
   standard: TierInput;
   premium: TierInput;
+}
+interface GigCourseInput {
+  title: string;
+  description: string;
+  goal: string;
+  topics: TopicInput[]
 }
 interface RequirementTemplateInput {
   question: string;
@@ -235,6 +248,23 @@ export class GigService {
       throw err;
     }
   }
+  // static async addCourseToGig(
+  //   gigId: string,
+  //   courseInput: GigCourseInput,
+  //   sellerId: string,
+  // ): Promise<any> {
+  //   try {
+  //     console.log(new Date(), "-> [ADD COURSE TO DRAFT]: Hit!!!");
+
+  //     const currentGig = await prisma.$transaction(async (tx) => {
+  //       const gig = await tx.gig.findFirst({ where: { id: gigId, sellerId } });
+
+  //       if (!gig) {
+  //         throw new Error("Gig not found or you don't have permission to edit it.")
+  //       }
+  //     })
+  //   }
+  // }
   static async generateUploadUrl(
     gigId: string,
     sellerId: string,

@@ -163,6 +163,7 @@ enum BoardMode {
 
 enum PurchaseType {
   FULL_COURSE
+  TOPIC
   SESSION_RANGE
 }
 
@@ -380,6 +381,7 @@ model SellerProfile {
   ledgerEntries         LedgerEntry[]
   sellerAvailabilities  SellerAvailability[]
   proSubscriptions      ProSubscription[]
+  availabilityBuyouts   AvailabilityBuyout[]
 }
 
 model SellerAvailability {
@@ -391,7 +393,8 @@ model SellerAvailability {
   timeZone  String   @default("Africa/Lagos")
   createdAt DateTime @default(now())
 
-  seller SellerProfile @relation(fields: [sellerId], references: [id])
+  seller                           SellerProfile                     @relation(fields: [sellerId], references: [id])
+  enrollmentAvailabilitySelections EnrollmentAvailabilitySelection[]
 
   @@index([sellerId, dayOfWeek])
 }
@@ -438,23 +441,23 @@ model FoundersPassConfig {
 }
 
 model Gig {
-  id           String   @id @default(uuid())
-  sellerId     String
-  categoryId   String // Changed from String? to required once you migrate
-  title        String
-  description  String?
-  tags         String[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
-  service      Service  @default(DIGITAL)
-  state        State    @default(ACTIVE)
-  coverImage   String?
-  images       String[]
-  video        String?
-  avgRating    Float    @default(0)
-  totalReviews Int      @default(0)
-  minPrice     Decimal? // or Float, matching your Tier.price type
-  maxPrice     Decimal?
+  id            String        @id @default(uuid())
+  sellerId      String
+  categoryId    String // Changed from String? to required once you migrate
+  title         String
+  description   String?
+  tags          String[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @default(now()) @updatedAt
+  service       Service       @default(DIGITAL)
+  state         State         @default(ACTIVE)
+  coverImage    String?
+  images        String[]
+  video         String?
+  avgRating     Float         @default(0)
+  totalReviews  Int           @default(0)
+  minPrice      Decimal? // or Float, matching your Tier.price type
+  maxPrice      Decimal?
   creationState CreationState @default(DRAFT_BASICS)
 
   deliveryMode GigDeliveryMode @default(DIGITAL)
@@ -543,10 +546,13 @@ model TierQuantityPrice {
 }
 
 model GigCourse {
-  id        String   @id @default(uuid())
-  gigId     String   @unique
-  title     String // Full Concept "Full Qur'an Memorization"
-  createdAt DateTime @default(now())
+  id              String   @id @default(uuid())
+  gigId           String   @unique
+  title           String // Full Concept "Full Qur'an Memorization"
+  descritpion     String?
+  goal            String?
+  priceFullCousre Float?
+  createdAt       DateTime @default(now())
 
   gig               Gig                @relation(fields: [gigId], references: [id])
   topics            GigTopic[]
@@ -555,10 +561,13 @@ model GigCourse {
 }
 
 model GigTopic {
-  id       String @id @default(uuid())
-  courseId String
-  order    Int
-  title    String // Full Concept "Full Qur'an Memorization"
+  id              String  @id @default(uuid())
+  courseId        String
+  order           Int
+  title           String // Full Concept "Full Qur'an Memorization"
+  descritpion     String?
+  goal            String?
+  priceFullCousre Float?
 
   course       GigCourse        @relation(fields: [courseId], references: [id], onDelete: Cascade)
   sessionUnits GigSessionUnit[]
@@ -567,12 +576,15 @@ model GigTopic {
 }
 
 model GigSessionUnit {
-  id               String @id @default(uuid())
+  id               String  @id @default(uuid())
   topicId          String
   courseId         String // denormalized, range in course (56-67) cheap
   globalIndex      Int // Position across the WHOLE course i,e 1..128
   title            String
-  estimatedMinutes Int    @default(30)
+  descritpion      String?
+  goal             String?
+  priceFullCousre  Float?
+  estimatedMinutes Int     @default(30)
 
   topic    GigTopic         @relation(fields: [topicId], references: [id], onDelete: Cascade)
   course   GigCourse        @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -587,6 +599,7 @@ model CourseEnrollment {
   courseId                String
   buyerId                 String
   purchaseType            PurchaseType
+  topicId                 String
   startIndex              Int? // Used for SESSION_RANGE
   endIndex                Int?
   sessionsPerDayPref      Int? // Pacing choice, FULL_COURSE only
@@ -594,10 +607,12 @@ model CourseEnrollment {
   sessionsCompleted       Int          @default(0)
   createdAt               DateTime     @default(now())
 
-  order    Order            @relation(fields: [orderId], references: [id])
-  course   GigCourse        @relation(fields: [courseId], references: [id])
-  buyer    User             @relation(fields: [buyerId], references: [id])
-  bookings SessionBooking[]
+  order                            Order                             @relation(fields: [orderId], references: [id])
+  course                           GigCourse                         @relation(fields: [courseId], references: [id])
+  buyer                            User                              @relation(fields: [buyerId], references: [id])
+  bookings                         SessionBooking[]
+  enrollmentAvailabilitySelections EnrollmentAvailabilitySelection[]
+  availabilityBuyout               AvailabilityBuyout?
 }
 
 model SessionPackage {
@@ -679,6 +694,30 @@ model SessionOvertimeRequest {
   respondedAt   DateTime?
 
   callSession CallSession @relation(fields: [callSessionId], references: [id])
+}
+
+model EnrollmentAvailabilitySelection {
+  id                   String   @id @default(uuid())
+  enrollmentId         String
+  sellerAvailabilityId String
+  createdAt            DateTime @default(now())
+
+  enrollment   CourseEnrollment   @relation(fields: [enrollmentId], references: [id])
+  availability SellerAvailability @relation(fields: [sellerAvailabilityId], references: [id])
+
+  @@unique([enrollmentId, sellerAvailabilityId])
+}
+
+model AvailabilityBuyout {
+  id           String   @id @default(uuid())
+  enrollmentId String   @unique
+  sellerId     String
+  weekoOf      DateTime // Monday of the bought-out week
+  amountPaid   Float
+  createdAt    DateTime @default(now())
+
+  enrollment CourseEnrollment @relation(fields: [enrollmentId], references: [id])
+  seller     SellerProfile    @relation(fields: [sellerId], references: [id])
 }
 
 model GigFAQ {

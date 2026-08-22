@@ -123,17 +123,131 @@ export default function DigitalPricingGigPage({
   };
   return (
     <main className="text-muted-foreground min-w-0 ">
-      <div className="top flex flex-row justify-between">
+      <div className="top flex flex-row justify-between items-center mb-4">
         <span className="font-semibold text-2xl">Scope & Pricing</span>
-        <div className="flex flex-c">
+        <div className="flex flex-col text-right">
           <span className="text-xs">Offer packages</span>
           {/* Toggle button - ADDED TO TODO, RN all 3 tiers are compulsory */}
         </div>
       </div>
       <hr className="border-border my-4" />
-      <div className="canvas">
-        <span className="text-xs font-semibold">Packages</span>
-        <div className="grid grid-cols-[160px_1fr_1fr_1fr] min-w-0 border border-border p-0">
+
+      <div className="canvas space-y-4">
+        <span className="text-xs font-semibold mb-2">Packages</span>
+        {/* MOBILE VIEW */}
+        <div className="grid md:hidden gap-6">
+          {(["basic", "standard", "premium"] as const).map((tierName) => (
+            <div key={tierName} className="shadow-xs border border-border p-4 space-y-2 rounded-md">
+              <div className="font-bold text-sm uppercase tracking-wider border-b border-bordre pb-2">
+                {tierName}
+              </div>
+
+              <div className="space-y-1">
+                 <Input
+                    key={tierName}
+                    value={tiers[tierName].customName}
+                    onChange={(e) =>
+                      updateTier(tierName, "customName", e.target.value)
+                    }
+                    className="rounded-none text-xs min-h-10"
+                    placeholder="What's the vibe? Name it"
+                  />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold">Description</label>
+                  <Textarea
+                    key={tierName}
+                    value={tiers[tierName].description}
+                    onChange={(e) =>
+                      updateTier(tierName, "description", e.target.value)
+                    }
+                    className="rounded-none text-xs min-h-16"
+                    placeholder="Drop the details"
+                  />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1 align-center">
+                  <label className="text-xs font-semibold">Delivery</label>
+                </div>
+                <Select
+                  key={tierName}
+                  //   value={tiers[tierName].deliveryDays ? String(tiers[tierName].deliveryDays) : undefined} This show never add been here
+                  onValueChange={(v) =>
+                    updateTier(tierName, "deliveryDays", Number(v))
+                  }
+                >
+                  <SelectTrigger className="w-full min-w-0 text-xs rounded-none cursor-pointer">
+                    <SelectValue
+                      className="truncate min-w-0"
+                      placeholder="Select delivery days"
+                    />
+                  </SelectTrigger>
+                  <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[var(--radix-select-trigger-width)] rounded-none">
+                    {DELIVERY_OPTIONS.map((d) => (
+                      <SelectItem
+                        className="text-xs rounded-none cursor-pointer data-[highlighted]:bg-muted"
+                        key={d}
+                        value={String(d)}
+                      >
+                        {d} {d === 1 ? "Day" : "Days"} Delivery
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1 align-center">
+                  <label className="text-xs font-semibold">Revisions</label>
+                </div>
+                <Select
+                    key={tierName}
+                    //   value={tiers[tierName].deliveryDays ? String(tiers[tierName].deliveryDays) : undefined} This show never add been here
+                    onValueChange={(v) =>
+                      updateTier(tierName, "revisionCount", Number(v))
+                    }
+                  >
+                    <SelectTrigger className="w-full min-w-0 text-xs rounded-none cursor-pointer">
+                      <SelectValue
+                        className="truncate min-w-0"
+                        placeholder="SELECT"
+                      />
+                    </SelectTrigger>
+                    <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[var(--radix-select-trigger-width)] rounded-none">
+                      {REVISION_OPTIONS.map((d) => (
+                        <SelectItem
+                          className="text-xs rounded-none cursor-pointer data-[highlighted]:bg-muted"
+                          key={d}
+                          value={String(d)}
+                        >
+                          {d} {d === 1 ? "Revision" : "Revisions"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+              </div>
+
+              <div className="space-y-1">
+                  <label className="text-xs font-semibold">
+                    Price (₦)
+                  </label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    key={tierName}
+                    value={formatNaira(tiers[tierName].price)}
+                    onChange={(e) =>
+                      updateTier(tierName, "price", parseNaira(e.target.value))
+                    }
+                    className="rounded-none text-xs h-10"
+                  />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="hidden md:grid grid-cols-[160px_1fr_1fr_1fr] min-w-0 border border-border p-0">
           <div />
           {["BASIC", "STANDARD", "PREMIUM"].map((t) => (
             <div
